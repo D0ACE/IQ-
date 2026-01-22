@@ -1,0 +1,32 @@
+class AppRoutes {
+  static const splash = '/splash';
+  static const login = '/login';
+  static const signUp = '/signUp';
+  static const forgotPassword = '/forgotPassword';
+  static const customerDetail = '/customer-detail';
+  static const customerEdit = '/customer-edit';
+  static const String customerDashboard = '/customer-dashboard';
+  static const String adminDashboard = '/admin-dashboard';
+  static const String consultantDashboard = '/consultant-dashboard';
+  static const customerOnboarding = '/customerOnboarding';
+  static const customerList = '/customerList';
+  static const employeeList = '/employeeList';
+  static const contactUs = '/contactUs';
+  static const ncrPage = '/ncrPage';
+  static const adminProfile = '/adminProfile';
+  static const onboardingRequest = '/onboardingRequest';
+  static const String consultantProfile = '/consultant-profile';
+  static const String NCRFormPage = '/ncr-form-page';
+   static const String visitorSummary = '/visitor-summary';
+   static const String chat = '/chat';
+   static const String customerProfile = '/customerProfile'; 
+   static const String customerProfileEdit = '/customerProfileEdit';
+   static const String customerMMEList = '/customerMMEList';
+   static const String customerMMEForm = '/customerMMEForm';
+   static const superAdminDashboard = '/superadmin-dashboard';
+  static const String createAdmin = '/create-admin';
+  static const String adminList = '/admins';
+static const String adminDetail = '/admins/:adminId';
+
+
+}

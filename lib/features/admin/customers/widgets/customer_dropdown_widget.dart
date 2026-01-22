@@ -1,0 +1,99 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:iq_plus/common/themes/app_colors.dart';
+import 'package:iq_plus/di/service_locator.dart';
+import 'package:iq_plus/features/admin/customers/cubit/customer_list_cubit.dart';
+import 'package:iq_plus/features/admin/customers/cubit/customer_list_state.dart';
+import 'package:iq_plus/features/auth/model/customer_model.dart';
+
+class CustomerDropdownWidget extends StatelessWidget {
+  final CustomerModel? selectedCustomer;
+  final ValueChanged<CustomerModel?> onChanged;
+  final String hint;
+
+  const CustomerDropdownWidget({
+    super.key,
+    this.selectedCustomer,
+    required this.onChanged,
+    this.hint = 'Select company',
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) => getIt<CustomerListCubit>()..fetchCustomers(),
+      child: BlocBuilder<CustomerListCubit, CustomerListState>(
+        builder: (context, state) {
+          if (state is CustomerListLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (state is CustomerListLoaded) {
+            return DropdownButtonFormField<CustomerModel>(
+              initialValue: selectedCustomer,
+              isExpanded: true,
+              hint: Text(hint),
+              decoration: InputDecoration(
+                contentPadding:
+                const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              items: state.customers.map((customer) {
+                return DropdownMenuItem<CustomerModel>(
+                  value: customer,
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 14,
+                        backgroundColor:
+                        AppColors.primary.withOpacity(0.15),
+                        child: Text(
+                          customer.companyName.isNotEmpty
+                              ? customer.companyName[0].toUpperCase()
+                              : 'C',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              customer.companyName,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w600),
+                            ),
+
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+              onChanged: onChanged,
+            );
+          }
+
+          if (state is CustomerListError) {
+            return Text(
+              state.message,
+              style: const TextStyle(color: Colors.red),
+            );
+          }
+
+          return const SizedBox.shrink();
+        },
+      ),
+    );
+  }
+}

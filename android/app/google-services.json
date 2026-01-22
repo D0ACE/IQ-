@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "493549065560",
+    "project_id": "iq-plush-dc0e6",
+    "storage_bucket": "iq-plush-dc0e6.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:493549065560:android:73b7f32cc1804a5dbd012d",
+        "android_client_info": {
+          "package_name": "com.iqplus.iq_plus"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDKI-Rw--dbEgUf8HmCHT7uJdqBryFQOyY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

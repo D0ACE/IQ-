@@ -1,0 +1,499 @@
+import 'dart:math';
+import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:iq_plus/common/routes/go_route.dart';
+import 'package:iq_plus/common/themes/app_colors.dart';
+import 'package:iq_plus/common/themes/app_extension.dart';
+import 'package:iq_plus/common/themes/responsive.dart';
+import 'package:iq_plus/core/local_storage/hive_service.dart';
+import 'package:iq_plus/di/service_locator.dart';
+import 'package:iq_plus/features/auth/Login/login_page.dart';
+import 'package:iq_plus/features/consultant/consultant_profile_page.dart';
+import 'package:iq_plus/features/dashboard/page/contact_us_page.dart';
+import 'package:iq_plus/features/dashboard/page/visit_summary/cubit/visitor_summary_cubit.dart';
+import 'package:iq_plus/features/dashboard/page/visit_summary/cubit/visitor_summary_state.dart';
+import 'package:iq_plus/features/dashboard/page/visit_summary/repository/visitor_summary_repository.dart';
+import 'package:iq_plus/features/dashboard/page/visit_summary/visit_summary_page.dart';
+import 'package:iq_plus/ncr_form/ncr_page.dart';
+import 'package:iq_plus/ncr_form/ncr_provider.dart';
+
+import 'package:provider/provider.dart';
+
+class ConsultantDashboardPage extends StatefulWidget {
+  const ConsultantDashboardPage({super.key});
+
+  @override
+  State<ConsultantDashboardPage> createState() =>
+      _ConsultantDashboardPageState();
+}
+
+class _ConsultantDashboardPageState extends State<ConsultantDashboardPage> {
+  final user = getIt<HiveService>().getUser();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.scaffoldBg,
+      drawer: _buildBeautifulDrawer(),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: const Text(
+          'Consultant Dashboard',
+          style: TextStyle(color: AppColors.titleText),
+        ),
+        iconTheme: const IconThemeData(color: AppColors.kPrimaryColor),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(18.0),
+        child: Responsive(
+          mobile: SingleChildScrollView(
+            child: Column(
+              children: [
+                _buildStatsColumn(),
+                const SizedBox(height: 20),
+                _buildChartsColumn(context),
+                const SizedBox(height: 24),
+                _dashboardClickableList(),
+              ],
+            ),
+          ),
+          desktop: SingleChildScrollView(
+            child: Row(
+              children: [
+                Expanded(flex: 2, child: _buildStatsColumn()),
+                const SizedBox(width: 20),
+                Expanded(
+                  flex: 3,
+                  child: Column(
+                    children: [
+                      _buildChartsColumn(context),
+                      const SizedBox(height: 24),
+                      _dashboardClickableList(),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showSuccessDialog(BuildContext context, String message) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: const Text("Success"),
+        content: Text(message),
+        actions: [
+          ElevatedButton(
+            onPressed: () {
+              GoRouter.of(context).pop(); // close dialog
+              GoRouter.of(context).pop(); // back to dashboard
+            },
+            child: const Text("OK"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showErrorDialog(BuildContext context, String error) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: const Text("Failed"),
+        content: Text(error),
+        actions: [
+          TextButton(
+            onPressed: () => GoRouter.of(context).pop(), // closes the dialog
+            child: const Text("Retry"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 🌈 Drawer
+  Widget _buildBeautifulDrawer() {
+    final hiveService = getIt<HiveService>();
+    final currentUser = hiveService.getUser();
+    final assignedCustomers = hiveService.getAssignedCustomers(
+      currentUser?.userId ?? '',
+    );
+
+    // 🔹 Assigned customers for this consultant
+    hiveService
+        .getAllCustomers()
+        .where((c) => c.assignedConsultantId == currentUser?.userId)
+        .toList();
+    return Drawer(
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+          topRight: Radius.circular(30),
+          bottomRight: Radius.circular(30),
+        ),
+      ),
+      child: Container(
+        decoration: const BoxDecoration(gradient: AppColors.mainGradient),
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            DrawerHeader(
+              child: InkWell(
+                onTap: () {
+                  GoRouter.of(context).pop(); // close drawer
+                  GoRouter.of(context).push(AppRoutes.consultantProfile);
+                },
+
+                child: Row(
+                  children: [
+                    const CircleAvatar(
+                      radius: 32,
+                      backgroundColor: Colors.white,
+                      child: Icon(
+                        Icons.person,
+                        color: AppColors.purple,
+                        size: 30,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          getIt<HiveService>().getUser()?.userName ??
+                              "Consultant",
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        Text(
+                          getIt<HiveService>().getUser()?.email ?? "",
+                          style: const TextStyle(color: Colors.white70),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          "View Profile",
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.white70,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            _drawerItem(
+              icon: Icons.edit_document,
+              title: 'NCR Form',
+              onTap: () {
+                GoRouter.of(context).pop(); // closes the drawer
+                GoRouter.of(context).push(AppRoutes.NCRFormPage); // navigate
+              },
+            ),
+            _drawerItem(
+              icon: Icons.contact_mail,
+              title: 'Contact Us',
+              onTap: () {
+                GoRouter.of(context).pop(); // closes the drawer
+                GoRouter.of(context).push(AppRoutes.contactUs); // navigate
+              },
+            ),
+            // 🔵 My Customers (Expandable)
+            ExpansionTile(
+              leading: const Icon(Icons.people, color: Colors.white),
+              title: const Text(
+                'My Customers',
+                style: TextStyle(color: Colors.white, fontSize: 16),
+              ),
+              children: assignedCustomers.isEmpty
+                  ? [
+                      const ListTile(
+                        title: Text(
+                          'No customers assigned',
+                          style: TextStyle(color: Colors.white70),
+                        ),
+                      ),
+                    ]
+                  : assignedCustomers.map((customer) {
+                      return ListTile(
+                        title: Text(
+                          customer.companyName,
+                          style: const TextStyle(color: Colors.white70),
+                        ),
+                        subtitle: Text(
+                          customer.email,
+                          style: const TextStyle(color: Colors.white54),
+                        ),
+                        onTap: () {
+                          GoRouter.of(context).pop(); // close drawer
+                          GoRouter.of(
+                            context,
+                          ).push(AppRoutes.customerProfile, extra: customer);
+                        },
+                      );
+                    }).toList(),
+            ),
+
+            _drawerItem(
+              icon: Icons.logout,
+              title: 'Logout',
+              onTap: () {
+                final hiveService = getIt<HiveService>();
+                hiveService.clearAll(); // clear local storage
+                GoRouter.of(context).pop(); // close the drawer
+                context.go(
+                  AppRoutes.login,
+                ); // navigate to login and replace the stack
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _drawerItem({
+    required IconData icon,
+    required String title,
+    required GestureTapCallback onTap,
+  }) {
+    return ListTile(
+      leading: Icon(icon, color: Colors.white),
+      title: Text(
+        title,
+        style: const TextStyle(color: Colors.white, fontSize: 16),
+      ),
+      onTap: onTap,
+    );
+  }
+
+  /// 📊 Stats
+  Widget _buildStatsColumn() {
+    return Column(
+      children: [
+        _statCard('Users', '1,245', AppColors.purple),
+        const SizedBox(height: 16),
+        _statCard('Revenue', '\$12,345', AppColors.paid),
+        const SizedBox(height: 16),
+        _statCard('Orders', '321', AppColors.blue),
+      ],
+    );
+  }
+
+  Widget _statCard(String title, String value, Color color) {
+    return Card(
+      elevation: 10,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: AppColors.cardBg,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(fontSize: 16, color: AppColors.subText),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 📈 NCR CHART (PROVIDER DRIVEN)
+  Widget _buildChartsColumn(BuildContext context) {
+    final ncrProvider = context.watch<NcrProvider>();
+
+    final barValues = [
+      ncrProvider.openCount.toDouble(),
+      ncrProvider.inProgressCount.toDouble(),
+      ncrProvider.closedCount.toDouble(),
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'NCR Overview',
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: AppColors.titleText,
+          ),
+        ),
+        const SizedBox(height: 14),
+        Card(
+          elevation: 10,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: SizedBox(
+              height: 280,
+              child: AnimatedBarChart(
+                values: barValues,
+                barColor: AppColors.barColor,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 🔗 Dashboard Navigation
+  Widget _dashboardClickableList() {
+    return Column(
+      children: [
+        // 🔴 Existing NCR tile
+        _clickableCard(
+          title: 'NCR',
+          icon: Icons.report_problem,
+          onTap: () => GoRouter.of(context).push(AppRoutes.ncrPage),
+        ),
+
+        // 🟠 Static tiles (NO navigation for now)
+        _clickableCard(
+          title: 'Risk',
+          icon: Icons.warning_amber_rounded,
+          onTap: () {
+            // later you can navigate
+          },
+        ),
+
+        _clickableCard(
+          title: 'Next Visit',
+          icon: Icons.event_available,
+          onTap: () {
+            GoRouter.of(context).push(AppRoutes.visitorSummary);
+          },
+        ),
+
+        _clickableCard(
+          title: 'Next Audit',
+          icon: Icons.fact_check,
+          onTap: () {},
+        ),
+
+        _clickableCard(
+          title: 'Next Training',
+          icon: Icons.school,
+          onTap: () {},
+        ),
+      ],
+    );
+  }
+
+  Widget _clickableCard({
+    required String title,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(20),
+      onTap: onTap,
+      child: Card(
+        elevation: 8,
+        margin: const EdgeInsets.only(bottom: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 22,
+                backgroundColor: AppColors.kPrimaryLightColor,
+                child: Icon(icon, color: AppColors.kPrimaryColor),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.titleText,
+                  ),
+                ),
+              ),
+              const Icon(Icons.arrow_forward_ios, size: 16),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 📊 Animated Bar Chart
+class AnimatedBarChart extends StatelessWidget {
+  final List<double> values;
+  final Color barColor;
+
+  const AnimatedBarChart({
+    super.key,
+    required this.values,
+    required this.barColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return BarChart(
+      BarChartData(
+        maxY: values.isEmpty ? 5 : values.reduce(max) + 2,
+        barGroups: values.asMap().entries.map((entry) {
+          return BarChartGroupData(
+            x: entry.key,
+            barRods: [
+              BarChartRodData(
+                toY: entry.value,
+                color: barColor,
+                width: 18,
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ],
+          );
+        }).toList(),
+        titlesData: FlTitlesData(
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              getTitlesWidget: (value, _) =>
+                  Text(['Open', 'In Progress', 'Closed'][value.toInt()]),
+            ),
+          ),
+          leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true)),
+        ),
+      ),
+    );
+  }
+}
