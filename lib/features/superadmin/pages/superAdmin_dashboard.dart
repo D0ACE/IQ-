@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:iq_plus/common/widgets/common_app_bar.dart';
 import 'package:iq_plus/features/admin/create_admin/create_admin_page.dart';
 import 'package:iq_plus/features/admin/customers/cubit/customer_list_cubit.dart';
 import 'package:iq_plus/features/admin/customers/cubit/customer_list_state.dart';
@@ -23,15 +24,9 @@ class SuperadminDashboardPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.scaffoldBg,
       drawer: _buildDrawer(context),
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        title: const Text(
-          'Super Admin Dashboard',
-          style: TextStyle(color: AppColors.titleText),
-        ),
-        iconTheme: const IconThemeData(color: AppColors.kPrimaryColor),
-      ),
+      appBar: const CommonAppBar(
+  title: 'Super Admin Dashboard',
+),
       body: Padding(
         padding: const EdgeInsets.all(18),
         child: SingleChildScrollView(

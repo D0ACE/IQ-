@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:iq_plus/common/routes/go_route.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
 import 'package:iq_plus/common/themes/responsive.dart';
+import 'package:iq_plus/common/widgets/common_app_bar.dart';
 import 'package:iq_plus/core/local_storage/hive_service.dart';
 import 'package:iq_plus/di/service_locator.dart';
 import 'package:iq_plus/features/admin/customers/pages/customer_list_page.dart';
@@ -16,6 +17,7 @@ import 'package:iq_plus/features/auth/customer_onboarding/onboarding_mode.dart';
 import 'package:iq_plus/features/auth/customer_onboarding/onboarding_request_page.dart';
 import 'package:iq_plus/features/auth/customer_onboarding/page/customer_onboarding_page.dart';
 import 'package:iq_plus/features/dashboard/page/contact_us_page.dart';
+
 
 import 'package:iq_plus/features/users/cubit/employee_user_cubit.dart';
 import 'package:iq_plus/features/users/pages/employe_user_list_page.dart';
@@ -37,15 +39,9 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     return Scaffold(
       backgroundColor: AppColors.scaffoldBg,
       drawer: _buildBeautifulDrawer(),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: const Text(
-          'Admin Dashboard',
-          style: TextStyle(color: AppColors.titleText),
-        ),
-        iconTheme: const IconThemeData(color: AppColors.kPrimaryColor),
-      ),
+      appBar: const CommonAppBar(
+  title: 'Admin Dashboard',
+),
       body: Padding(
         padding: const EdgeInsets.all(18.0),
         child: Responsive(

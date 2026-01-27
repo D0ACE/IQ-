@@ -7,6 +7,8 @@ import 'package:iq_plus/common/routes/go_route.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
 import 'package:iq_plus/common/themes/app_extension.dart';
 import 'package:iq_plus/common/themes/responsive.dart';
+import 'package:iq_plus/common/widgets/common_app_bar.dart';
+
 import 'package:iq_plus/core/local_storage/hive_service.dart';
 import 'package:iq_plus/di/service_locator.dart';
 import 'package:iq_plus/features/auth/Login/login_page.dart';
@@ -37,15 +39,8 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage> {
     return Scaffold(
       backgroundColor: AppColors.scaffoldBg,
       drawer: _buildBeautifulDrawer(),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: const Text(
-          'Consultant Dashboard',
-          style: TextStyle(color: AppColors.titleText),
-        ),
-        iconTheme: const IconThemeData(color: AppColors.kPrimaryColor),
-      ),
+      appBar: const CommonAppBar(title: 'Consultant Dashboard'),
+
       body: Padding(
         padding: const EdgeInsets.all(18.0),
         child: Responsive(
@@ -125,15 +120,16 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage> {
   Widget _buildBeautifulDrawer() {
     final hiveService = getIt<HiveService>();
     final currentUser = hiveService.getUser();
-    final assignedCustomers = hiveService.getAssignedCustomers(
-      currentUser?.userId ?? '',
-    );
-
-    // 🔹 Assigned customers for this consultant
-    hiveService
-        .getAllCustomers()
-        .where((c) => c.assignedConsultantId == currentUser?.userId)
-        .toList();
+    final assignedCustomers = [];
+    // final assignedCustomers = hiveService.getAssignedCustomers(
+    //   currentUser?.userId ?? '',
+    // );
+    //
+    // // 🔹 Assigned customers for this consultant
+    // hiveService
+    //     .getAllCustomers()
+    //     .where((c) => c.assignedConsultantId == currentUser?.userId)
+    //     .toList();
     return Drawer(
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.only(
@@ -149,10 +145,20 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage> {
             DrawerHeader(
               child: InkWell(
                 onTap: () {
-                  GoRouter.of(context).pop(); // close drawer
-                  GoRouter.of(context).push(AppRoutes.consultantProfile);
+                  final consultantId = getIt<HiveService>().getUser()?.userId;
+                  if (consultantId != null && consultantId.isNotEmpty) {
+                    GoRouter.of(context).pop(); // close drawer
+                    GoRouter.of(context).push(
+                      AppRoutes.consultantProfile,
+                      extra: consultantId, // pass the ID here
+                    );
+                  } else {
+                    // optional: show error if ID is missing
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Invalid consultant ID")),
+                    );
+                  }
                 },
-
                 child: Row(
                   children: [
                     const CircleAvatar(
@@ -197,6 +203,7 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage> {
                 ),
               ),
             ),
+
             _drawerItem(
               icon: Icons.edit_document,
               title: 'NCR Form',

@@ -6,8 +6,10 @@ import 'package:go_router/go_router.dart';
 import 'package:iq_plus/common/routes/go_route.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
 import 'package:iq_plus/common/themes/responsive.dart';
+import 'package:iq_plus/common/widgets/common_app_bar.dart';
 import 'package:iq_plus/core/local_storage/hive_service.dart';
 import 'package:iq_plus/di/service_locator.dart';
+import 'package:iq_plus/features/admin/consultants/model/consultant_model.dart';
 import 'package:iq_plus/features/admin/customers/pages/customer_profile_edit_page.dart';
 import 'package:iq_plus/features/admin/customers/pages/customer_profile_page.dart';
 import 'package:iq_plus/features/auth/Login/login_page.dart';
@@ -31,34 +33,32 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
+  ConsultantModel? assignedConsultant;
+  bool isConsultantLoading = false;
   CustomerModel? customerModel;
   final user = getIt<HiveService>().getUser();
   final customer = getIt<HiveService>().getCustomer();
 
-  @override
-  void initState() {
-    final hiveService = getIt<HiveService>();
-    customerModel = hiveService.getCustomer();
-    if ((customerModel?.customerId ?? '').isNotEmpty) {
-      context.read<CustomerMMECubit>().loadMME(customerModel!.customerId);
-    }
-    super.initState();
-  }
+  // @override
+  // void initState() {
+  //   final hiveService = getIt<HiveService>();
+  //   customerModel = hiveService.getCustomer();
+  //   if ((customerModel?.customerId ?? '').isNotEmpty) {
+  //     context.read<CustomerMMECubit>().loadMME(customerModel!.customerId);
+  //   }
+  //   _fetchAssignedConsultant(customerModel!.customerId);
+  //   super.initState();
+  // }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.scaffoldBg,
       drawer: _buildBeautifulDrawer(),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: const Text(
-          'Governance Risk and Complaiance Dashboard',
-          style: TextStyle(color: AppColors.titleText),
-        ),
-        iconTheme: const IconThemeData(color: AppColors.kPrimaryColor),
-      ),
+      appBar: const CommonAppBar(
+  title: 'Governance Risk and Compliance Dashboard',
+),
+
       body: Padding(
         padding: const EdgeInsets.all(18.0),
         child: Responsive(
@@ -166,18 +166,27 @@ class _DashboardPageState extends State<DashboardPage> {
                 }
               },
             ),
-            _drawerItem(
-              icon: Icons.badge,
-              title: 'My Consultant',
-              onTap: () {
-                if (customer?.assignedConsultantId == null) return;
+            // _drawerItem(
+            //   icon: Icons.badge,
+            //   title: 'My Consultant',
+            //   onTap: () async {
+            //     final customer = getIt<HiveService>().getCustomer();
+            //     if (customer == null) return;
 
-                context.push(
-                  AppRoutes.consultantProfile,
-                  extra: customer!.assignedConsultantId,
-                );
-              },
-            ),
+            //     final consultant = await getAssignedConsultant(
+            //       customer.customerId,
+            //     );
+
+            //     if (consultant == null) {
+            //       ScaffoldMessenger.of(context).showSnackBar(
+            //         const SnackBar(content: Text('No consultant assigned')),
+            //       );
+            //       return;
+            //     }
+
+            //     context.push(AppRoutes.consultantProfile, extra: consultant);
+            //   },
+            // ),
 
             _drawerItem(
               icon: Icons.contact_mail,
@@ -525,6 +534,21 @@ class _DashboardPageState extends State<DashboardPage> {
       ),
     );
   }
+
+  // Future<void> _fetchAssignedConsultant(String customerId) async {
+  //   setState(() => isConsultantLoading = true);
+
+  //   try {
+  //     final consultant = await getAssignedConsultant(customerId);
+
+  //     setState(() {
+  //       assignedConsultant = consultant;
+  //       isConsultantLoading = false;
+  //     });
+  //   } catch (e) {
+  //     setState(() => isConsultantLoading = false);
+  //   }
+  // }
 }
 
 /// 📊 Animated Bar Chart
