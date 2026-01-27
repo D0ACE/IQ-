@@ -12,6 +12,7 @@ import 'package:iq_plus/common/routes/app.dart';
 import 'package:iq_plus/main.dart';
 
 void main() {
+  
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
     await tester.pumpWidget(const MyApp());
