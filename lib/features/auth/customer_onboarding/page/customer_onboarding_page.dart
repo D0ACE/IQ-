@@ -148,7 +148,7 @@ class _CustomerOnboardingPageState extends State<CustomerOnboardingPage> {
         legitDocumentUrl: lDCController.text.trim(),
         isProfileApproved: false,
         fcmToken: "",
-        roleId: "2",
+        roleId: "3",
         // 🔽 LOW LEVEL DEPARTMENT
         lowLevelName: lowNameController.text.trim(),
         lowLevelEmail: lowEmailController.text.trim(),

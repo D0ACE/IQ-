@@ -67,17 +67,4 @@ class HiveService {
       debugPrint('Hive clearAll error: $e');
     }
   }
-
-  /// 🔹 Fetch all customers stored in Hive
-  List<CustomerModel> getAllCustomers() {
-    final box = Hive.box<CustomerModel>('customers'); // make sure 'customers' box exists
-    return box.values.toList();
-  }
-
-  /// optional: fetch customers assigned to a specific consultant
-  List<CustomerModel> getAssignedCustomers(String consultantId) {
-    return getAllCustomers()
-        .where((customer) => customer.assignedConsultantId == consultantId)
-        .toList();
-  }
 }

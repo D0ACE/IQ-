@@ -22,11 +22,10 @@ class _LoginPageState extends State<LoginPage> {
   int selectedRole = 0;
 
   final List<String> roles = [
-  
+    'Super Admin',
   'Admin',
   'Consultant',
   'Customer',
-  'Super Admin',
 ];
 
   @override
