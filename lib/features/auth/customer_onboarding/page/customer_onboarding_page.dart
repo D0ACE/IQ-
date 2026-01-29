@@ -359,6 +359,7 @@ void showAccountCreatedDialog() {
               // labelText: 'Password',
               hintText: "Number of locations",
               validator: AppValidation.numberOfLocationValidator,
+              keyboardType: TextInputType.number,
               inputFormatters: <TextInputFormatter>[
                 LengthLimitingTextInputFormatter(20),
               ],
@@ -388,6 +389,7 @@ void showAccountCreatedDialog() {
               textFieldController: numberOfEmployeesController,
               onTap: () {},
               validator: AppValidation.numberOfEmployeesValidator,
+              keyboardType: TextInputType.number,
               prefixIconWidget: const Padding(
                 padding: EdgeInsets.all(defaultPadding),
                 child: Icon(

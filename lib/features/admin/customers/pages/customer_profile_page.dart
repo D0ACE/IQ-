@@ -27,17 +27,17 @@ class _CustomerDetailViewState extends State<CustomerProfilePage> {
     customer = widget.customer;
   }
 
-  Future<void> _openEditPage() async {
-    final updatedCustomer = await GoRouter.of(
-      context,
-    ).push<CustomerModel>(AppRoutes.customerEdit, extra: widget.customer);
+ Future<void> _openEditPage() async {
+  final updatedCustomer = await GoRouter.of(context)
+      .push<CustomerModel>(AppRoutes.customerEdit, extra: customer);
 
-    if (updatedCustomer != null) {
-      setState(() {
-        customer = updatedCustomer; // Auto reflects changes
-      });
-    }
+  if (updatedCustomer != null) {
+    setState(() {
+      customer = updatedCustomer;
+    });
   }
+}
+
 
   @override
   Widget build(BuildContext context) {

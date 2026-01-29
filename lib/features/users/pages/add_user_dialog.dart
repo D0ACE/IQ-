@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -94,7 +95,10 @@ class _AddUserDialogState extends State<AddUserDialog> {
                     /// 📞 Phone
                     _field(
                       AppTextFieldWidget(
-                        keyboardType: TextInputType.phone,
+                       keyboardType: TextInputType.number,
+inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+
+
                         hintText: "Phone Number",
                         textFieldController: phoneController,
                         validator: AppValidation.phoneNumberValidator,

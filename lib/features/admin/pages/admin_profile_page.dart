@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:iq_plus/common/app_widget/common_gradient_button.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
 import 'package:iq_plus/common/themes/app_theme_data.dart';
@@ -167,6 +168,9 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
               labelText: "Phone Number",
               textFieldController: _phoneCtrl,
               readOnly: true,
+              keyboardType: TextInputType.number,
+inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+
             ),
             const SizedBox(height: 14),
 

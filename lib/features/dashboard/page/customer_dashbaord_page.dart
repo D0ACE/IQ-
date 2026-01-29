@@ -3,10 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:iq_plus/common/constants/access_control.dart';
+import 'package:iq_plus/common/constants/user_role.dart';
 import 'package:iq_plus/common/routes/go_route.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
 import 'package:iq_plus/common/themes/responsive.dart';
 import 'package:iq_plus/common/widgets/common_app_bar.dart';
+import 'package:iq_plus/core/access/access_control.dart' hide AccessControl;
 import 'package:iq_plus/core/local_storage/hive_service.dart';
 import 'package:iq_plus/di/service_locator.dart';
 import 'package:iq_plus/features/admin/consultants/model/consultant_model.dart';
@@ -19,9 +22,11 @@ import 'package:iq_plus/features/customer_mme/cubit/customer_mme_state.dart';
 import 'package:iq_plus/features/customer_mme/pages/customer_mme_list_page.dart';
 import 'package:iq_plus/features/dashboard/page/contact_us_page.dart';
 import 'package:iq_plus/features/dashboard/page/visit_summary/visit_summary_page.dart';
+import 'package:iq_plus/features/users/user_role.dart';
 import 'package:iq_plus/ncr_form/ncr_page.dart';
 import 'package:iq_plus/ncr_form/ncr_provider.dart';
 import 'package:iq_plus/features/auth/model/customer_model.dart';
+
 
 import 'package:provider/provider.dart';
 
@@ -50,14 +55,33 @@ class _DashboardPageState extends State<DashboardPage> {
   //   super.initState();
   // }
 
+  void _refreshCustomer() {
+    setState(() {
+      customerModel = getIt<HiveService>().getCustomer();
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    final hiveService = getIt<HiveService>();
+    customerModel = hiveService.getCustomer();
+
+    if ((customerModel?.customerId ?? '').isNotEmpty) {
+      context.read<CustomerMMECubit>().loadMME(customerModel!.customerId);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    
     return Scaffold(
       backgroundColor: AppColors.scaffoldBg,
       drawer: _buildBeautifulDrawer(),
       appBar: const CommonAppBar(
-  title: 'Governance Risk and Compliance Dashboard',
-),
+        title: 'Governance Risk and Compliance Dashboard',
+      ),
 
       body: Padding(
         padding: const EdgeInsets.all(18.0),
@@ -166,6 +190,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 }
               },
             ),
+
             // _drawerItem(
             //   icon: Icons.badge,
             //   title: 'My Consultant',
@@ -187,7 +212,6 @@ class _DashboardPageState extends State<DashboardPage> {
             //     context.push(AppRoutes.consultantProfile, extra: consultant);
             //   },
             // ),
-
             _drawerItem(
               icon: Icons.contact_mail,
               title: 'Contact Us',
@@ -224,53 +248,63 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _profileDropdown(BuildContext context) {
-    final hiveService = getIt<HiveService>();
+ Widget _profileDropdown(BuildContext context) {
+  final hiveService = getIt<HiveService>();
+  final user = hiveService.getUser(); // can be null
+  final customer = hiveService.getCustomer();
+  final role = user != null ? parseUserRole(user.roleId) : UserRole.customer;
 
-    return ExpansionTile(
-      leading: const Icon(Icons.person, color: Colors.white),
-      title: const Text(
-        'Profile',
-        style: TextStyle(color: Colors.white, fontSize: 16),
+  return ExpansionTile(
+    leading: const Icon(Icons.person, color: Colors.white),
+    title: const Text('Profile', style: TextStyle(color: Colors.white, fontSize: 16)),
+    iconColor: Colors.white,
+    collapsedIconColor: Colors.white,
+    children: [
+      ListTile(
+        title: const Text("View Profile", style: TextStyle(color: Colors.white)),
+        onTap: () async {
+          if (!AccessControl.canViewCustomerProfile(
+            customer: customer,
+            role: role,
+            userId: user?.userId ?? '',
+          )) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Unauthorized access')),
+            );
+            return;
+          }
+
+          GoRouter.of(context).pop();
+          final result = await context.push(AppRoutes.customerProfile, extra: customer)as CustomerModel?;
+
+          if (result != null) setState(() => customerModel = result);
+        },
       ),
-      iconColor: Colors.white,
-      collapsedIconColor: Colors.white,
-      children: [
-        ListTile(
-          title: const Text(
-            "View Profile",
-            style: TextStyle(color: Colors.white),
-          ),
-          onTap: () {
-            final customer = hiveService.getCustomer();
-            if (customer != null) {
-              GoRouter.of(context).pop();
-              context.push(
-                AppRoutes.customerProfile, // define this route path
-                extra: customer, // pass the customer object
-              );
-            }
-          },
-        ),
-        ListTile(
-          title: const Text(
-            "Edit Profile",
-            style: TextStyle(color: Colors.white),
-          ),
-          onTap: () async {
-            final customer = hiveService.getCustomer();
-            if (customer != null) {
-              GoRouter.of(context).pop();
-              await context.push(
-                AppRoutes.customerProfileEdit, // route path for edit page
-                extra: customer, // pass the customer object
-              );
-            }
-          },
-        ),
-      ],
-    );
-  }
+      ListTile(
+        title: const Text("Edit Profile", style: TextStyle(color: Colors.white)),
+        onTap: () async {
+          if (!AccessControl.canEditCustomerProfile(
+            customer: customer,
+            role: role,
+            userId: user?.userId ?? '',
+          )) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Unauthorized to edit')),
+            );
+            return;
+          }
+
+          GoRouter.of(context).pop();
+          await context.push(
+            AppRoutes.customerProfileEdit,
+            extra: customer,
+          );
+        },
+      ),
+    ],
+  );
+}
+
 
   Widget _drawerItem({
     required IconData icon,

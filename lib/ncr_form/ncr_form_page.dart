@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
@@ -388,6 +389,9 @@ class _NCRFormPageState extends State<NCRFormPage> {
                     hintText: "IQA Number",
                     textFieldController: iqaCtrl,
                     readOnly: isReview,
+                    keyboardType: TextInputType.number,
+inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+
                   ),
                 ),
               ],
@@ -569,6 +573,9 @@ class _NCRFormPageState extends State<NCRFormPage> {
                     ),
                     readOnly: true,
                     isEnabled: false,
+                    keyboardType: TextInputType.number,
+inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+
                   ),
                 ),
               ],

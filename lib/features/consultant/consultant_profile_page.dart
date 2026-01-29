@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:iq_plus/common/app_widget/app_text_field_widget.dart';
 import 'package:iq_plus/common/app_widget/common_gradient_button.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
@@ -147,6 +148,9 @@ class _ConsultantProfilePageState extends State<ConsultantProfilePage> {
                 labelText: "Phone Number",
                 textFieldController: _phoneCtrl,
                 readOnly: true,
+                keyboardType: TextInputType.number,
+inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+
               ),
               const SizedBox(height: 14),
 
