@@ -6,9 +6,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-
 import 'package:iq_plus/common/app_widget/app_text_field_widget.dart';
 import 'package:iq_plus/common/app_widget/common_gradient_button.dart';
+import 'package:iq_plus/common/constants/user_role.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
 import 'package:iq_plus/common/themes/app_theme_data.dart';
 import 'package:iq_plus/core/local_storage/hive_service.dart';
@@ -18,7 +18,6 @@ import 'package:iq_plus/features/auth/model/customer_model.dart';
 import 'package:iq_plus/features/auth/model/user_model.dart';
 import 'package:iq_plus/ncr_form/ncr/model/ncr_form_model.dart';
 import 'package:iq_plus/ncr_form/ncr/repository/ncr_repository.dart';
-
 
 class NCRFormPage extends StatefulWidget {
   final Map<String, dynamic>? ncrData;
@@ -33,7 +32,8 @@ class _NCRFormPageState extends State<NCRFormPage> {
   final picker = ImagePicker();
   final NcrRepository _ncrRepository = NcrRepository();
   late bool isReview;
-  String userRole = ""; // role fetched from Firebase
+  UserRole userRole = UserRole.customer; // default to customer
+ // role fetched from Firebase
 
   /// 🔹 Controllers
   final docNoCtrl = TextEditingController();
@@ -102,18 +102,40 @@ class _NCRFormPageState extends State<NCRFormPage> {
   }
 
   Future<void> fetchUserRole() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      final doc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .get();
+  final user = FirebaseAuth.instance.currentUser;
+  if (user != null) {
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
 
-      setState(() {
-        userRole = doc.data()?['role'] ?? '';
-      });
-    }
+    setState(() {
+      // Map the Firebase role string to UserRole enum
+      userRole = mapUserRole((doc.data()?['role'] ?? '').toString().toUpperCase());
+    });
   }
+}
+
+
+
+ bool canShowStatusButton(String targetStatus) {
+  switch (userRole) {
+    case UserRole.consultant:
+      return currentStatus == 'open' && targetStatus == 'in_progress';
+
+    case UserRole.customer:
+      return false;
+
+    case UserRole.admin:
+    case UserRole.superAdmin:
+      if (targetStatus == 'closed') return true;
+      if (currentStatus == 'open' && targetStatus == 'in_progress') return true;
+      if (currentStatus == 'in_progress' && targetStatus == 'closed') return true;
+      return false;
+  }
+}
+
+
 
   /// 🔹 Date Picker
   Future<void> pickDate(TextEditingController controller) async {
@@ -135,7 +157,7 @@ class _NCRFormPageState extends State<NCRFormPage> {
     if (isReview) return; // Prevent changes in review mode
     final img = await picker.pickImage(source: ImageSource.gallery);
     if (img != null) setState(() => logo = File(img.path));
-  }
+  } 
 
   Widget sectionHeader(String title) {
     return Container(
@@ -154,32 +176,35 @@ class _NCRFormPageState extends State<NCRFormPage> {
   }
 
   /// 🔹 Status Button Widget
-  Widget _statusButton(
-    String value,
-    String label, {
-    required bool isEnabled,
-  }) {
+  Widget _statusButton(String value, String label) {
     final isActive = currentStatus == value;
+
     return Expanded(
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
           backgroundColor: isActive
               ? value == "open"
-                  ? AppColors.orange
-                  : value == "in_progress"
-                      ? AppColors.blue
-                      : AppColors.green
+                    ? AppColors.orange
+                    : value == "in_progress"
+                    ? AppColors.blue
+                    : AppColors.green
               : AppColors.greyTextFormFiledColor,
         ),
-        onPressed: isEnabled
-            ? () async {
-                setState(() => currentStatus = value);
-                if (isReview && widget.ncrData != null) {
-                  await _ncrRepository.updateStatus(
-                      widget.ncrData!['id'], value);
-                }
-              }
-            : null,
+        onPressed: () async {
+          final docId = widget.ncrData?['id'];
+          if (docId == null) return;
+
+          await _ncrRepository.updateNcrStatus(docId, value);
+
+          setState(() {
+            currentStatus = value;
+          });
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Status updated to ${value.toUpperCase()}")),
+          );
+        },
+
         child: Text(
           label,
           style: TextStyle(
@@ -202,7 +227,8 @@ class _NCRFormPageState extends State<NCRFormPage> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                  border: Border.all(color: AppColors.greyBorderColor!)),
+                border: Border.all(color: AppColors.greyBorderColor!),
+              ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -213,7 +239,8 @@ class _NCRFormPageState extends State<NCRFormPage> {
                       height: 80,
                       width: 80,
                       decoration: BoxDecoration(
-                          border: Border.all(color: AppColors.greyBorderColor!)),
+                        border: Border.all(color: AppColors.greyBorderColor!),
+                      ),
                       child: logo == null
                           ? const Center(
                               child: Text(
@@ -286,8 +313,8 @@ class _NCRFormPageState extends State<NCRFormPage> {
                 color: currentStatus == "open"
                     ? AppColors.orange.withOpacity(0.2)
                     : currentStatus == "in_progress"
-                        ? AppColors.blue.withOpacity(0.2)
-                        : AppColors.green.withOpacity(0.2),
+                    ? AppColors.blue.withOpacity(0.2)
+                    : AppColors.green.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
@@ -297,39 +324,36 @@ class _NCRFormPageState extends State<NCRFormPage> {
                   color: currentStatus == "open"
                       ? AppColors.orange
                       : currentStatus == "in_progress"
-                          ? AppColors.blue
-                          : AppColors.green,
+                      ? AppColors.blue
+                      : AppColors.green,
                 ),
               ),
             ),
 
             /// 🔹 Status Buttons (review mode only)
+            /// 🔹 Status Buttons (review mode only)
             if (isReview) ...[
               const SizedBox(height: 20),
               Row(
                 children: [
-                  _statusButton(
-                    'open',
-                    'Open',
-                    isEnabled: userRole == 'admin' || userRole == 'auditor',
-                  ),
-                  const SizedBox(width: 8),
-                  _statusButton(
-                    'in_progress',
-                    'In Progress',
-                    isEnabled: userRole == 'admin' || userRole == 'consultant',
-                  ),
-                  const SizedBox(width: 8),
-                  _statusButton(
-                    'closed',
-                    'Closed',
-                    isEnabled: userRole == 'admin',
-                  ),
+                  if (canShowStatusButton('open'))
+                    _statusButton('open', 'Open'),
+
+                  if (canShowStatusButton('in_progress')) ...[
+                    const SizedBox(width: 8),
+                    _statusButton('in_progress', 'In Progress'),
+                  ],
+
+                  if (canShowStatusButton('closed')) ...[
+                    const SizedBox(width: 8),
+                    _statusButton('closed', 'Closed'),
+                  ],
                 ],
               ),
             ],
 
             const SizedBox(height: 15),
+
             /// 🔹 SECTION 5
             sectionHeader("Select Company"),
             CustomerDropdownWidget(
@@ -504,6 +528,7 @@ class _NCRFormPageState extends State<NCRFormPage> {
             ),
 
             const SizedBox(height: 15),
+
             /// 🔹 SECTION 5
             sectionHeader("SECTION 5 – Auditee Details"),
             Row(
@@ -511,7 +536,11 @@ class _NCRFormPageState extends State<NCRFormPage> {
                 Expanded(
                   child: AppTextFieldWidget(
                     hintText: "Name",
-                    textFieldController: TextEditingController.fromValue(TextEditingValue(text:selectedCustomer?.lowLevelName??"" )),
+                    textFieldController: TextEditingController.fromValue(
+                      TextEditingValue(
+                        text: selectedCustomer?.lowLevelName ?? "",
+                      ),
+                    ),
                     readOnly: true,
                     isEnabled: false,
                   ),
@@ -520,7 +549,11 @@ class _NCRFormPageState extends State<NCRFormPage> {
                 Expanded(
                   child: AppTextFieldWidget(
                     hintText: "Email",
-                    textFieldController: TextEditingController.fromValue(TextEditingValue(text:selectedCustomer?.lowLevelEmail??"" )),
+                    textFieldController: TextEditingController.fromValue(
+                      TextEditingValue(
+                        text: selectedCustomer?.lowLevelEmail ?? "",
+                      ),
+                    ),
                     readOnly: true,
                     isEnabled: false,
                   ),
@@ -529,7 +562,11 @@ class _NCRFormPageState extends State<NCRFormPage> {
                 Expanded(
                   child: AppTextFieldWidget(
                     hintText: "Phone",
-                    textFieldController: TextEditingController.fromValue(TextEditingValue(text:selectedCustomer?.lowLevelMobile??"" )),
+                    textFieldController: TextEditingController.fromValue(
+                      TextEditingValue(
+                        text: selectedCustomer?.lowLevelMobile ?? "",
+                      ),
+                    ),
                     readOnly: true,
                     isEnabled: false,
                   ),
@@ -546,9 +583,9 @@ class _NCRFormPageState extends State<NCRFormPage> {
                 radiusSize: 50,
                 onPressed: () async {
                   final hiveService = getIt<HiveService>();
-                  UserModel? consultantUserModel=hiveService.getUser();
+                  UserModel? consultantUserModel = hiveService.getUser();
                   print("Consultant ${consultantUserModel?.userId}");
-                  if ((selectedCustomer?.customerId??'').isEmpty) {
+                  if ((selectedCustomer?.customerId ?? '').isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Please select a company first'),
@@ -557,7 +594,7 @@ class _NCRFormPageState extends State<NCRFormPage> {
                       ),
                     );
                     return;
-                  }else if ((consultantUserModel?.userId??'').isEmpty) {
+                  } else if ((consultantUserModel?.userId ?? '').isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Please login first'),
@@ -589,8 +626,8 @@ class _NCRFormPageState extends State<NCRFormPage> {
                     verification: verificationCtrl.text,
                     auditor: auditorCtrl.text,
                     approvedBy: approvedCtrl.text,
-                    consultantId: consultantUserModel?.userId??"",
-                    companyId: selectedCustomer?.customerId??'',
+                    consultantId: consultantUserModel?.userId ?? "",
+                    companyId: selectedCustomer?.customerId ?? '',
                     status: currentStatus,
                     createdAt: Timestamp.now(),
                   );
@@ -609,3 +646,7 @@ class _NCRFormPageState extends State<NCRFormPage> {
     );
   }
 }
+
+
+
+

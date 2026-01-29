@@ -12,10 +12,14 @@ class NcrRepository {
     await ncrCollection.add(model.toMap());
   }
 
-  /// Update NCR Status
-  Future<void> updateStatus(String docId, String status) async {
-    await ncrCollection.doc(docId).update({'status': status});
+  //Update NCR Status
+   Future<void> updateNcrStatus(String docId, String status) async {
+    await ncrCollection.doc(docId).update({
+      'status': status,
+      'updatedAt': Timestamp.now(),
+    });
   }
+
 
   /// Stream NCRs (optionally filtered by consultantId)
   Stream<QuerySnapshot<Map<String, dynamic>>> getNcrStream({String? consultantId}) {
