@@ -21,6 +21,8 @@ class NcrPage extends StatefulWidget {
 
 class _NcrPageState extends State<NcrPage> {
   UserRole userRole = UserRole.customer;
+  bool isRoleLoaded = false;
+
 
   @override
   void initState() {
@@ -29,7 +31,21 @@ class _NcrPageState extends State<NcrPage> {
     _fetchUserRole();
   }
 
- Future<void> _fetchUserRole() async {
+  Future<void> _fetchUserRole() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
+
+    setState(() {
+      userRole = mapUserRole(
+        (doc.data()?['role'] ?? '').toString(),
+      );
+    });
+  }Future<void> fetchUserRole() async {
   final user = FirebaseAuth.instance.currentUser;
   if (user == null) return;
 
@@ -39,13 +55,18 @@ class _NcrPageState extends State<NcrPage> {
       .get();
 
   setState(() {
-    userRole = mapUserRole((doc.data()?['role'] ?? '').toString().toUpperCase());
+    userRole = mapUserRole(
+      (doc.data()?['role'] ?? '').toString(),
+    );
+    isRoleLoaded = true;
   });
 }
+
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      
       backgroundColor: AppColors.whiteTextColor,
       floatingActionButtonLocation: FloatingActionButtonLocation.endTop,
       floatingActionButton: Padding(
@@ -126,39 +147,38 @@ class _NcrListCardState extends State<NcrListCard> {
     status = widget.ncr['status'] ?? 'open';
   }
 
-  List<String> allowedStatusChanges() {
-    switch (widget.userRole) {
-      case UserRole.consultant:
-        return status == 'open' ? ['in_progress'] : [];
-      case UserRole.admin:
-      case UserRole.superAdmin:
-        if (status == 'open') return ['in_progress', 'closed'];
-        if (status == 'in_progress') return ['closed'];
-        return [];
-      case UserRole.customer:
-      default:
-        return [];
-    }
-  }
+  // List<String> allowedStatusChanges() {
+  //   switch (widget.userRole) {
+  //     case UserRole.consultant:
+  //       return status == 'open' ? ['in_progress'] : [];
+  //     case UserRole.admin:
+  //     case UserRole.superAdmin:
+  //       if (status == 'open') return ['in_progress', 'closed'];
+  //       if (status == 'in_progress') return ['closed'];
+  //       return [];
+  //     case UserRole.customer:
+  //     default:
+  //       return [];
+  //   }
+  // }
   /// Status tag widget
-Widget _statusTag() {
-  return Container(
-    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-    decoration: BoxDecoration(
-      color: _statusColor(status), // Orange, Blue, Green
-      borderRadius: BorderRadius.circular(20),
-    ),
-    child: Text(
-      _statusText(status),
-      style: const TextStyle(
-        color: Colors.white,
-        fontWeight: FontWeight.bold,
-        fontSize: 12,
+  Widget _statusTag() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: _statusColor(status), // Orange, Blue, Green
+        borderRadius: BorderRadius.circular(20),
       ),
-    ),
-  );
-}
-
+      child: Text(
+        _statusText(status),
+        style: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.bold,
+          fontSize: 12,
+        ),
+      ),
+    );
+  }
 
   /// Status color
   Color _statusColor(String status) {
@@ -187,16 +207,16 @@ Widget _statusTag() {
     }
   }
 
-  Future<void> _updateStatus(String newStatus) async {
-    final docId = widget.ncr['id'];
-    if (docId == null) return;
+  // Future<void> _updateStatus(String newStatus) async {
+  //   final docId = widget.ncr['id'];
+  //   if (docId == null) return;
 
-    await FirebaseFirestore.instance.collection('ncr').doc(docId).update({'status': newStatus});
+  //   await FirebaseFirestore.instance.collection('ncr').doc(docId).update({'status': newStatus});
 
-    setState(() {
-      status = newStatus;
-    });
-  }
+  //   setState(() {
+  //     status = newStatus;
+  //   });
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -230,8 +250,8 @@ Widget _statusTag() {
                     status == 'open'
                         ? Icons.pending_actions
                         : status == 'in_progress'
-                            ? Icons.autorenew
-                            : Icons.check_circle,
+                        ? Icons.autorenew
+                        : Icons.check_circle,
                     color: _statusColor(status),
                   ),
                 ),
@@ -251,20 +271,63 @@ Widget _statusTag() {
                         color: AppColors.titleText,
                       ),
                     ),
-                    if (createdAt != null)
-                      const SizedBox(height: 4),
+                    if (createdAt != null) const SizedBox(height: 4),
                     if (createdAt != null)
                       Text(
                         "Created: ${DateFormat('dd MMM yyyy').format(createdAt)}",
-                        style: TextStyle(fontSize: 12, color: AppColors.greyTextColor),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.greyTextColor,
+                        ),
                       ),
                   ],
                 ),
               ),
-              Padding(
-  padding: const EdgeInsets.only(left: 8),
-  child: _statusTag(),
-),
+              // Padding(
+              //   padding: const EdgeInsets.only(left: 8),
+              //   child: widget.userRole == UserRole.consultant
+              //       ? Row(
+              //           mainAxisSize: MainAxisSize.min,
+              //           children: ['open', 'in_progress', 'closed'].map((s) {
+              //             return Padding(
+              //               padding: const EdgeInsets.only(left: 6),
+              //               child: ElevatedButton(
+              //                 style: ElevatedButton.styleFrom(
+              //                   backgroundColor: _statusColor(s),
+              //                   minimumSize: const Size(36, 36),
+              //                   padding: const EdgeInsets.symmetric(
+              //                     horizontal: 8,
+              //                   ),
+              //                 ),
+              //                 onPressed: () async {
+              //                   final docId = widget.ncr['id'];
+              //                   if (docId == null) return;
+
+              //                   await FirebaseFirestore.instance
+              //                       .collection('ncr')
+              //                       .doc(docId)
+              //                       .update({'status': s});
+
+              //                   setState(() => status = s);
+              //                 },
+              //                 child: Text(
+              //                   _statusText(s),
+              //                   style: const TextStyle(
+              //                     fontSize: 11,
+              //                     color: Colors.white,
+              //                   ),
+              //                 ),
+              //               ),
+              //             );
+              //           }).toList(),
+              //         )
+              //       : _statusTag(),
+              // ),
+
+                            Padding(
+                padding: const EdgeInsets.only(left: 8),
+                child: _statusTag(),
+              ),
               /// Right: status buttons
               // Row(
               //   children: allowedStatusChanges().map((s) {
@@ -287,5 +350,3 @@ Widget _statusTag() {
     );
   }
 }
-
-

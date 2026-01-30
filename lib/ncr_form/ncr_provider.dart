@@ -20,11 +20,15 @@ class NcrProvider extends ChangeNotifier {
         .getNcrStream(consultantId: consultantId)
         .listen((snapshot) {
       _ncrList = snapshot.docs.map((doc) {
-        return {
-          'id': doc.id,
-          ...doc.data(),
-        };
-      }).toList();
+  final data = doc.data();
+
+  return {
+    'id': doc.id,
+    ...data,
+    'status': _normalizeStatus(data['status']),
+  };
+}).toList();
+
 
       notifyListeners();
     });
@@ -36,10 +40,23 @@ class NcrProvider extends ChangeNotifier {
 
     final index = _ncrList.indexWhere((e) => e['id'] == ncrId);
     if (index != -1) {
-      _ncrList[index]['status'] = status;
+      _ncrList[index]['status'] = _normalizeStatus(status);
       notifyListeners();
     }
   }
+
+
+  String _normalizeStatus(dynamic status) {
+  final s = status?.toString().toLowerCase().trim() ?? '';
+
+  if (s == 'open') return 'open';
+  if (s == 'in progress') return 'in_progress';
+  if (s == 'in_progress') return 'in_progress';
+  if (s == 'closed') return 'closed';
+
+  return 'open';
+}
+
 
   //   /// 🔹 Update status in Firestore and locally
   // Future<void> updateStatus(String ncrId, String status) async {

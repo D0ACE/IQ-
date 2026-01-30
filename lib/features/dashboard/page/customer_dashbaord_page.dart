@@ -483,10 +483,7 @@ class _DashboardPageState extends State<DashboardPage> {
           icon: Icons.report_problem,
 
           onTap: () {
-            GoRouter.of(context).pop(); // close drawer if needed
-            GoRouter.of(
-              context,
-            ).push(AppRoutes.NCRFormPage); // navigate to NcrPage
+           context.push(AppRoutes.ncrPage); // navigate to NcrPage
           },
         ),
 
@@ -494,8 +491,7 @@ class _DashboardPageState extends State<DashboardPage> {
           title: 'Visit Summary',
           icon: Icons.warning_amber_rounded,
           onTap: () {
-            GoRouter.of(context).pop(); // close drawer if needed
-            GoRouter.of(context).push(AppRoutes.visitorSummary); // navigate
+            context.push(AppRoutes.visitorSummary);// navigate
           },
         ),
 

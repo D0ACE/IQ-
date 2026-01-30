@@ -14,11 +14,15 @@ class NcrRepository {
 
   //Update NCR Status
    Future<void> updateNcrStatus(String docId, String status) async {
-    await ncrCollection.doc(docId).update({
-      'status': status,
-      'updatedAt': Timestamp.now(),
-    });
-  }
+
+  final s = status.toLowerCase().trim();
+
+  await ncrCollection.doc(docId).update({
+    'status': s,
+    'updatedAt': Timestamp.now(),
+  });
+}
+
 
 
   /// Stream NCRs (optionally filtered by consultantId)

@@ -168,7 +168,7 @@ class _LoginFormState extends State<LoginForm> {
 
           const SizedBox(height: defaultPadding),
 
-          if (widget.selectedRole == 2) // ✅ CUSTOMER ONLY
+          if (widget.selectedRole == 3) // ✅ CUSTOMER ONLY
             AlreadyHaveAnAccountCheck(
               login: true,
               press: () {

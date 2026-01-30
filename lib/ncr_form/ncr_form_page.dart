@@ -34,7 +34,7 @@ class _NCRFormPageState extends State<NCRFormPage> {
   final NcrRepository _ncrRepository = NcrRepository();
   late bool isReview;
   UserRole userRole = UserRole.customer; // default to customer
- // role fetched from Firebase
+  // role fetched from Firebase
 
   /// 🔹 Controllers
   final docNoCtrl = TextEditingController();
@@ -63,6 +63,7 @@ class _NCRFormPageState extends State<NCRFormPage> {
 
   /// Current status
   String currentStatus = "open";
+  bool isRoleLoaded = false;
 
   CustomerModel? selectedCustomer;
 
@@ -95,48 +96,72 @@ class _NCRFormPageState extends State<NCRFormPage> {
       verificationCtrl.text = ncr['verification'] ?? '';
       auditorCtrl.text = ncr['auditor'] ?? '';
       approvedCtrl.text = ncr['approvedBy'] ?? '';
-      currentStatus = ncr['status'] ?? "open";
-    }
+      currentStatus = _normalizeStatus(ncr['status']);
+
 
     /// Fetch user role from Firebase
     fetchUserRole();
-  }
+  }}
 
   Future<void> fetchUserRole() async {
-  final user = FirebaseAuth.instance.currentUser;
-  if (user != null) {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
     final doc = await FirebaseFirestore.instance
         .collection('users')
         .doc(user.uid)
         .get();
 
     setState(() {
-      // Map the Firebase role string to UserRole enum
-      userRole = mapUserRole((doc.data()?['role'] ?? '').toString().toUpperCase());
+      userRole = mapUserRole((doc.data()?['role'] ?? '').toString());
+      isRoleLoaded = true;
     });
   }
-}
 
+  Future<void> _updateStatus(String newStatus) async {
+    final docId = widget.ncrData?['id'];
+    if (docId == null) return;
 
+    await _ncrRepository.updateNcrStatus(docId, newStatus);
 
- bool canShowStatusButton(String targetStatus) {
-  switch (userRole) {
-    case UserRole.consultant:
-      return currentStatus == 'open' && targetStatus == 'in_progress';
+    setState(() {
+      currentStatus = newStatus;
+    });
 
-    case UserRole.customer:
-      return false;
-
-    case UserRole.admin:
-    case UserRole.superAdmin:
-      if (targetStatus == 'closed') return true;
-      if (currentStatus == 'open' && targetStatus == 'in_progress') return true;
-      if (currentStatus == 'in_progress' && targetStatus == 'closed') return true;
-      return false;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Status updated to ${newStatus.toUpperCase()}")),
+    );
   }
+
+String _normalizeStatus(dynamic status) {
+  final s = status?.toString().toLowerCase().trim() ?? '';
+
+  if (s == 'open') return 'open';
+  if (s == 'in progress') return 'in_progress';
+  if (s == 'in_progress') return 'in_progress';
+  if (s == 'closed') return 'closed';
+
+  return 'open';
 }
 
+  bool canShowStatusButton(String targetStatus) {
+    switch (userRole) {
+      case UserRole.consultant:
+        return currentStatus == 'open' && targetStatus == 'in_progress';
 
+      case UserRole.customer:
+        return false;
+
+      case UserRole.admin:
+      case UserRole.superAdmin:
+        if (targetStatus == 'closed') return true;
+        if (currentStatus == 'open' && targetStatus == 'in_progress')
+          return true;
+        if (currentStatus == 'in_progress' && targetStatus == 'closed')
+          return true;
+        return false;
+    }
+  }
 
   /// 🔹 Date Picker
   Future<void> pickDate(TextEditingController controller) async {
@@ -158,7 +183,7 @@ class _NCRFormPageState extends State<NCRFormPage> {
     if (isReview) return; // Prevent changes in review mode
     final img = await picker.pickImage(source: ImageSource.gallery);
     if (img != null) setState(() => logo = File(img.path));
-  } 
+  }
 
   Widget sectionHeader(String title) {
     return Container(
@@ -177,41 +202,52 @@ class _NCRFormPageState extends State<NCRFormPage> {
   }
 
   /// 🔹 Status Button Widget
-  Widget _statusButton(String value, String label) {
-    final isActive = currentStatus == value;
+  // Widget _statusButton(String value, String label) {
+  //   final isActive = currentStatus == value;
 
+  //   return Expanded(
+  //     child: ElevatedButton(
+  //       style: ElevatedButton.styleFrom(
+  //         backgroundColor: isActive
+  //             ? value == "open"
+  //                   ? AppColors.orange
+  //                   : value == "in_progress"
+  //                   ? AppColors.blue
+  //                   : AppColors.green
+  //             : AppColors.greyTextFormFiledColor,
+  //       ),
+  //       onPressed: () async {
+  //         final docId = widget.ncrData?['id'];
+  //         if (docId == null) return;
+
+  //         await _ncrRepository.updateNcrStatus(docId, value);
+
+  //         setState(() {
+  //           currentStatus = value;
+  //         });
+
+  //         ScaffoldMessenger.of(context).showSnackBar(
+  //           SnackBar(content: Text("Status updated to ${value.toUpperCase()}")),
+  //         );
+  //       },
+
+  //       child: Text(
+  //         label,
+  //         style: TextStyle(
+  //           color: isActive ? Colors.white : AppColors.blackTextColor,
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
+  Widget _statusButton(String value, String label) {
     return Expanded(
       child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: isActive
-              ? value == "open"
-                    ? AppColors.orange
-                    : value == "in_progress"
-                    ? AppColors.blue
-                    : AppColors.green
-              : AppColors.greyTextFormFiledColor,
-        ),
+        style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
         onPressed: () async {
-          final docId = widget.ncrData?['id'];
-          if (docId == null) return;
-
-          await _ncrRepository.updateNcrStatus(docId, value);
-
-          setState(() {
-            currentStatus = value;
-          });
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Status updated to ${value.toUpperCase()}")),
-          );
+          await _updateStatus(value);
         },
-
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isActive ? Colors.white : AppColors.blackTextColor,
-          ),
-        ),
+        child: Text(label),
       ),
     );
   }
@@ -331,24 +367,61 @@ class _NCRFormPageState extends State<NCRFormPage> {
               ),
             ),
 
-            /// 🔹 Status Buttons (review mode only)
-            /// 🔹 Status Buttons (review mode only)
-            if (isReview) ...[
+            /// Status Buttons (Consultant Only)
+            if (isReview &&
+                isRoleLoaded &&
+                userRole == UserRole.consultant) ...[
               const SizedBox(height: 20),
+
               Row(
                 children: [
-                  if (canShowStatusButton('open'))
-                    _statusButton('open', 'Open'),
+                  // OPEN → IN PROGRESS
+                  if (currentStatus == 'open')
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          await _updateStatus('in_progress');
+                        },
+                        child: const Text('Mark In Progress'),
+                      ),
+                    ),
 
-                  if (canShowStatusButton('in_progress')) ...[
-                    const SizedBox(width: 8),
-                    _statusButton('in_progress', 'In Progress'),
-                  ],
+                  // IN PROGRESS → CLOSED
+                  if (currentStatus == 'in_progress')
+                    Expanded(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                        ),
+                        onPressed: () async {
+                          final confirm = await showDialog<bool>(
+                            context: context,
+                            builder: (_) => AlertDialog(
+                              title: const Text("Close NCR"),
+                              content: const Text(
+                                "Are you sure you want to close this NCR?",
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () =>
+                                      Navigator.pop(context, false),
+                                  child: const Text("Cancel"),
+                                ),
+                                ElevatedButton(
+                                  onPressed: () => Navigator.pop(context, true),
+                                  child: const Text("Yes"),
+                                ),
+                              ],
+                            ),
+                          );
 
-                  if (canShowStatusButton('closed')) ...[
-                    const SizedBox(width: 8),
-                    _statusButton('closed', 'Closed'),
-                  ],
+                          if (confirm == true) {
+                            await _updateStatus('closed');
+                          }
+                        },
+                        child: const Text('Close NCR'),
+                      ),
+                    ),
                 ],
               ),
             ],
@@ -390,8 +463,7 @@ class _NCRFormPageState extends State<NCRFormPage> {
                     textFieldController: iqaCtrl,
                     readOnly: isReview,
                     keyboardType: TextInputType.number,
-inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   ),
                 ),
               ],
@@ -574,8 +646,7 @@ inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     readOnly: true,
                     isEnabled: false,
                     keyboardType: TextInputType.number,
-inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   ),
                 ),
               ],
@@ -653,7 +724,3 @@ inputFormatters: [FilteringTextInputFormatter.digitsOnly],
     );
   }
 }
-
-
-
-
