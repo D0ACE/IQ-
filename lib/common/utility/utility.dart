@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:iq_plus/common/themes/app_colors.dart';
 import 'dart:math';
 
 import 'package:iq_plus/common/themes/app_const.dart';
@@ -103,6 +104,80 @@ class Utility {
         return 'Customer';
       default:
         return 'Unknown';
+    }
+  }
+
+  static String getNCRStatus(String currentStatus) {
+    switch (currentStatus) {
+      case AppConst.openNCRStatusKey:
+        return 'Open';
+      case AppConst.inProgressNCRStatusKey:
+        return 'In Progress';
+      case AppConst.closedNCRStatusKey:
+        return 'Closed';
+      default:
+        return 'Open';
+    }
+  }
+
+  static Color getNCRStatusColor(String status) {
+    switch (status) {
+      case AppConst.openNCRStatusKey:
+        return AppColors.orange;
+      case AppConst.inProgressNCRStatusKey:
+        return AppColors.blue;
+      case AppConst.closedNCRStatusKey:
+        return AppColors.green;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  static IconData getNCRStatusIcons(String status) {
+    switch (status) {
+      case  AppConst.openNCRStatusKey:
+        return Icons.pending_actions;
+      case AppConst.inProgressNCRStatusKey:
+        return Icons.autorenew;
+      case AppConst.closedNCRStatusKey:
+        return Icons.check_circle;
+      default:
+        return  Icons.pending_actions;
+    }
+  }
+
+  static bool isSuperAdmin(String? roleId) {
+    switch (roleId) {
+      case  AppConst.superAdminRole:
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  static bool isAdmin(String? roleId) {
+    switch (roleId) {
+      case  AppConst.adminRole:
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  static bool isConsultant(String? roleId) {
+    switch (roleId) {
+      case  AppConst.consultantRole:
+        return true;
+      default:
+        return false;
+    }
+  }
+  static bool isCustomer(String? roleId) {
+    switch (roleId) {
+      case  AppConst.customerRole:
+        return true;
+      default:
+        return false;
     }
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:iq_plus/common/utility/utility.dart';
 import 'package:iq_plus/common/widgets/common_app_bar.dart';
 import 'package:iq_plus/features/admin/create_admin/create_admin_page.dart';
 import 'package:iq_plus/features/admin/customers/cubit/customer_list_cubit.dart';
@@ -183,6 +184,18 @@ class SuperadminDashboardPage extends StatelessWidget {
               title: 'Consultants',
               route: AppRoutes.employeeList,
             ),
+
+            // ✅ Add Admin
+            if(Utility.isSuperAdmin(getIt<HiveService>().getUser()?.roleId??""))
+              _drawerItem(
+                context,
+                icon: Icons.person_add_alt,
+                title: 'Add Admin',
+                onTap: () {
+                  context.pop();
+                  context.push(AppRoutes.createAdmin); // navigate to Add Admin page
+                },
+              ),
 
             // 🔹 SUPER ADMIN ONLY
             // _drawerItem(

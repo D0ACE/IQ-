@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:iq_plus/common/routes/go_route.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
 import 'package:iq_plus/common/themes/responsive.dart';
+import 'package:iq_plus/common/utility/utility.dart';
 import 'package:iq_plus/common/widgets/common_app_bar.dart';
 import 'package:iq_plus/core/local_storage/hive_service.dart';
 import 'package:iq_plus/di/service_locator.dart';
@@ -171,7 +172,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               },
             ),
                        // ✅ Add Admin
-          _drawerItem(
+            if(Utility.isSuperAdmin(getIt<HiveService>().getUser()?.roleId??""))
+            _drawerItem(
             icon: Icons.person_add_alt,
             title: 'Add Admin',
             onTap: () {
@@ -181,6 +183,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           ),
 
           // ✅ Admins (List)
+            if(Utility.isSuperAdmin(getIt<HiveService>().getUser()?.roleId??""))
           _drawerItem(
             icon: Icons.admin_panel_settings,
             title: 'Admins',

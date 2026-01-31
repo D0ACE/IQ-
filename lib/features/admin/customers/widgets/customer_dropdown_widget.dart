@@ -10,10 +10,12 @@ class CustomerDropdownWidget extends StatelessWidget {
   final CustomerModel? selectedCustomer;
   final ValueChanged<CustomerModel?> onChanged;
   final String hint;
+  final bool? readOnly;
 
   const CustomerDropdownWidget({
     super.key,
     this.selectedCustomer,
+    this.readOnly,
     required this.onChanged,
     this.hint = 'Select company',
   });
@@ -21,7 +23,7 @@ class CustomerDropdownWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => getIt<CustomerListCubit>()..fetchCustomers(),
+      create: (_) => getIt<CustomerListCubit>()..fetchApprovedCustomers(),
       child: BlocBuilder<CustomerListCubit, CustomerListState>(
         builder: (context, state) {
           if (state is CustomerListLoading) {
@@ -80,7 +82,7 @@ class CustomerDropdownWidget extends StatelessWidget {
                   ),
                 );
               }).toList(),
-              onChanged: onChanged,
+              onChanged:(readOnly??false)==true? null:onChanged,
             );
           }
 

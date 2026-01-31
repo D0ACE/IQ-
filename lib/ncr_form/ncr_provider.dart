@@ -12,12 +12,12 @@ class NcrProvider extends ChangeNotifier {
   List<Map<String, dynamic>> get ncrList => _ncrList;
 
   /// 🔹 Start listening to NCRs
-  void listenToNcrs({String? consultantId}) {
+  void listenToNcrs() {
     // ❗ Avoid multiple listeners
     _subscription?.cancel();
 
     _subscription = _ncrRepository
-        .getNcrStream(consultantId: consultantId)
+        .getNcrStream()
         .listen((snapshot) {
       _ncrList = snapshot.docs.map((doc) {
   final data = doc.data();

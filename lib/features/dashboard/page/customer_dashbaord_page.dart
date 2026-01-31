@@ -263,17 +263,6 @@ class _DashboardPageState extends State<DashboardPage> {
       ListTile(
         title: const Text("View Profile", style: TextStyle(color: Colors.white)),
         onTap: () async {
-          if (!AccessControl.canViewCustomerProfile(
-            customer: customer,
-            role: role,
-            userId: user?.userId ?? '',
-          )) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Unauthorized access')),
-            );
-            return;
-          }
-
           GoRouter.of(context).pop();
           final result = await context.push(AppRoutes.customerProfile, extra: customer)as CustomerModel?;
 
@@ -283,17 +272,6 @@ class _DashboardPageState extends State<DashboardPage> {
       ListTile(
         title: const Text("Edit Profile", style: TextStyle(color: Colors.white)),
         onTap: () async {
-          if (!AccessControl.canEditCustomerProfile(
-            customer: customer,
-            role: role,
-            userId: user?.userId ?? '',
-          )) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Unauthorized to edit')),
-            );
-            return;
-          }
-
           GoRouter.of(context).pop();
           await context.push(
             AppRoutes.customerProfileEdit,
@@ -487,40 +465,40 @@ class _DashboardPageState extends State<DashboardPage> {
           },
         ),
 
-        _clickableCard(
-          title: 'Visit Summary',
-          icon: Icons.warning_amber_rounded,
-          onTap: () {
-            context.push(AppRoutes.visitorSummary);// navigate
-          },
-        ),
+        // _clickableCard(
+        //   title: 'Visit Summary',
+        //   icon: Icons.warning_amber_rounded,
+        //   onTap: () {
+        //     context.push(AppRoutes.visitorSummary);// navigate
+        //   },
+        // ),
 
         // 🟠 Static tiles (NO navigation for now)
-        _clickableCard(
-          title: 'Risk',
-          icon: Icons.warning_amber_rounded,
-          onTap: () {
-            // later you can navigate
-          },
-        ),
+        // _clickableCard(
+        //   title: 'Risk',
+        //   icon: Icons.warning_amber_rounded,
+        //   onTap: () {
+        //     // later you can navigate
+        //   },
+        // ),
 
-        _clickableCard(
-          title: 'Next Visit',
-          icon: Icons.event_available,
-          onTap: () {},
-        ),
+        // _clickableCard(
+        //   title: 'Next Visit',
+        //   icon: Icons.event_available,
+        //   onTap: () {},
+        // ),
 
-        _clickableCard(
-          title: 'Next Audit',
-          icon: Icons.fact_check,
-          onTap: () {},
-        ),
+        // _clickableCard(
+        //   title: 'Next Audit',
+        //   icon: Icons.fact_check,
+        //   onTap: () {},
+        // ),
 
-        _clickableCard(
-          title: 'Next Training',
-          icon: Icons.school,
-          onTap: () {},
-        ),
+        // _clickableCard(
+        //   title: 'Next Training',
+        //   icon: Icons.school,
+        //   onTap: () {},
+        // ),
       ],
     );
   }

@@ -153,6 +153,48 @@ class AuthRepository {
       );
     }).toList();
   }
+  /// GET ALL CUSTOMERS
+  Future<List<CustomerModel>> getFetchAllApprovedCustomers() async {
+    final snapshot = await firestore
+        .collection('customers')
+        .where('isProfileApproved', isEqualTo: true)
+        .get();
+
+    return snapshot.docs.map((doc) {
+      final data = doc.data();
+      return CustomerModel(
+        customerId: doc.id,
+        companyName: data['companyName'] ?? '',
+        email: data['email'] ?? '',
+        phoneNumber: data['phoneNumber'] ?? '',
+        password: data['password'] ?? '',
+        certificateStandard: data['certificateStandard'] ?? '',
+        numberOfLocations: data['numberOfLocations'] ?? '',
+        numberOfEmployees: data['numberOfEmployees'] ?? '',
+        companyFunction: data['companyFunction'] ?? '',
+        legitDocumentUrl: data['legitDocumentUrl'] ?? '',
+        isProfileApproved: data['isProfileApproved'] ?? false,
+        fcmToken: data['fcmToken'] ?? '',
+        roleId: data['roleId'] ?? '',
+        createdAt: data['createdAt'].toDate(),
+        address: data['address'] ?? '',
+        // 🔽 LOW LEVEL DEPARTMENT
+        lowLevelName: data['lowLevelDepartment']?['name'] ?? '',
+        lowLevelEmail: data['lowLevelDepartment']?['email'] ?? '',
+        lowLevelMobile: data['lowLevelDepartment']?['mobile'] ?? '',
+
+        // 🔶 MEDIUM LEVEL DEPARTMENT
+        mediumLevelName: data['mediumLevelDepartment']?['name'] ?? '',
+        mediumLevelEmail: data['mediumLevelDepartment']?['email'] ?? '',
+        mediumLevelMobile: data['mediumLevelDepartment']?['mobile'] ?? '',
+
+        // 🔺 TOP LEVEL DEPARTMENT
+        topLevelName: data['topLevelDepartment']?['name'] ?? '',
+        topLevelEmail: data['topLevelDepartment']?['email'] ?? '',
+        topLevelMobile: data['topLevelDepartment']?['mobile'] ?? '',
+      );
+    }).toList();
+  }
 
   /// APPROVE CUSTOMER
   Future<void> approveCustomer({required String customerId,required String companyName,required String customerEmail,required String consultantId,}) async {

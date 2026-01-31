@@ -6,17 +6,21 @@ import {
   mediumLevelEscalation,
   topLevelCriticalEscalation,
 } from "../templates/ncrEmailTemplates";
-import * as path from "path"; // <-- Add this
+// import * as path from "path"; // <-- Add this
 
 function getDb() {
   if (admin.apps.length === 0) {
-    //admin.initializeApp();
-      // Use service account locally
-              const serviceAccountPath = path.resolve(__dirname, "../../serviceAccountKey.json");
-                 admin.initializeApp({
-                   credential: admin.credential.cert(serviceAccountPath),
-                 });
-
+    admin.initializeApp();
+    // Use service account locally
+    /*
+    const serviceAccountPath = path.resolve(
+      __dirname,
+      "../../serviceAccountKey.json"
+    );
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccountPath),
+    });
+    */
   }
   return admin.firestore();
 }

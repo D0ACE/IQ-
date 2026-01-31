@@ -226,19 +226,19 @@ factory CustomerModel.fromJson(
     address: json['address'] ?? '',
 
     // Low
-    lowLevelName: json['lowLevelName'] ?? '',
-    lowLevelEmail: json['lowLevelEmail'] ?? '',
-    lowLevelMobile: json['lowLevelMobile'] ?? '',
+    lowLevelName: json['lowLevelDepartment']?['name'] ?? '',
+    lowLevelEmail: json['lowLevelDepartment']?['email'] ?? '',
+    lowLevelMobile: json['lowLevelDepartment']?['mobile'] ?? '',
 
     // Medium
-    mediumLevelName: json['mediumLevelName'] ?? '',
-    mediumLevelEmail: json['mediumLevelEmail'] ?? '',
-    mediumLevelMobile: json['mediumLevelMobile'] ?? '',
+    mediumLevelName: json['mediumLevelDepartment']?['name'] ?? '',
+    mediumLevelEmail: json['mediumLevelDepartment']?['email'] ?? '',
+    mediumLevelMobile: json['mediumLevelDepartment']?['mobile'] ?? '',
 
     // Top
-    topLevelName: json['topLevelName'] ?? '',
-    topLevelEmail: json['topLevelEmail'] ?? '',
-    topLevelMobile: json['topLevelMobile'] ?? '',
+    topLevelName: json['topLevelDepartment']?['name'] ?? '',
+    topLevelEmail: json['topLevelDepartment']?['email'] ?? '',
+    topLevelMobile: json['topLevelDepartment']?['mobile'] ?? '',
 
     assignedConsultantId: json['assignedConsultantId'],
   );

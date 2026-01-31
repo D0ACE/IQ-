@@ -1,5 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:iq_plus/common/utility/utility.dart';
+import 'package:iq_plus/core/local_storage/hive_service.dart';
+import 'package:iq_plus/di/service_locator.dart';
 import 'package:iq_plus/features/auth/model/role_model.dart';
+import 'package:iq_plus/features/auth/model/user_model.dart';
 import 'package:iq_plus/features/users/models/employe_user.dart';
 
 class UserRepository {
@@ -9,10 +13,19 @@ class UserRepository {
 
   // 🔹 Fetch roles
   Future<List<RoleModel>> fetchRoles() async {
-    final snapshot = await firestore.collection('roles') .where('roleId', whereNotIn: ['1', '3']).get();
-    return snapshot.docs
-        .map((doc) => RoleModel.fromFirestore(doc.data()))
-        .toList();
+    final UserModel? userLoginDetails = getIt<HiveService>().getUser();
+    if(Utility.isSuperAdmin(userLoginDetails?.roleId)){
+      final snapshot = await firestore.collection('roles') .where('roleId', whereNotIn: ['0', '3']).get();
+      return snapshot.docs
+          .map((doc) => RoleModel.fromFirestore(doc.data()))
+          .toList();
+    }else{
+      final snapshot = await firestore.collection('roles') .where('roleId', whereNotIn: ['0','1', '3']).get();
+      return snapshot.docs
+          .map((doc) => RoleModel.fromFirestore(doc.data()))
+          .toList();
+    }
+
   }
 
   // 🔹 Create user

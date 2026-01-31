@@ -11,6 +11,18 @@ class CustomerListCubit extends Cubit<CustomerListState> {
     emit(CustomerListLoading());
     try {
       final customers = await repo.getAllCustomers();
+      print(customers.toString());
+      emit(CustomerListLoaded(customers));
+    } catch (e) {
+      emit(CustomerListError(e.toString()));
+    }
+  }
+
+  Future<void> fetchApprovedCustomers() async {
+    emit(CustomerListLoading());
+    try {
+      final customers = await repo.getFetchAllApprovedCustomers();
+      print(customers.toString());
       emit(CustomerListLoaded(customers));
     } catch (e) {
       emit(CustomerListError(e.toString()));

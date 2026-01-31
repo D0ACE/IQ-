@@ -241,12 +241,6 @@ class AppRouter {
         builder: (context, state) {
           final customer = state.extra as CustomerModel;
 
-          if (!AccessControl.canViewCustomer(customer)) {
-            return const Scaffold(
-              body: Center(child: Text('Unauthorized Access')),
-            );
-          }
-
           return CustomerProfilePage(customer: customer);
         },
       ),
@@ -255,13 +249,6 @@ class AppRouter {
         path: AppRoutes.customerProfileEdit,
         builder: (context, state) {
           final customer = state.extra as CustomerModel;
-
-          if (!AccessControl.canEditCustomer(customer)) {
-            return const Scaffold(
-              body: Center(child: Text('Edit not allowed')),
-            );
-          }
-
           return CustomerProfileEditPage(customer: customer);
         },
       ),

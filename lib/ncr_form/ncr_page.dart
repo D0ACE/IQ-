@@ -5,12 +5,17 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:iq_plus/common/constants/user_role.dart';
 import 'package:iq_plus/common/routes/go_route.dart';
+import 'package:iq_plus/common/themes/app_const.dart';
+import 'package:iq_plus/common/utility/utility.dart';
+import 'package:iq_plus/core/local_storage/hive_service.dart';
+import 'package:iq_plus/di/service_locator.dart';
+import 'package:iq_plus/features/auth/model/customer_model.dart';
+import 'package:iq_plus/features/auth/model/user_model.dart';
 import 'package:iq_plus/ncr_form/ncr_form_page.dart';
 import 'package:iq_plus/ncr_form/ncr_provider.dart';
 
 import 'package:provider/provider.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
-import 'package:iq_plus/common/themes/app_theme_data.dart';
 
 class NcrPage extends StatefulWidget {
   const NcrPage({super.key});
@@ -20,47 +25,22 @@ class NcrPage extends StatefulWidget {
 }
 
 class _NcrPageState extends State<NcrPage> {
-  UserRole userRole = UserRole.customer;
+  String roleId = '';
   bool isRoleLoaded = false;
-
+  final UserModel? userLoginDetails = getIt<HiveService>().getUser();
+  final CustomerModel? customerLoginDetails = getIt<HiveService>().getCustomer();
 
   @override
   void initState() {
     super.initState();
+    fetchUserRole();
     context.read<NcrProvider>().listenToNcrs();
-    _fetchUserRole();
   }
 
-  Future<void> _fetchUserRole() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
-
-    final doc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .get();
-
-    setState(() {
-      userRole = mapUserRole(
-        (doc.data()?['role'] ?? '').toString(),
-      );
-    });
-  }Future<void> fetchUserRole() async {
-  final user = FirebaseAuth.instance.currentUser;
-  if (user == null) return;
-
-  final doc = await FirebaseFirestore.instance
-      .collection('users')
-      .doc(user.uid)
-      .get();
-
-  setState(() {
-    userRole = mapUserRole(
-      (doc.data()?['role'] ?? '').toString(),
-    );
+  void fetchUserRole()  {
+    roleId = userLoginDetails?.roleId??customerLoginDetails?.roleId??'';
     isRoleLoaded = true;
-  });
-}
+  }
 
 
   @override
@@ -69,7 +49,7 @@ class _NcrPageState extends State<NcrPage> {
       
       backgroundColor: AppColors.whiteTextColor,
       floatingActionButtonLocation: FloatingActionButtonLocation.endTop,
-      floatingActionButton: Padding(
+      floatingActionButton: Utility.isCustomer(roleId)?null:Padding(
         padding: const EdgeInsets.only(top: 16),
         child: FloatingActionButton.extended(
           backgroundColor: AppColors.primary,
@@ -103,7 +83,7 @@ class _NcrPageState extends State<NcrPage> {
                 final ncr = provider.ncrList[index];
                 return NcrListCard(
                   ncr: ncr,
-                  userRole: userRole, // 👈 ADD THIS
+                  roleId: roleId, // 👈 ADD THIS
                   onTap: () {
                     Navigator.push(
                       context,
@@ -125,13 +105,13 @@ class _NcrPageState extends State<NcrPage> {
 class NcrListCard extends StatefulWidget {
   final Map<String, dynamic> ncr;
   final VoidCallback onTap;
-  final UserRole userRole; // 👈 Use enum
+  final String roleId; // 👈 Use enum
 
   const NcrListCard({
     super.key,
     required this.ncr,
     required this.onTap,
-    required this.userRole,
+    required this.roleId,
   });
 
   @override
@@ -144,17 +124,17 @@ class _NcrListCardState extends State<NcrListCard> {
   @override
   void initState() {
     super.initState();
-    status = widget.ncr['status'] ?? 'open';
+    status = widget.ncr['status'] ?? AppConst.openNCRStatusKey;
   }
 
   // List<String> allowedStatusChanges() {
   //   switch (widget.userRole) {
   //     case UserRole.consultant:
-  //       return status == 'open' ? ['in_progress'] : [];
+  //       return status == AppConst.openNCRStatusKey ? [AppConst.inProgressNCRStatusKey] : [];
   //     case UserRole.admin:
   //     case UserRole.superAdmin:
-  //       if (status == 'open') return ['in_progress', 'closed'];
-  //       if (status == 'in_progress') return ['closed'];
+  //       if (status == AppConst.openNCRStatusKey) return [AppConst.inProgressNCRStatusKey, AppConst.closedNCRStatusKey];
+  //       if (status == AppConst.inProgressNCRStatusKey) return [AppConst.closedNCRStatusKey];
   //       return [];
   //     case UserRole.customer:
   //     default:
@@ -166,11 +146,11 @@ class _NcrListCardState extends State<NcrListCard> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: _statusColor(status), // Orange, Blue, Green
+        color: Utility.getNCRStatusColor(status), // Orange, Blue, Green
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
-        _statusText(status),
+        Utility.getNCRStatus(status),
         style: const TextStyle(
           color: Colors.white,
           fontWeight: FontWeight.bold,
@@ -179,33 +159,7 @@ class _NcrListCardState extends State<NcrListCard> {
       ),
     );
   }
-
-  /// Status color
-  Color _statusColor(String status) {
-    switch (status) {
-      case 'open':
-        return AppColors.orange;
-      case 'in_progress':
-        return AppColors.blue;
-      case 'closed':
-        return AppColors.green;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  String _statusText(String status) {
-    switch (status) {
-      case 'open':
-        return 'Open';
-      case 'in_progress':
-        return 'In Progress';
-      case 'closed':
-        return 'Closed';
-      default:
-        return 'Unknown';
-    }
-  }
+  
 
   // Future<void> _updateStatus(String newStatus) async {
   //   final docId = widget.ncr['id'];
@@ -242,17 +196,13 @@ class _NcrListCardState extends State<NcrListCard> {
                 height: 50,
                 width: 50,
                 decoration: BoxDecoration(
-                  color: _statusColor(status).withOpacity(0.2),
+                  color: Utility.getNCRStatusColor(status).withOpacity(0.2),
                   shape: BoxShape.circle,
                 ),
                 child: Center(
                   child: Icon(
-                    status == 'open'
-                        ? Icons.pending_actions
-                        : status == 'in_progress'
-                        ? Icons.autorenew
-                        : Icons.check_circle,
-                    color: _statusColor(status),
+                    Utility.getNCRStatusIcons(status),
+                    color: Utility.getNCRStatusColor(status),
                   ),
                 ),
               ),
@@ -288,12 +238,12 @@ class _NcrListCardState extends State<NcrListCard> {
               //   child: widget.userRole == UserRole.consultant
               //       ? Row(
               //           mainAxisSize: MainAxisSize.min,
-              //           children: ['open', 'in_progress', 'closed'].map((s) {
+              //           children: [AppConst.openNCRStatusKey, AppConst.inProgressNCRStatusKey, AppConst.closedNCRStatusKey].map((s) {
               //             return Padding(
               //               padding: const EdgeInsets.only(left: 6),
               //               child: ElevatedButton(
               //                 style: ElevatedButton.styleFrom(
-              //                   backgroundColor: _statusColor(s),
+              //                   backgroundColor: Utility.getNCRStatusColor(s),
               //                   minimumSize: const Size(36, 36),
               //                   padding: const EdgeInsets.symmetric(
               //                     horizontal: 8,
@@ -335,7 +285,7 @@ class _NcrListCardState extends State<NcrListCard> {
               //       padding: const EdgeInsets.only(left: 8),
               //       child: ElevatedButton(
               //         style: ElevatedButton.styleFrom(
-              //           backgroundColor: _statusColor(s),
+              //           backgroundColor: Utility.getNCRStatusColor(s),
               //         ),
               //         onPressed: () => _updateStatus(s),
               //         child: Text(_statusText(s), style: const TextStyle(color: Colors.white)),

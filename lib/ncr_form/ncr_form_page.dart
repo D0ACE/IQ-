@@ -11,7 +11,9 @@ import 'package:iq_plus/common/app_widget/app_text_field_widget.dart';
 import 'package:iq_plus/common/app_widget/common_gradient_button.dart';
 import 'package:iq_plus/common/constants/user_role.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
+import 'package:iq_plus/common/themes/app_const.dart';
 import 'package:iq_plus/common/themes/app_theme_data.dart';
+import 'package:iq_plus/common/utility/utility.dart';
 import 'package:iq_plus/core/local_storage/hive_service.dart';
 import 'package:iq_plus/di/service_locator.dart';
 import 'package:iq_plus/features/admin/customers/widgets/customer_dropdown_widget.dart';
@@ -33,7 +35,7 @@ class _NCRFormPageState extends State<NCRFormPage> {
   final picker = ImagePicker();
   final NcrRepository _ncrRepository = NcrRepository();
   late bool isReview;
-  UserRole userRole = UserRole.customer; // default to customer
+  String roleId = '';
   // role fetched from Firebase
 
   /// 🔹 Controllers
@@ -62,10 +64,12 @@ class _NCRFormPageState extends State<NCRFormPage> {
   final approvedCtrl = TextEditingController();
 
   /// Current status
-  String currentStatus = "open";
+  String currentStatus = AppConst.openNCRStatusKey;
   bool isRoleLoaded = false;
 
   CustomerModel? selectedCustomer;
+  final UserModel? userLoginDetails = getIt<HiveService>().getUser();
+  final CustomerModel? customerLoginDetails = getIt<HiveService>().getCustomer();
 
   @override
   void initState() {
@@ -96,26 +100,29 @@ class _NCRFormPageState extends State<NCRFormPage> {
       verificationCtrl.text = ncr['verification'] ?? '';
       auditorCtrl.text = ncr['auditor'] ?? '';
       approvedCtrl.text = ncr['approvedBy'] ?? '';
-      currentStatus = _normalizeStatus(ncr['status']);
+      currentStatus = ncr['status'];
 
 
-    /// Fetch user role from Firebase
-    fetchUserRole();
+    //  fetchCustomer();
+      /// Fetch user role from Firebase
+      fetchUserRole();
   }}
 
-  Future<void> fetchUserRole() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
-
+  Future<void> fetchCustomer() async {
     final doc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
+        .collection('customers')
+        .doc(widget.ncrData?['customerId'] ?? '')
         .get();
 
     setState(() {
-      userRole = mapUserRole((doc.data()?['role'] ?? '').toString());
-      isRoleLoaded = true;
+      selectedCustomer = CustomerModel.fromJson(doc.data()!,customerId: widget.ncrData?['customerId'] ?? '');
     });
+    print(selectedCustomer);
+  }
+
+  void fetchUserRole()  {
+      roleId = userLoginDetails?.roleId??customerLoginDetails?.roleId??'';
+      isRoleLoaded = true;
   }
 
   Future<void> _updateStatus(String newStatus) async {
@@ -131,36 +138,6 @@ class _NCRFormPageState extends State<NCRFormPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text("Status updated to ${newStatus.toUpperCase()}")),
     );
-  }
-
-String _normalizeStatus(dynamic status) {
-  final s = status?.toString().toLowerCase().trim() ?? '';
-
-  if (s == 'open') return 'open';
-  if (s == 'in progress') return 'in_progress';
-  if (s == 'in_progress') return 'in_progress';
-  if (s == 'closed') return 'closed';
-
-  return 'open';
-}
-
-  bool canShowStatusButton(String targetStatus) {
-    switch (userRole) {
-      case UserRole.consultant:
-        return currentStatus == 'open' && targetStatus == 'in_progress';
-
-      case UserRole.customer:
-        return false;
-
-      case UserRole.admin:
-      case UserRole.superAdmin:
-        if (targetStatus == 'closed') return true;
-        if (currentStatus == 'open' && targetStatus == 'in_progress')
-          return true;
-        if (currentStatus == 'in_progress' && targetStatus == 'closed')
-          return true;
-        return false;
-    }
   }
 
   /// 🔹 Date Picker
@@ -209,9 +186,9 @@ String _normalizeStatus(dynamic status) {
   //     child: ElevatedButton(
   //       style: ElevatedButton.styleFrom(
   //         backgroundColor: isActive
-  //             ? value == "open"
+  //             ? value == AppConst.openNCRStatusKey
   //                   ? AppColors.orange
-  //                   : value == "in_progress"
+  //                   : value == AppConst.inProgressNCRStatusKey
   //                   ? AppColors.blue
   //                   : AppColors.green
   //             : AppColors.greyTextFormFiledColor,
@@ -347,20 +324,20 @@ String _normalizeStatus(dynamic status) {
               margin: const EdgeInsets.only(top: 10),
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: currentStatus == "open"
+                color: currentStatus == AppConst.openNCRStatusKey
                     ? AppColors.orange.withOpacity(0.2)
-                    : currentStatus == "in_progress"
+                    : currentStatus == AppConst.inProgressNCRStatusKey
                     ? AppColors.blue.withOpacity(0.2)
                     : AppColors.green.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                "Status: ${currentStatus.toUpperCase()}",
+                "Status: ${Utility.getNCRStatus(currentStatus)}",
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: currentStatus == "open"
+                  color: currentStatus == AppConst.openNCRStatusKey
                       ? AppColors.orange
-                      : currentStatus == "in_progress"
+                      : currentStatus == AppConst.inProgressNCRStatusKey
                       ? AppColors.blue
                       : AppColors.green,
                 ),
@@ -370,24 +347,24 @@ String _normalizeStatus(dynamic status) {
             /// Status Buttons (Consultant Only)
             if (isReview &&
                 isRoleLoaded &&
-                userRole == UserRole.consultant) ...[
+                roleId == UserRole.consultant) ...[
               const SizedBox(height: 20),
 
               Row(
                 children: [
                   // OPEN → IN PROGRESS
-                  if (currentStatus == 'open')
+                  if (currentStatus == AppConst.openNCRStatusKey)
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () async {
-                          await _updateStatus('in_progress');
+                          await _updateStatus(AppConst.inProgressNCRStatusKey);
                         },
                         child: const Text('Mark In Progress'),
                       ),
                     ),
 
                   // IN PROGRESS → CLOSED
-                  if (currentStatus == 'in_progress')
+                  if (currentStatus == AppConst.inProgressNCRStatusKey)
                     Expanded(
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
@@ -416,7 +393,7 @@ String _normalizeStatus(dynamic status) {
                           );
 
                           if (confirm == true) {
-                            await _updateStatus('closed');
+                            await _updateStatus(AppConst.closedNCRStatusKey);
                           }
                         },
                         child: const Text('Close NCR'),
@@ -432,6 +409,7 @@ String _normalizeStatus(dynamic status) {
             sectionHeader("Select Company"),
             CustomerDropdownWidget(
               selectedCustomer: selectedCustomer,
+              readOnly: Utility.isCustomer(roleId),
               onChanged: (customer) {
                 setState(() {
                   selectedCustomer = customer;
