@@ -145,29 +145,6 @@ export const listAllAwsResources = onRequest((req, res) => {
           })),
         })) || [];
 
-      /* ===================== Billing ===================== */
-      const today = new Date();
-      const start = new Date(today.getFullYear(), today.getMonth(), 1)
-        .toISOString()
-        .split("T")[0];
-      const end = today.toISOString().split("T")[0];
-
-      const billingRes = await costExplorer
-        .getCostAndUsage({
-          TimePeriod: {Start: start, End: end},
-          Granularity: "MONTHLY",
-          Metrics: ["UnblendedCost"],
-          GroupBy: [{Type: "DIMENSION", Key: "SERVICE"}],
-        })
-        .promise();
-
-      const billing =
-        billingRes.ResultsByTime?.[0].Groups?.map((g) => ({
-          service: g.Keys?.[0],
-          amount: Number(g.Metrics?.UnblendedCost?.Amount || 0),
-          unit: g.Metrics?.UnblendedCost?.Unit,
-        })) || [];
-
       /* ===================== RESPONSE ===================== */
       res.status(200).json({
         region: "us-east-1",
@@ -183,7 +160,6 @@ export const listAllAwsResources = onRequest((req, res) => {
           ec2: ec2Instances,
           iam: iamUsers,
           cloudFront: cloudFrontDistributions,
-          billing,
         },
       });
     } catch (error: unknown) {
@@ -194,3 +170,93 @@ export const listAllAwsResources = onRequest((req, res) => {
     }
   });
 });
+
+/* =======================
+   DAILY BILLING SCHEDULER
+======================= */
+export const storeAwsBillingDaily = onSchedule(
+  {
+    schedule: "every day 01:00",
+    timeZone: "Asia/Kolkata",
+  },
+  async () => {
+    try {
+      const today = new Date();
+
+      const start = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        1
+      )
+        .toISOString()
+        .split("T")[0];
+
+      const end = today.toISOString().split("T")[0];
+
+      /* =======================
+         AWS BILLING
+      ======================= */
+      const billingRes = await costExplorer
+        .getCostAndUsage({
+          TimePeriod: {
+            Start: start, End: end,
+          },
+          Granularity: "MONTHLY",
+          Metrics: ["UnblendedCost"],
+          GroupBy: [
+            {
+              Type: "DIMENSION",
+              Key: "SERVICE",
+            },
+          ],
+        })
+        .promise();
+
+      const billing =
+        billingRes.ResultsByTime?.[0].Groups?.map((g) => ({
+          service: g.Keys?.[0],
+          amount: Number(
+            g.Metrics?.UnblendedCost?.Amount || 0
+          ),
+          unit: g.Metrics?.UnblendedCost?.Unit,
+        })) || [];
+
+      // =====================
+      // Clear Old Billing Docs
+      // =====================
+      const billingCollection = admin.firestore().
+        collection("aws_billing_daily");
+        // Check if collection has any docs
+      const snapshot = await billingCollection.limit(1).get();
+
+      if (!snapshot.empty) {
+        const snapshot = await billingCollection.get();
+
+        const batch = admin.firestore().batch();
+        snapshot.docs.forEach((doc) => {
+          batch.delete(doc.ref);
+        });
+
+        await batch.commit();
+      }
+
+      // =====================
+      // Add Fresh Billing Data
+      // =====================
+      await billingCollection.add({
+        billing,
+        region: "us-east-1",
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      console.log(
+        "✅ AWS billing stored",
+      );
+    } catch (error) {
+      console.error(
+        "❌ AWS Billing Scheduler Error:",
+        error
+      );
+    }
+  }
+);

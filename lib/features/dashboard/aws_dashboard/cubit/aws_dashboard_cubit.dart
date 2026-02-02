@@ -15,6 +15,7 @@ class AwsDashboardCubit extends Cubit<AwsDashboardState> {
       final data = await _service.fetchAwsResources();
       emit(AwsDashboardLoaded(data));
     } catch (e) {
+      print(e.toString());
       emit(AwsDashboardError(e.toString()));
     }
   }

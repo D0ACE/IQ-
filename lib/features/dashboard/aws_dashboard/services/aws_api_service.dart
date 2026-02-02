@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
 import '../models/aws_resources_model.dart';
 
@@ -25,6 +26,16 @@ class AwsApiService {
 
     final decoded = jsonDecode(response.body);
 
+    /// 2️⃣ Fetch billing from Firestore (latest daily doc)
+    final billingSnapshot = await FirebaseFirestore.instance
+        .collection('aws_billing_daily')
+        .orderBy('createdAt', descending: true)
+        .limit(1)
+        .get();
+
+    final billingData = billingSnapshot.docs.isNotEmpty? billingSnapshot.docs.first.data():null;
+    final finalBillingData=billingData?['billing'] ?? [];
+    decoded['details']['billing']=finalBillingData;
     /// IMPORTANT:
     /// your API returns:
     /// { region, summary, details }
