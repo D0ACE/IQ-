@@ -221,39 +221,24 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage> {
               },
             ),
             // 🔵 My Customers (Expandable)
-            ExpansionTile(
-              leading: const Icon(Icons.people, color: Colors.white),
-              title: const Text(
-                'My Customers',
-                style: TextStyle(color: Colors.white, fontSize: 16),
-              ),
-              children: assignedCustomers.isEmpty
-                  ? [
-                      const ListTile(
-                        title: Text(
-                          'No customers assigned',
-                          style: TextStyle(color: Colors.white70),
-                        ),
-                      ),
-                    ]
-                  : assignedCustomers.map((customer) {
-                      return ListTile(
-                        title: Text(
-                          customer.companyName,
-                          style: const TextStyle(color: Colors.white70),
-                        ),
-                        subtitle: Text(
-                          customer.email,
-                          style: const TextStyle(color: Colors.white54),
-                        ),
-                        onTap: () {
-                          GoRouter.of(context).pop(); // close drawer
-                          GoRouter.of(
-                            context,
-                          ).push(AppRoutes.customerProfile, extra: customer);
-                        },
-                      );
-                    }).toList(),
+
+            _drawerItem(
+              icon: Icons.edit_document,
+              title: 'Assign Customers',
+              onTap: () {
+                if ((user?.userId??'').isNotEmpty) {
+                  GoRouter.of(context).pop();
+                  GoRouter.of(context).push(
+                    AppRoutes.assignCustomers,
+                    extra: user?.userId,
+                  );
+                } else {
+                  // optional: show error if ID is missing
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Invalid consultant ID")),
+                  );
+                }
+              },
             ),
 
             _drawerItem(

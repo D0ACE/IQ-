@@ -85,7 +85,10 @@ class CustomerModel extends HiveObject {
   String topLevelMobile;
 
   @HiveField(24)
-  String? assignedConsultantId;
+  String? consultantId;
+
+  @HiveField(25)
+  String? nextVisitDate;
 
 
   CustomerModel({
@@ -117,7 +120,8 @@ class CustomerModel extends HiveObject {
     required this.topLevelEmail,
     required this.topLevelMobile,
 
-    this.assignedConsultantId,
+    this.consultantId,
+    this.nextVisitDate,
   });
   CustomerModel copyWith({
   String? customerId,
@@ -163,6 +167,7 @@ class CustomerModel extends HiveObject {
     lowLevelName: lowLevelName ?? this.lowLevelName,
     lowLevelEmail: lowLevelEmail ?? this.lowLevelEmail,
     lowLevelMobile: lowLevelMobile ?? this.lowLevelMobile,
+    nextVisitDate: nextVisitDate ?? this.nextVisitDate,
   );
 }
   /// 🔁 Firestore → CustomerModel
@@ -196,7 +201,8 @@ class CustomerModel extends HiveObject {
     'topLevelEmail': topLevelEmail,
     'topLevelMobile': topLevelMobile,
 
-    'assignedConsultantId': assignedConsultantId,
+    'consultantId': consultantId,
+    'nextVisitDate': nextVisitDate,
 
   };
 }
@@ -240,7 +246,8 @@ factory CustomerModel.fromJson(
     topLevelEmail: json['topLevelDepartment']?['email'] ?? '',
     topLevelMobile: json['topLevelDepartment']?['mobile'] ?? '',
 
-    assignedConsultantId: json['assignedConsultantId'],
+    consultantId: json['consultantId'],
+    nextVisitDate: json['nextVisitDate'],
   );
 }
 

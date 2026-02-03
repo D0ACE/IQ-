@@ -13,7 +13,7 @@ class CustomerAccessPolicy {
       case UserRole.admin:
         return true; // can view all
       case UserRole.consultant:
-        return customer.assignedConsultantId == currentUserId;
+        return customer.consultantId == currentUserId;
       case UserRole.customer:
         return customer.customerId == currentUserId;
       default:

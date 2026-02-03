@@ -20,7 +20,7 @@ class AccessControl {
 
     // ✅ Assigned Consultant
     if (user.roleId == '2' &&
-        user.userId == customer.assignedConsultantId) {
+        user.userId == customer.consultantId) {
       return true;
     }
 

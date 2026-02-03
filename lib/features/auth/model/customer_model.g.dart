@@ -41,13 +41,15 @@ class CustomerModelAdapter extends TypeAdapter<CustomerModel> {
       topLevelName: fields[21] as String,
       topLevelEmail: fields[22] as String,
       topLevelMobile: fields[23] as String,
+      consultantId: fields[24] as String?,
+      nextVisitDate: fields[25] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, CustomerModel obj) {
     writer
-      ..writeByte(24)
+      ..writeByte(26)
       ..writeByte(0)
       ..write(obj.customerId)
       ..writeByte(1)
@@ -95,9 +97,12 @@ class CustomerModelAdapter extends TypeAdapter<CustomerModel> {
       ..writeByte(22)
       ..write(obj.topLevelEmail)
       ..writeByte(23)
-      ..write(obj.topLevelMobile);
+      ..write(obj.topLevelMobile)
+      ..writeByte(24)
+      ..write(obj.consultantId)
+      ..writeByte(25)
+      ..write(obj.nextVisitDate);
   }
-  
 
   @override
   int get hashCode => typeId.hashCode;

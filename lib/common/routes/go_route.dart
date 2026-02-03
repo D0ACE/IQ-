@@ -17,16 +17,15 @@ class AppRoutes {
   static const onboardingRequest = '/onboardingRequest';
   static const String consultantProfile = '/consultant-profile';
   static const String NCRFormPage = '/ncr-form-page';
-   static const String visitorSummary = '/visitor-summary';
-   static const String chat = '/chat';
-   static const String customerProfile = '/customerProfile'; 
-   static const String customerProfileEdit = '/customerProfileEdit';
-   static const String customerMMEList = '/customerMMEList';
-   static const String customerMMEForm = '/customerMMEForm';
-   static const superAdminDashboard = '/superadmin-dashboard';
+  static const String visitorSummary = '/visitor-summary';
+  static const String chat = '/chat';
+  static const String customerProfile = '/customerProfile';
+  static const String customerProfileEdit = '/customerProfileEdit';
+  static const String customerMMEList = '/customerMMEList';
+  static const String customerMMEForm = '/customerMMEForm';
+  static const superAdminDashboard = '/superadmin-dashboard';
   static const String createAdmin = '/create-admin';
   static const String adminList = '/admins';
-static const String adminDetail = '/admins/:adminId';
-
-
+  static const String adminDetail = '/admins/:adminId';
+  static const String assignCustomers = '/assignCustomers';
 }

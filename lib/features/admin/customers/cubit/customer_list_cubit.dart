@@ -18,6 +18,17 @@ class CustomerListCubit extends Cubit<CustomerListState> {
     }
   }
 
+  Future<void> fetchAssignCustomers(String consultantId) async {
+    emit(CustomerListLoading());
+    try {
+      final customers = await repo.getFetchAssignCustomers(consultantId);
+      print(customers.toString());
+      emit(CustomerListLoaded(customers));
+    } catch (e) {
+      emit(CustomerListError(e.toString()));
+    }
+  }
+
   Future<void> fetchApprovedCustomers() async {
     emit(CustomerListLoading());
     try {
@@ -35,5 +46,23 @@ class CustomerListCubit extends Cubit<CustomerListState> {
         customerEmail:customerEmail,
         consultantId: consultantId);
     fetchCustomers();
+  }
+
+  Future<void> updateCustomerNextVisitDate({
+    required String customerId,
+    required String consultantId,
+    required String nextVisitDate,
+  }) async {
+    try {
+      emit(CustomerListLoading());
+
+      await repo.updateCustomerNextVisitDate(
+        customerId: customerId,
+        nextVisitDate: nextVisitDate,
+      );
+      fetchAssignCustomers(consultantId);
+    } catch (e) {
+      emit(CustomerListError("Failed to update password"));
+    }
   }
 }

@@ -7,6 +7,7 @@ import 'package:iq_plus/core/access/access_control.dart';
 import 'package:iq_plus/core/local_storage/hive_service.dart';
 import 'package:iq_plus/di/service_locator.dart';
 import 'package:iq_plus/features/admin/create_admin/create_admin_page.dart';
+import 'package:iq_plus/features/admin/customers/pages/assign_customers_page.dart';
 import 'package:iq_plus/features/admin/customers/pages/customer_detail_page.dart';
 import 'package:iq_plus/features/admin/customers/pages/customer_list_page.dart';
 import 'package:iq_plus/features/admin/customers/pages/customer_profile_edit_page.dart';
@@ -307,6 +308,16 @@ class AppRouter {
         builder: (context, state) {
           final adminId = state.pathParameters['adminId']!;
           return AdminDetailPage(adminId: adminId);
+        },
+      ),
+    /// 🔹 Admin detail (IMPORTANT)
+      GoRoute(
+        path: AppRoutes.assignCustomers,
+        builder: (context, state) {
+          final consultantId = state.extra as String;
+          return BlocProvider(
+              create: (_) => getIt<CustomerListCubit>()..fetchAssignCustomers(consultantId),
+              child: AssignCustomersPage(consultantId: consultantId));
         },
       ),
     ],
