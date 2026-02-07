@@ -9,6 +9,8 @@ import 'package:iq_plus/features/auth/cubit/customer/customer_cubit.dart';
 import 'package:iq_plus/features/auth/repository/auth_repository.dart';
 import 'package:iq_plus/features/customer_mme/cubit/customer_mme_cubit.dart';
 import 'package:iq_plus/features/customer_mme/repository/customer_mme_repository.dart';
+import 'package:iq_plus/features/dashboard/page/visit_summary/cubit/visitor_summary_cubit.dart';
+import 'package:iq_plus/features/dashboard/page/visit_summary/repository/visitor_summary_repository.dart';
 import 'package:iq_plus/features/users/cubit/employee_user_cubit.dart';
 import 'package:iq_plus/features/users/repository/user_repository.dart';
 
@@ -30,6 +32,9 @@ Future<void> setupServiceLocator() async {
   getIt.registerLazySingleton<CustomerMMERepository>(
         () => CustomerMMERepository(getIt<FirebaseFirestore>()),
   );
+  getIt.registerLazySingleton<VisitorSummaryRepository>(
+        () => VisitorSummaryRepository(getIt<FirebaseFirestore>()),
+  );
 
   // Cubit
   getIt.registerFactory<AuthCubit>(() => AuthCubit(getIt<AuthRepository>()));
@@ -46,6 +51,10 @@ Future<void> setupServiceLocator() async {
   );
   getIt.registerFactory<CustomerMMECubit >(
         () => CustomerMMECubit (getIt()),
+  );
+
+  getIt.registerFactory<VisitorSummaryCubit >(
+        () => VisitorSummaryCubit (getIt()),
   );
 
   getIt.registerLazySingleton<HiveService>(() => HiveService());

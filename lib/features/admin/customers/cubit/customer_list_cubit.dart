@@ -1,5 +1,8 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:iq_plus/core/email_services/email_service.dart';
 import 'package:iq_plus/features/admin/customers/cubit/customer_list_state.dart';
+import 'package:iq_plus/features/auth/model/customer_model.dart';
+import 'package:iq_plus/features/auth/model/user_model.dart';
 import 'package:iq_plus/features/auth/repository/auth_repository.dart';
 
 class CustomerListCubit extends Cubit<CustomerListState> {
@@ -29,12 +32,18 @@ class CustomerListCubit extends Cubit<CustomerListState> {
     }
   }
 
-  Future<void> fetchApprovedCustomers() async {
+  Future<void> fetchApprovedCustomers(String? consultantId) async {
     emit(CustomerListLoading());
     try {
-      final customers = await repo.getFetchAllApprovedCustomers();
-      print(customers.toString());
-      emit(CustomerListLoaded(customers));
+      if((consultantId??'').isNotEmpty){
+        final customers = await repo.getFetchConsultantCustomers(consultantId);
+        print(customers.toString());
+        emit(CustomerListLoaded(customers));
+      }else{
+        final customers = await repo.getFetchAllApprovedCustomers();
+        print(customers.toString());
+        emit(CustomerListLoaded(customers));
+      }
     } catch (e) {
       emit(CustomerListError(e.toString()));
     }
@@ -49,18 +58,23 @@ class CustomerListCubit extends Cubit<CustomerListState> {
   }
 
   Future<void> updateCustomerNextVisitDate({
-    required String customerId,
-    required String consultantId,
+    required CustomerModel customer,
+    required UserModel? consultant,
     required String nextVisitDate,
   }) async {
     try {
       emit(CustomerListLoading());
 
       await repo.updateCustomerNextVisitDate(
-        customerId: customerId,
+        customerId: customer.customerId,
         nextVisitDate: nextVisitDate,
       );
-      fetchAssignCustomers(consultantId);
+      fetchAssignCustomers(consultant?.userId??"");
+      await BrevoEmailService.sendNextVisitDateAssignedMail(
+        customer: customer,
+        consultant: consultant,
+        nextVisitDate: nextVisitDate,
+      );
     } catch (e) {
       emit(CustomerListError("Failed to update password"));
     }

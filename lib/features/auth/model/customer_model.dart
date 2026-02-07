@@ -251,5 +251,15 @@ factory CustomerModel.fromJson(
   );
 }
 
+// ✅ ADD THIS
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+          other is CustomerModel &&
+              runtimeType == other.runtimeType &&
+              customerId == other.customerId;
+
+  @override
+  int get hashCode => customerId.hashCode;
 
 }

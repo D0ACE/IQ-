@@ -1,6 +1,8 @@
 import 'dart:io';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
 import 'dart:math';
 
@@ -178,6 +180,16 @@ class Utility {
         return true;
       default:
         return false;
+    }
+  }
+
+  static String formatTimestamp(Timestamp? timestamp) {
+    if(timestamp!=null)
+    {
+      final date = timestamp.toDate();
+      return DateFormat('dd MMM yyyy').format(date);
+    }else{
+      return "";
     }
   }
 }

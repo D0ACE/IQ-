@@ -11,6 +11,7 @@ class CustomerDropdownWidget extends StatelessWidget {
   final ValueChanged<CustomerModel?> onChanged;
   final String hint;
   final bool? readOnly;
+  final String? consultantId;
 
   const CustomerDropdownWidget({
     super.key,
@@ -18,12 +19,13 @@ class CustomerDropdownWidget extends StatelessWidget {
     this.readOnly,
     required this.onChanged,
     this.hint = 'Select company',
+    this.consultantId,
   });
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => getIt<CustomerListCubit>()..fetchApprovedCustomers(),
+      create: (_) => getIt<CustomerListCubit>()..fetchApprovedCustomers(consultantId),
       child: BlocBuilder<CustomerListCubit, CustomerListState>(
         builder: (context, state) {
           if (state is CustomerListLoading) {
@@ -32,12 +34,11 @@ class CustomerDropdownWidget extends StatelessWidget {
 
           if (state is CustomerListLoaded) {
             return DropdownButtonFormField<CustomerModel>(
-              initialValue: selectedCustomer,
+              value: selectedCustomer,
               isExpanded: true,
               hint: Text(hint),
               decoration: InputDecoration(
-                contentPadding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -49,8 +50,7 @@ class CustomerDropdownWidget extends StatelessWidget {
                     children: [
                       CircleAvatar(
                         radius: 14,
-                        backgroundColor:
-                        AppColors.primary.withOpacity(0.15),
+                        backgroundColor: AppColors.primary.withOpacity(0.15),
                         child: Text(
                           customer.companyName.isNotEmpty
                               ? customer.companyName[0].toUpperCase()
@@ -64,26 +64,19 @@ class CustomerDropdownWidget extends StatelessWidget {
                       ),
                       const SizedBox(width: 10),
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              customer.companyName,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.w600),
-                            ),
-
-                          ],
+                        child: Text(
+                          customer.companyName,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontWeight: FontWeight.w600),
                         ),
                       ),
                     ],
                   ),
                 );
               }).toList(),
-              onChanged:(readOnly??false)==true? null:onChanged,
+              onChanged: (readOnly ?? false) ? null : onChanged,
             );
+
           }
 
           if (state is CustomerListError) {

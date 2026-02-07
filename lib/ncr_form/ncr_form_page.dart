@@ -103,26 +103,31 @@ class _NCRFormPageState extends State<NCRFormPage> {
       currentStatus = ncr['status'];
 
 
-    //  fetchCustomer();
+      fetchCustomer();
       /// Fetch user role from Firebase
       fetchUserRole();
   }}
 
   Future<void> fetchCustomer() async {
-    final doc = await FirebaseFirestore.instance
+    final doc = await getIt<FirebaseFirestore>()
         .collection('customers')
         .doc(widget.ncrData?['customerId'] ?? '')
         .get();
 
     setState(() {
-      selectedCustomer = CustomerModel.fromJson(doc.data()!,customerId: widget.ncrData?['customerId'] ?? '');
+      selectedCustomer = CustomerModel.fromJson(
+        doc.data()!,
+        customerId:  widget.ncrData?['customerId'] ?? '',
+      );
     });
-    print(selectedCustomer);
   }
 
   void fetchUserRole()  {
       roleId = userLoginDetails?.roleId??customerLoginDetails?.roleId??'';
       isRoleLoaded = true;
+      setState(() {
+
+      });
   }
 
   Future<void> _updateStatus(String newStatus) async {
@@ -347,7 +352,7 @@ class _NCRFormPageState extends State<NCRFormPage> {
             /// Status Buttons (Consultant Only)
             if (isReview &&
                 isRoleLoaded &&
-                roleId == UserRole.consultant) ...[
+                 Utility.isConsultant(roleId)) ...[
               const SizedBox(height: 20),
 
               Row(
@@ -408,8 +413,9 @@ class _NCRFormPageState extends State<NCRFormPage> {
             /// 🔹 SECTION 5
             sectionHeader("Select Company"),
             CustomerDropdownWidget(
+              consultantId: userLoginDetails?.userId,
               selectedCustomer: selectedCustomer,
-              readOnly: Utility.isCustomer(roleId),
+              readOnly: isReview,
               onChanged: (customer) {
                 setState(() {
                   selectedCustomer = customer;

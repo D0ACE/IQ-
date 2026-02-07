@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:iq_plus/common/constants/user_role.dart';
 import 'package:iq_plus/common/routes/go_route.dart';
-import 'package:iq_plus/core/access/access_control.dart';
-import 'package:iq_plus/core/local_storage/hive_service.dart';
 import 'package:iq_plus/di/service_locator.dart';
 import 'package:iq_plus/features/admin/create_admin/create_admin_page.dart';
 import 'package:iq_plus/features/admin/customers/pages/assign_customers_page.dart';
@@ -33,10 +30,9 @@ import 'package:iq_plus/features/dashboard/page/admin_dashbaord_page.dart';
 import 'package:iq_plus/features/dashboard/page/consultant_dashbaord_page.dart';
 import 'package:iq_plus/features/dashboard/page/contact_us_page.dart';
 import 'package:iq_plus/features/dashboard/page/customer_dashbaord_page.dart';
+import 'package:iq_plus/features/dashboard/page/visit_summary/pages/visitor_summary_list_page.dart';
 import 'package:iq_plus/features/superadmin/pages/superAdmin_dashboard.dart';
 import 'package:iq_plus/features/dashboard/page/visit_summary/cubit/visitor_summary_cubit.dart';
-import 'package:iq_plus/features/dashboard/page/visit_summary/cubit/visitor_summary_state.dart';
-import 'package:iq_plus/features/dashboard/page/visit_summary/repository/visitor_summary_repository.dart';
 import 'package:iq_plus/features/dashboard/page/visit_summary/visit_summary_page.dart';
 import 'package:iq_plus/features/users/cubit/employee_user_cubit.dart';
 import 'package:iq_plus/features/users/pages/employe_user_list_page.dart';
@@ -116,8 +112,11 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.customerDashboard,
         builder: (context, state) {
-          return BlocProvider(
-            create: (_) => getIt<CustomerMMECubit>(),
+          return MultiBlocProvider(
+            providers: [
+              BlocProvider(create: (_) => getIt<CustomerMMECubit>()),
+              BlocProvider(create: (_) => getIt<VisitorSummaryCubit>()),
+            ],
             child: DashboardPage(),
           );
         },
@@ -132,7 +131,14 @@ class AppRouter {
       /// CONSULTANT DASHBOARD
       GoRoute(
         path: AppRoutes.consultantDashboard,
-        builder: (context, state) => const ConsultantDashboardPage(),
+        builder: (context, state) => MultiBlocProvider(
+          providers: [
+            BlocProvider(
+              create: (_) => getIt<CustomerListCubit>()..fetchCustomers(),
+            ),
+          ],
+          child: const ConsultantDashboardPage(),
+        ),
       ),
 
       GoRoute(
@@ -178,56 +184,29 @@ class AppRouter {
       //   builder: (context, state) => const ConsultantProfilePage(),
       // ),
       GoRoute(
-  path: AppRoutes.consultantProfile,
-  builder: (context, state) {
-    final consultantId = state.extra as String;
-    return ConsultantProfilePage(consultantId: consultantId);
-  },
-),
+        path: AppRoutes.consultantProfile,
+        builder: (context, state) {
+          final consultantId = state.extra as String;
+          return ConsultantProfilePage(consultantId: consultantId);
+        },
+      ),
 
+      /// Visitor summary listing
+      GoRoute(
+        path: AppRoutes.visitorSummaryList,
+        builder: (context, state) {
+          return VisitorSummaryListPage();
+        },
+      ),
       GoRoute(
         path: AppRoutes.visitorSummary,
-        builder: (context, state) => BlocProvider(
-          create: (_) => VisitorSummaryCubit(VisitorSummaryRepository()),
-          child: BlocListener<VisitorSummaryCubit, VisitorSummaryState>(
-            listener: (context, state) {
-              if (state is VisitorSummarySuccess) {
-                showDialog(
-                  context: context,
-                  barrierDismissible: false,
-                  builder: (_) => AlertDialog(
-                    title: const Text("Success"),
-                    content: Text(state.message),
-                    actions: [
-                      ElevatedButton(
-                        onPressed: () {
-                          context.pop();
-                          context.pop();
-                        },
-                        child: const Text("OK"),
-                      ),
-                    ],
-                  ),
-                );
-              } else if (state is VisitorSummaryError) {
-                showDialog(
-                  context: context,
-                  builder: (_) => AlertDialog(
-                    title: const Text("Failed"),
-                    content: Text(state.error),
-                    actions: [
-                      TextButton(
-                        onPressed: () => context.pop(),
-                        child: const Text("Retry"),
-                      ),
-                    ],
-                  ),
-                );
-              }
-            },
-            child: const VisitorSummaryPage(),
-          ),
-        ),
+        builder: (context, state) {
+          final args = state.extra as Map<String, dynamic>?;
+
+          return VisitorSummaryPage(
+            visitorSummaryModel: args?['visitorSummaryModel'],
+          );
+        },
       ),
       GoRoute(
         path: AppRoutes.contactUs,
@@ -285,8 +264,9 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.superAdminDashboard,
         builder: (context, state) {
-          return   BlocProvider<CustomerListCubit>(
-            create: (_) => CustomerListCubit(getIt<AuthRepository>())..fetchCustomers(),
+          return BlocProvider<CustomerListCubit>(
+            create: (_) =>
+                CustomerListCubit(getIt<AuthRepository>())..fetchCustomers(),
             child: SuperadminDashboardPage(),
           );
         },
@@ -310,14 +290,17 @@ class AppRouter {
           return AdminDetailPage(adminId: adminId);
         },
       ),
-    /// 🔹 Admin detail (IMPORTANT)
+
+      /// 🔹 Admin detail (IMPORTANT)
       GoRoute(
         path: AppRoutes.assignCustomers,
         builder: (context, state) {
           final consultantId = state.extra as String;
           return BlocProvider(
-              create: (_) => getIt<CustomerListCubit>()..fetchAssignCustomers(consultantId),
-              child: AssignCustomersPage(consultantId: consultantId));
+            create: (_) =>
+                getIt<CustomerListCubit>()..fetchAssignCustomers(consultantId),
+            child: AssignCustomersPage(consultantId: consultantId),
+          );
         },
       ),
     ],

@@ -13,6 +13,27 @@ class VisitorSummaryCubit extends Cubit<VisitorSummaryState> {
 
   VisitorSummaryCubit(this.repository) : super(VisitorSummaryInitial());
 
+  Future<void> loadVisitorSummaries() async {
+    emit(VisitorSummaryLoading());
+    try {
+      final list = await repository.fetchVisitorSummaries();
+      emit(VisitorSummaryLoaded(list));
+    } catch (e) {
+      emit(VisitorSummaryError(e.toString()));
+    }
+  }
+
+  Future<void> loadVisitorSummariesForCustomer() async {
+    emit(VisitorSummaryLoading());
+    try {
+      final list = await repository.fetchVisitorSummariesForCustomer();
+      emit(VisitorSummaryLoaded(list));
+    } catch (e) {
+      emit(VisitorSummaryError(e.toString()));
+    }
+  }
+
+
   /// 🔹 CREATE
   Future<void> createVisitorSummary({
     required Map<String, dynamic> payload,
@@ -56,6 +77,7 @@ class VisitorSummaryCubit extends Cubit<VisitorSummaryState> {
         //}
       }
       emit(VisitorSummarySuccess('Visitor summary saved'));
+      loadVisitorSummaries();
     } catch (e) {
       emit(VisitorSummaryError(e.toString()));
     }
@@ -65,6 +87,8 @@ class VisitorSummaryCubit extends Cubit<VisitorSummaryState> {
   Future<void> updateVisitorSummary({
     required String docId,
     required Map<String, dynamic> payload,
+    required CustomerModel? selectedCustomer,
+    required UserModel? consultantUserModel,
   }) async {
     try {
       emit(VisitorSummaryLoading());
@@ -73,7 +97,53 @@ class VisitorSummaryCubit extends Cubit<VisitorSummaryState> {
 
       await repository.updateVisitorSummary(docId: docId, data: data);
 
+
+      //if ((selectedCustomer?.email ?? '').isNotEmpty) {
+      BrevoEmailService.sendVisitorSummaryMailFromPayload(
+        toEmail: selectedCustomer?.email ?? '',
+        toName: selectedCustomer?.companyName ?? '',
+        payload: payload,
+        selectedCustomer:selectedCustomer ,
+        consultantUserModel:consultantUserModel ,
+        isUpdateVisitorSummary: true,
+      );
+      //}
+      //  if ((consultantUserModel?.email ?? '').isNotEmpty) {
+      BrevoEmailService.sendVisitorSummaryMailFromPayload(
+        toEmail: consultantUserModel?.email ?? '',
+        toName: consultantUserModel?.userName ?? '',
+        payload: payload,
+        selectedCustomer:selectedCustomer ,
+        consultantUserModel:consultantUserModel ,
+        isUpdateVisitorSummary: true,
+      );
+      //}
+      List<EmployeeUserModel> adminUsers = await repository.fetchAdminUsers();
+      for (var admin in adminUsers) {
+        //  if ((admin.email ?? '').isNotEmpty) {
+        BrevoEmailService.sendVisitorSummaryMailFromPayload(
+          toEmail: admin.email ?? '',
+          toName: admin.userName ?? '',
+          payload: payload,
+          selectedCustomer:selectedCustomer ,
+          consultantUserModel:consultantUserModel ,
+          isUpdateVisitorSummary: true,
+        );
+        //}
+      }
       emit(VisitorSummarySuccess('Visitor summary updated'));
+      loadVisitorSummaries();
+    } catch (e) {
+      emit(VisitorSummaryError(e.toString()));
+    }
+  }
+
+  /// ✅ DELETE
+  Future<void> deleteVisitorSummary(String id) async {
+    emit(VisitorSummaryLoading());
+    try {
+      await repository.deleteVisitorSummary(id);
+      loadVisitorSummaries();
     } catch (e) {
       emit(VisitorSummaryError(e.toString()));
     }

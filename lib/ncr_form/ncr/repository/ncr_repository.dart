@@ -50,4 +50,9 @@ class NcrRepository {
           .map((snapshot) => snapshot as QuerySnapshot<Map<String, dynamic>>);
     }
   }
+
+  Future<int> getNCRCountOnce() async {
+    final snapshot = await getNcrStream().first;
+    return snapshot.docs.length;
+  }
 }

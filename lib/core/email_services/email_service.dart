@@ -3,6 +3,9 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import 'package:iq_plus/features/auth/model/customer_model.dart';
 import 'package:iq_plus/features/auth/model/user_model.dart';
+import 'package:iq_plus/features/dashboard/page/visit_summary/pages/widgets/visitor_summary_pdf.dart';
+import 'dart:convert';
+import 'package:pdf/widgets.dart' as pw;
 
 class BrevoEmailService {
   static const String _apiKey = 'REMOVED_BREVO_KEY';
@@ -81,8 +84,9 @@ class BrevoEmailService {
     required CustomerModel? selectedCustomer,
     required UserModel? consultantUserModel,
     required Map<String, dynamic> payload,
+    bool isUpdateVisitorSummary=false,
   }) async {
-    const int templateId = 4; // Brevo template ID
+    final int templateId =isUpdateVisitorSummary? 6:4; // Brevo template ID
     Map<String, dynamic> paramsData={
 
       // ✅ Customer
@@ -120,6 +124,13 @@ class BrevoEmailService {
       "signClientSign": payload['signOff']?['clientSign'] ?? '',
       "signDate": payload['signOff']?['signDate'] ?? '',
     };
+
+    /// 🔥 Generate PDF
+    final pdfBytes = await VisitorSummaryPdf.generate(
+      paramsData,
+      isUpdated: isUpdateVisitorSummary,
+    );
+
     final response = await http.post(
       Uri.parse('https://api.brevo.com/v3/smtp/email'),
       headers: {
@@ -132,7 +143,15 @@ class BrevoEmailService {
         "to": [
           {"email": toEmail, "name": toName}
         ],
-        "params": paramsData
+        "params": paramsData,
+        "attachment": [
+          {
+            "content": base64Encode(pdfBytes),
+            "name": isUpdateVisitorSummary
+                ? "Visitor_Summary_Updated.pdf"
+                : "Visitor_Summary.pdf"
+          }
+        ]
       }),
     );
 
@@ -154,4 +173,96 @@ class BrevoEmailService {
       return "$i) ${v.entries.map((x) => "${x.key}: ${x.value}").join(', ')}";
     }).join('\n');
   }
+
+  static Future<void> sendNextVisitDateAssignedMail({
+    required CustomerModel customer,
+    required UserModel? consultant,
+    required String nextVisitDate,
+  }) async {
+    const int templateId = 5; // Brevo template ID
+
+    final response = await http.post(
+      Uri.parse('https://api.brevo.com/v3/smtp/email'),
+      headers: {
+        'api-key': _apiKey,
+        'Content-Type': 'application/json',
+        'accept': 'application/json',
+      },
+      body: jsonEncode({
+        "templateId": templateId,
+
+        /// Send to both customer & consultant
+        "to": [
+          {
+            "email": customer.email,
+            "name": customer.companyName,
+          },
+          {
+            "email": consultant?.email,
+            "name": consultant?.userName,
+          }
+        ],
+
+        "params": {
+          // Customer
+          "customerName": customer.companyName,
+          "customerEmail": customer.email,
+
+          // Consultant
+          "consultantName": consultant?.userName,
+          "consultantEmail": consultant?.email,
+
+          // Visit Info
+          "nextVisitDate": nextVisitDate,
+        }
+      }),
+    );
+
+    if (response.statusCode != 201) {
+      debugPrint("Next Visit Date Email Error: ${response.body}");
+      throw Exception("Failed to send Next Visit Date email");
+    }
+  }
+
+
+  static Future<String> generateVisitorSummaryPdfBase64({
+    required Map<String, dynamic> params,
+  }) async {
+    final pdf = pw.Document();
+
+    pdf.addPage(
+      pw.MultiPage(
+        build: (context) => [
+          pw.Text('Visitor Summary Report',
+              style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
+          pw.SizedBox(height: 10),
+
+          pw.Text('Company: ${params["customerName"]}'),
+          pw.Text('Consultant: ${params["consultantName"]}'),
+          pw.SizedBox(height: 10),
+
+          pw.Text('Client Name: ${params["clientName"]}'),
+          pw.Text('Location: ${params["location"]}'),
+          pw.Text('Visit Date: ${params["visitDate"]}'),
+          pw.Text('Time: ${params["fromTime"]} - ${params["toTime"]}'),
+
+          pw.SizedBox(height: 10),
+          pw.Text('Scope of Review'),
+          pw.Text(params["scopeOfReview"] ?? ''),
+
+          pw.SizedBox(height: 10),
+          pw.Text('Observations'),
+          pw.Text(params["observations"] ?? ''),
+
+          pw.SizedBox(height: 10),
+          pw.Text('Compliance Status: ${params["complianceStatus"]}'),
+          pw.Text(params["complianceComments"] ?? ''),
+        ],
+      ),
+    );
+
+    final bytes = await pdf.save();
+    return base64Encode(bytes);
+  }
+
 }

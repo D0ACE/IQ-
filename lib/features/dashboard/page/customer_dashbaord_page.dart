@@ -3,30 +3,19 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:iq_plus/common/constants/access_control.dart';
-import 'package:iq_plus/common/constants/user_role.dart';
 import 'package:iq_plus/common/routes/go_route.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
 import 'package:iq_plus/common/themes/responsive.dart';
 import 'package:iq_plus/common/widgets/common_app_bar.dart';
-import 'package:iq_plus/core/access/access_control.dart' hide AccessControl;
 import 'package:iq_plus/core/local_storage/hive_service.dart';
 import 'package:iq_plus/di/service_locator.dart';
 import 'package:iq_plus/features/admin/consultants/model/consultant_model.dart';
-import 'package:iq_plus/features/admin/customers/pages/customer_profile_edit_page.dart';
-import 'package:iq_plus/features/admin/customers/pages/customer_profile_page.dart';
-import 'package:iq_plus/features/auth/Login/login_page.dart';
-import 'package:iq_plus/features/chatbot/chat_screen.dart';
 import 'package:iq_plus/features/customer_mme/cubit/customer_mme_cubit.dart';
 import 'package:iq_plus/features/customer_mme/cubit/customer_mme_state.dart';
-import 'package:iq_plus/features/customer_mme/pages/customer_mme_list_page.dart';
-import 'package:iq_plus/features/dashboard/page/contact_us_page.dart';
-import 'package:iq_plus/features/dashboard/page/visit_summary/visit_summary_page.dart';
-import 'package:iq_plus/features/users/user_role.dart';
-import 'package:iq_plus/ncr_form/ncr_page.dart';
+import 'package:iq_plus/features/dashboard/page/visit_summary/cubit/visitor_summary_cubit.dart';
+import 'package:iq_plus/features/dashboard/page/visit_summary/cubit/visitor_summary_state.dart';
 import 'package:iq_plus/ncr_form/ncr_provider.dart';
 import 'package:iq_plus/features/auth/model/customer_model.dart';
-
 
 import 'package:provider/provider.dart';
 
@@ -75,7 +64,6 @@ class _DashboardPageState extends State<DashboardPage> {
 
   @override
   Widget build(BuildContext context) {
-    
     return Scaffold(
       backgroundColor: AppColors.scaffoldBg,
       drawer: _buildBeautifulDrawer(),
@@ -248,41 +236,46 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
- Widget _profileDropdown(BuildContext context) {
-  final hiveService = getIt<HiveService>();
-  final user = hiveService.getUser(); // can be null
-  final customer = hiveService.getCustomer();
-  final role = user != null ? parseUserRole(user.roleId) : UserRole.customer;
+  Widget _profileDropdown(BuildContext context) {
+    final hiveService = getIt<HiveService>();
+    final customer = hiveService.getCustomer();
 
-  return ExpansionTile(
-    leading: const Icon(Icons.person, color: Colors.white),
-    title: const Text('Profile', style: TextStyle(color: Colors.white, fontSize: 16)),
-    iconColor: Colors.white,
-    collapsedIconColor: Colors.white,
-    children: [
-      ListTile(
-        title: const Text("View Profile", style: TextStyle(color: Colors.white)),
-        onTap: () async {
-          GoRouter.of(context).pop();
-          final result = await context.push(AppRoutes.customerProfile, extra: customer)as CustomerModel?;
-
-          if (result != null) setState(() => customerModel = result);
-        },
+    return ExpansionTile(
+      leading: const Icon(Icons.person, color: Colors.white),
+      title: const Text(
+        'Profile',
+        style: TextStyle(color: Colors.white, fontSize: 16),
       ),
-      ListTile(
-        title: const Text("Edit Profile", style: TextStyle(color: Colors.white)),
-        onTap: () async {
-          GoRouter.of(context).pop();
-          await context.push(
-            AppRoutes.customerProfileEdit,
-            extra: customer,
-          );
-        },
-      ),
-    ],
-  );
-}
+      iconColor: Colors.white,
+      collapsedIconColor: Colors.white,
+      children: [
+        ListTile(
+          title: const Text(
+            "View Profile",
+            style: TextStyle(color: Colors.white),
+          ),
+          onTap: () async {
+            GoRouter.of(context).pop();
+            final result =
+                await context.push(AppRoutes.customerProfile, extra: customer)
+                    as CustomerModel?;
 
+            if (result != null) setState(() => customerModel = result);
+          },
+        ),
+        ListTile(
+          title: const Text(
+            "Edit Profile",
+            style: TextStyle(color: Colors.white),
+          ),
+          onTap: () async {
+            GoRouter.of(context).pop();
+            await context.push(AppRoutes.customerProfileEdit, extra: customer);
+          },
+        ),
+      ],
+    );
+  }
 
   Widget _drawerItem({
     required IconData icon,
@@ -461,7 +454,7 @@ class _DashboardPageState extends State<DashboardPage> {
           icon: Icons.report_problem,
 
           onTap: () {
-           context.push(AppRoutes.ncrPage); // navigate to NcrPage
+            context.push(AppRoutes.ncrPage); // navigate to NcrPage
           },
         ),
 
@@ -474,31 +467,33 @@ class _DashboardPageState extends State<DashboardPage> {
         // ),
 
         // 🟠 Static tiles (NO navigation for now)
-        // _clickableCard(
-        //   title: 'Risk',
-        //   icon: Icons.warning_amber_rounded,
-        //   onTap: () {
-        //     // later you can navigate
-        //   },
-        // ),
+        _clickableCard(
+          title: 'Risk',
+          icon: Icons.warning_amber_rounded,
+          onTap: () {
+            // later you can navigate
+          },
+        ),
 
-        // _clickableCard(
-        //   title: 'Next Visit',
-        //   icon: Icons.event_available,
-        //   onTap: () {},
-        // ),
+        _clickableCard(
+          title: 'Next Visit',
+          icon: Icons.event_available,
+          onTap: () {
+            showNextVisitDialog();
+          },
+        ),
 
-        // _clickableCard(
-        //   title: 'Next Audit',
-        //   icon: Icons.fact_check,
-        //   onTap: () {},
-        // ),
+        _clickableCard(
+          title: 'Next Audit',
+          icon: Icons.fact_check,
+          onTap: () {},
+        ),
 
-        // _clickableCard(
-        //   title: 'Next Training',
-        //   icon: Icons.school,
-        //   onTap: () {},
-        // ),
+        _clickableCard(
+          title: 'Next Training',
+          icon: Icons.school,
+          onTap: () {},
+        ),
       ],
     );
   }
@@ -557,6 +552,14 @@ class _DashboardPageState extends State<DashboardPage> {
   //     setState(() => isConsultantLoading = false);
   //   }
   // }
+
+  void showNextVisitDialog() {
+    showDialog(
+      context: context,
+      builder: (_) =>
+          NextVisitDateDialog(nextVisitDate: customer?.nextVisitDate),
+    );
+  }
 }
 
 /// 📊 Animated Bar Chart
@@ -601,4 +604,200 @@ class AnimatedBarChart extends StatelessWidget {
       ),
     );
   }
+}
+
+class NextVisitDateDialog extends StatelessWidget {
+  final String? nextVisitDate;
+
+  const NextVisitDateDialog({super.key, required this.nextVisitDate});
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 8,
+      child: Container(
+        width: MediaQuery.of(context).size.width / 4,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          color: Colors.white,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            /// Header
+            Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    'Next Visit Date',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                  ),
+                ),
+                InkWell(
+                  onTap: () => Navigator.pop(context),
+                  borderRadius: BorderRadius.circular(20),
+                  child: const Padding(
+                    padding: EdgeInsets.all(4),
+                    child: Icon(Icons.close, size: 20),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 24),
+
+            /// Date Card
+            BlocBuilder<VisitorSummaryCubit, VisitorSummaryState>(
+              bloc: context.read<VisitorSummaryCubit>()..loadVisitorSummariesForCustomer(),
+              builder: (context, state) {
+                if (state is VisitorSummaryLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (state is VisitorSummaryLoaded) {
+                  if (state.list.isEmpty) {
+                    return const Center(
+                      child: Text(
+                        'No visit date found',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    );
+                  }
+                  return Expanded(
+                    child: ListView.separated(
+                        itemCount: state.list.length,
+                        separatorBuilder: (_, __) => SizedBox(
+                          height: 10,
+                        ),
+                        itemBuilder: (context, index) {
+                          return Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 18,
+                              horizontal: 14,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.kPrimaryLightColor,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: AppColors.kPrimaryColor),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                /// Date (Top Center)
+                                Center(
+                                  child: Column(
+                                    children: [
+                                      const Icon(
+                                        Icons.calendar_today,
+                                        size: 26,
+                                        color: AppColors.kPrimaryColor,
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        state.list[index].visitDate ?? 'Not Assigned',
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.kPrimaryColor,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                const SizedBox(height: 16),
+                                Divider(color: AppColors.kPrimaryColor.withOpacity(0.3)),
+
+                                const SizedBox(height: 10),
+
+                                /// Purpose
+                                _infoRow(
+                                  icon: Icons.flag,
+                                  label: 'Purpose',
+                                  value: state.list[index].purpose,
+                                ),
+
+                                /// Officer Name
+                                _infoRow(
+                                  icon: Icons.person,
+                                  label: 'Officer',
+                                  value: state.list[index].officerName,
+                                ),
+
+                                /// Department
+                                _infoRow(
+                                  icon: Icons.apartment,
+                                  label: 'Department',
+                                  value: state.list[index].department,
+                                ),
+
+                                /// Location
+                                _infoRow(
+                                  icon: Icons.location_on,
+                                  label: 'Location',
+                                  value: state.list[index].location,
+                                ),
+                              ],
+                            ),
+                          );
+
+                        }
+                    ),
+                  );
+                }
+                if (state is VisitorSummaryError) {
+                  return Center(
+                    child: Text(
+                      state.error,
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  );
+                }
+
+                return const SizedBox();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _infoRow({
+    required IconData icon,
+    required String label,
+    String? value,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18, color: AppColors.kPrimaryColor),
+          const SizedBox(width: 8),
+          Expanded(
+            child: RichText(
+              text: TextSpan(
+                style: const TextStyle(fontSize: 14, color: Colors.black),
+                children: [
+                  TextSpan(
+                    text: '$label: ',
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  TextSpan(
+                    text: value?.isNotEmpty == true ? value : '—',
+                    style: TextStyle(color: Colors.grey.shade800),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
 }

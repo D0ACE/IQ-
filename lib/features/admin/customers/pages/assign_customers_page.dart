@@ -5,6 +5,7 @@ import 'package:iq_plus/common/themes/app_colors.dart';
 import 'package:iq_plus/common/themes/app_extension.dart';
 import 'package:iq_plus/common/themes/app_theme_data.dart';
 import 'package:iq_plus/common/themes/app_ui_helper.dart';
+import 'package:iq_plus/core/local_storage/hive_service.dart';
 import 'package:iq_plus/di/service_locator.dart';
 import 'package:iq_plus/features/admin/consultants/cubit/consultant_cubit.dart';
 import 'package:iq_plus/features/admin/customers/cubit/customer_list_cubit.dart';
@@ -36,28 +37,28 @@ class AssignCustomersPage extends StatelessWidget {
 
           if (state is CustomerListLoaded) {
             // Filter only approved customers
-            final approvedCustomers = state.customers
+            final assignedCustomers = state.customers
                 .where((customer) => customer.isProfileApproved)
                 .toList();
 
-            if (approvedCustomers.isEmpty) {
+            if (assignedCustomers.isEmpty) {
               return const Center(child: Text('No customers assigned'));
             }
 
             return ListView.separated(
               padding: const EdgeInsets.all(appHorizontalPadding15),
-              itemCount: approvedCustomers.length,
+              itemCount: assignedCustomers.length,
               separatorBuilder: (_, __) =>
                   const SizedBox(height: 20), // vertical spacing
               itemBuilder: (cc, index) {
                 return _CustomerCard(
                   context: context,
                   consultantId: consultantId,
-                  customer: approvedCustomers[index],
+                  customer: assignedCustomers[index],
                   onTap: () {
                     GoRouter.of(context).push(
                       AppRoutes.customerDetail,
-                      extra: approvedCustomers[index],
+                      extra: assignedCustomers[index],
                     );
                   },
                 );
@@ -160,7 +161,7 @@ class _CustomerCard extends StatelessWidget {
                     );
 
                     if (nextVisitDate != null) {
-                      context.read<CustomerListCubit>().updateCustomerNextVisitDate(customerId: customer.customerId, consultantId: consultantId, nextVisitDate: nextVisitDate);
+                      context.read<CustomerListCubit>().updateCustomerNextVisitDate(customer: customer, consultant: getIt<HiveService>().getUser(), nextVisitDate: nextVisitDate);
                     }
                   },
                   style: TextButton.styleFrom(

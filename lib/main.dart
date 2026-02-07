@@ -15,6 +15,8 @@ import 'package:iq_plus/features/auth/model/customer_model.dart';
 import 'package:iq_plus/features/auth/model/user_model.dart';
 import 'package:iq_plus/ncr_form/ncr_provider.dart';
 
+import 'features/dashboard/page/visit_summary/cubit/visitor_summary_cubit.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -44,6 +46,7 @@ void main() async {
         providers: [
           BlocProvider(create: (_) => getIt<AuthCubit>()),
           BlocProvider(create: (_) => getIt<CustomerCubit>()),
+          BlocProvider(create: (_) => getIt<VisitorSummaryCubit>()),
         ],
         child: const MyApp(),
       ),

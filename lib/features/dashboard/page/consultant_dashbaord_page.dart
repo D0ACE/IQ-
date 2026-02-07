@@ -11,6 +11,8 @@ import 'package:iq_plus/common/widgets/common_app_bar.dart';
 
 import 'package:iq_plus/core/local_storage/hive_service.dart';
 import 'package:iq_plus/di/service_locator.dart';
+import 'package:iq_plus/features/admin/customers/cubit/customer_list_cubit.dart';
+import 'package:iq_plus/features/admin/customers/cubit/customer_list_state.dart';
 import 'package:iq_plus/features/auth/Login/login_page.dart';
 import 'package:iq_plus/features/consultant/consultant_profile_page.dart';
 import 'package:iq_plus/features/dashboard/page/contact_us_page.dart';
@@ -18,6 +20,7 @@ import 'package:iq_plus/features/dashboard/page/visit_summary/cubit/visitor_summ
 import 'package:iq_plus/features/dashboard/page/visit_summary/cubit/visitor_summary_state.dart';
 import 'package:iq_plus/features/dashboard/page/visit_summary/repository/visitor_summary_repository.dart';
 import 'package:iq_plus/features/dashboard/page/visit_summary/visit_summary_page.dart';
+import 'package:iq_plus/ncr_form/ncr/repository/ncr_repository.dart';
 import 'package:iq_plus/ncr_form/ncr_page.dart';
 import 'package:iq_plus/ncr_form/ncr_provider.dart';
 
@@ -34,6 +37,11 @@ class ConsultantDashboardPage extends StatefulWidget {
 class _ConsultantDashboardPageState extends State<ConsultantDashboardPage> {
   final user = getIt<HiveService>().getUser();
 
+  @override
+  void initState() {
+    super.initState();
+    context.read<VisitorSummaryCubit>().loadVisitorSummaries();
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -57,6 +65,8 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage> {
           ),
           desktop: SingleChildScrollView(
             child: Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(flex: 2, child: _buildStatsColumn()),
                 const SizedBox(width: 20),
@@ -171,33 +181,38 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage> {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          getIt<HiveService>().getUser()?.userName ??
-                              "Consultant",
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            getIt<HiveService>().getUser()?.userName ??
+                                "Consultant",
+
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
                           ),
-                        ),
-                        Text(
-                          getIt<HiveService>().getUser()?.email ?? "",
-                          style: const TextStyle(color: Colors.white70),
-                        ),
-                        const SizedBox(height: 4),
-                        const Text(
-                          "View Profile",
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.white70,
-                            decoration: TextDecoration.underline,
+                          Flexible(
+                            child: Text(
+                              getIt<HiveService>().getUser()?.email ?? "",
+                              style: const TextStyle(color: Colors.white70),
+                            ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 4),
+                          const Text(
+                            "View Profile",
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.white70,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -205,25 +220,26 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage> {
             ),
 
             _drawerItem(
-              icon: Icons.edit_document,
-              title: 'NCR Form',
+              icon: Icons.report_problem_outlined,
+              title: 'NCR',
               onTap: () {
                 GoRouter.of(context).pop(); // closes the drawer
-                GoRouter.of(context).push(AppRoutes.NCRFormPage); // navigate
+                GoRouter.of(context).push(AppRoutes.ncrPage); // navigate
               },
             ),
-            _drawerItem(
-              icon: Icons.contact_mail,
-              title: 'Contact Us',
-              onTap: () {
-                GoRouter.of(context).pop(); // closes the drawer
-                GoRouter.of(context).push(AppRoutes.contactUs); // navigate
-              },
-            ),
-            // 🔵 My Customers (Expandable)
 
+         _drawerItem(
+              icon: Icons.event_available,
+              title: 'Visitor Summary',
+              onTap: () {
+                GoRouter.of(context).pop(); // closes the drawer
+                GoRouter.of(context).push(AppRoutes.visitorSummaryList); // navigate
+              },
+            ),
+
+            // 🔵 My Customers (Expandable)
             _drawerItem(
-              icon: Icons.edit_document,
+              icon: Icons.supervised_user_circle_outlined,
               title: 'Assign Customers',
               onTap: () {
                 if ((user?.userId??'').isNotEmpty) {
@@ -238,6 +254,15 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage> {
                     const SnackBar(content: Text("Invalid consultant ID")),
                   );
                 }
+              },
+            ),
+
+            _drawerItem(
+              icon: Icons.contact_support_outlined,
+              title: 'Contact Us',
+              onTap: () {
+                GoRouter.of(context).pop(); // closes the drawer
+                GoRouter.of(context).push(AppRoutes.contactUs); // navigate
               },
             ),
 
@@ -278,14 +303,48 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage> {
   Widget _buildStatsColumn() {
     return Column(
       children: [
-        _statCard('Users', '1,245', AppColors.purple),
+        BlocBuilder<CustomerListCubit, CustomerListState>(
+            builder: (c, state) {
+              if (state is CustomerListLoading) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              int count=(state is CustomerListLoaded) ?state.customers.length:0;
+              return GestureDetector(onTap:(){ GoRouter.of(context).push(
+                AppRoutes.assignCustomers,
+                extra: user?.userId,
+              );},child: _statCard('Assign Customers', '$count', AppColors.purple));
+          }
+        ),
         const SizedBox(height: 16),
-        _statCard('Revenue', '\$12,345', AppColors.paid),
+        FutureBuilder<int>(
+          future: NcrRepository().getNCRCountOnce(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            final count = snapshot.data ?? 0;
+
+            return GestureDetector(onTap:(){ GoRouter.of(context).push(AppRoutes.ncrPage);},child: _statCard('Total NCR', '$count', AppColors.paid));
+          },
+        ),
         const SizedBox(height: 16),
-        _statCard('Orders', '321', AppColors.blue),
+        BlocBuilder<VisitorSummaryCubit, VisitorSummaryState>(
+            builder: (c, state) {
+              if (state is VisitorSummaryLoading) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              int count=(state is VisitorSummaryLoaded) ?state.list.length:0;
+              return GestureDetector(onTap:(){ GoRouter.of(context).push(
+                AppRoutes.visitorSummaryList,
+                extra: user?.userId,
+              );},child: _statCard('Total Visitor Summary', '$count', AppColors.blue));
+            }
+        ),
       ],
     );
   }
+
 
   Widget _statCard(String title, String value, Color color) {
     return Card(
@@ -374,33 +433,33 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage> {
         ),
 
         // 🟠 Static tiles (NO navigation for now)
-        _clickableCard(
-          title: 'Risk',
-          icon: Icons.warning_amber_rounded,
-          onTap: () {
-            // later you can navigate
-          },
-        ),
+        // _clickableCard(
+        //   title: 'Risk',
+        //   icon: Icons.warning_amber_rounded,
+        //   onTap: () {
+        //     // later you can navigate
+        //   },
+        // ),
 
         _clickableCard(
-          title: 'Next Visit',
+          title: 'Visitor Summary',
           icon: Icons.event_available,
           onTap: () {
-            GoRouter.of(context).push(AppRoutes.visitorSummary);
+            GoRouter.of(context).push(AppRoutes.visitorSummaryList);
           },
         ),
 
-        _clickableCard(
-          title: 'Next Audit',
-          icon: Icons.fact_check,
-          onTap: () {},
-        ),
-
-        _clickableCard(
-          title: 'Next Training',
-          icon: Icons.school,
-          onTap: () {},
-        ),
+        // _clickableCard(
+        //   title: 'Next Audit',
+        //   icon: Icons.fact_check,
+        //   onTap: () {},
+        // ),
+        //
+        // _clickableCard(
+        //   title: 'Next Training',
+        //   icon: Icons.school,
+        //   onTap: () {},
+        // ),
       ],
     );
   }
