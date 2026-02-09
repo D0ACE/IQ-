@@ -47,33 +47,33 @@ class VisitorSummaryCubit extends Cubit<VisitorSummaryState> {
 
       await repository.createVisitorSummary(data);
       //if ((selectedCustomer?.email ?? '').isNotEmpty) {
-        BrevoEmailService.sendVisitorSummaryMailFromPayload(
-          toEmail: selectedCustomer?.email ?? '',
-          toName: selectedCustomer?.companyName ?? '',
-          payload: payload,
-          selectedCustomer:selectedCustomer ,
-          consultantUserModel:consultantUserModel ,
-        );
+      BrevoEmailService.sendVisitorSummaryMailFromPayload(
+        toEmail: selectedCustomer?.email ?? '',
+        toName: selectedCustomer?.companyName ?? '',
+        payload: payload,
+        selectedCustomer: selectedCustomer,
+        consultantUserModel: consultantUserModel,
+      );
       //}
-    //  if ((consultantUserModel?.email ?? '').isNotEmpty) {
-        BrevoEmailService.sendVisitorSummaryMailFromPayload(
-          toEmail: consultantUserModel?.email ?? '',
-          toName: consultantUserModel?.userName ?? '',
-          payload: payload,
-          selectedCustomer:selectedCustomer ,
-          consultantUserModel:consultantUserModel ,
-        );
+      //  if ((consultantUserModel?.email ?? '').isNotEmpty) {
+      BrevoEmailService.sendVisitorSummaryMailFromPayload(
+        toEmail: consultantUserModel?.email ?? '',
+        toName: consultantUserModel?.userName ?? '',
+        payload: payload,
+        selectedCustomer: selectedCustomer,
+        consultantUserModel: consultantUserModel,
+      );
       //}
       List<EmployeeUserModel> adminUsers = await repository.fetchAdminUsers();
       for (var admin in adminUsers) {
-      //  if ((admin.email ?? '').isNotEmpty) {
-          BrevoEmailService.sendVisitorSummaryMailFromPayload(
-            toEmail: admin.email ?? '',
-            toName: admin.userName ?? '',
-            payload: payload,
-            selectedCustomer:selectedCustomer ,
-            consultantUserModel:consultantUserModel ,
-          );
+        //  if ((admin.email ?? '').isNotEmpty) {
+        BrevoEmailService.sendVisitorSummaryMailFromPayload(
+          toEmail: admin.email ?? '',
+          toName: admin.userName ?? '',
+          payload: payload,
+          selectedCustomer: selectedCustomer,
+          consultantUserModel: consultantUserModel,
+        );
         //}
       }
       emit(VisitorSummarySuccess('Visitor summary saved'));
@@ -103,8 +103,8 @@ class VisitorSummaryCubit extends Cubit<VisitorSummaryState> {
         toEmail: selectedCustomer?.email ?? '',
         toName: selectedCustomer?.companyName ?? '',
         payload: payload,
-        selectedCustomer:selectedCustomer ,
-        consultantUserModel:consultantUserModel ,
+        selectedCustomer: selectedCustomer,
+        consultantUserModel: consultantUserModel,
         isUpdateVisitorSummary: true,
       );
       //}
@@ -113,8 +113,8 @@ class VisitorSummaryCubit extends Cubit<VisitorSummaryState> {
         toEmail: consultantUserModel?.email ?? '',
         toName: consultantUserModel?.userName ?? '',
         payload: payload,
-        selectedCustomer:selectedCustomer ,
-        consultantUserModel:consultantUserModel ,
+        selectedCustomer: selectedCustomer,
+        consultantUserModel: consultantUserModel,
         isUpdateVisitorSummary: true,
       );
       //}
@@ -125,8 +125,8 @@ class VisitorSummaryCubit extends Cubit<VisitorSummaryState> {
           toEmail: admin.email ?? '',
           toName: admin.userName ?? '',
           payload: payload,
-          selectedCustomer:selectedCustomer ,
-          consultantUserModel:consultantUserModel ,
+          selectedCustomer: selectedCustomer,
+          consultantUserModel: consultantUserModel,
           isUpdateVisitorSummary: true,
         );
         //}
@@ -165,7 +165,9 @@ class VisitorSummaryCubit extends Cubit<VisitorSummaryState> {
   }
 
   Timestamp? _toTimestamp(dynamic value) {
-    if (value == null || value.toString().isEmpty) return null;
+    if (value == null || value
+        .toString()
+        .isEmpty) return null;
     try {
       // Parse "10 Jan 2026" format
       final date = DateFormat('dd MMM yyyy').parse(value.toString());

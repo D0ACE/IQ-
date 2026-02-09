@@ -173,7 +173,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   context.push(
                     AppRoutes.customerMMEList, // route path for edit page
                     extra:
-                        customerModel!.customerId, // pass the customer object
+                    customerModel!.customerId, // pass the customer object
                   );
                 }
               },
@@ -257,8 +257,8 @@ class _DashboardPageState extends State<DashboardPage> {
           onTap: () async {
             GoRouter.of(context).pop();
             final result =
-                await context.push(AppRoutes.customerProfile, extra: customer)
-                    as CustomerModel?;
+            await context.push(AppRoutes.customerProfile, extra: customer)
+            as CustomerModel?;
 
             if (result != null) setState(() => customerModel = result);
           },
@@ -302,7 +302,7 @@ class _DashboardPageState extends State<DashboardPage> {
             'Monitoring and Measuring Equipment',
             '${state.list.length}',
             AppColors.purple,
-            () {
+                () {
               if ((customerModel?.customerId ?? '').isNotEmpty) {
                 context.push(
                   AppRoutes.customerMMEList, // route path for edit page
@@ -318,12 +318,10 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _statCard(
-    String title,
-    String value,
-    Color color,
-    GestureTapCallback onTap,
-  ) {
+  Widget _statCard(String title,
+      String value,
+      Color color,
+      GestureTapCallback onTap,) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -578,7 +576,10 @@ class AnimatedBarChart extends StatelessWidget {
     return BarChart(
       BarChartData(
         maxY: values.isEmpty ? 5 : values.reduce(max) + 2,
-        barGroups: values.asMap().entries.map((entry) {
+        barGroups: values
+            .asMap()
+            .entries
+            .map((entry) {
           return BarChartGroupData(
             x: entry.key,
             barRods: [
@@ -617,7 +618,10 @@ class NextVisitDateDialog extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       elevation: 8,
       child: Container(
-        width: MediaQuery.of(context).size.width / 4,
+        width: MediaQuery
+            .of(context)
+            .size
+            .width / 4,
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
@@ -626,6 +630,7 @@ class NextVisitDateDialog extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+
             /// Header
             Row(
               children: [
@@ -650,7 +655,8 @@ class NextVisitDateDialog extends StatelessWidget {
 
             /// Date Card
             BlocBuilder<VisitorSummaryCubit, VisitorSummaryState>(
-              bloc: context.read<VisitorSummaryCubit>()..loadVisitorSummariesForCustomer(),
+              bloc: context.read<VisitorSummaryCubit>()
+                ..loadVisitorSummariesForCustomer(),
               builder: (context, state) {
                 if (state is VisitorSummaryLoading) {
                   return const Center(child: CircularProgressIndicator());
@@ -668,9 +674,10 @@ class NextVisitDateDialog extends StatelessWidget {
                   return Expanded(
                     child: ListView.separated(
                         itemCount: state.list.length,
-                        separatorBuilder: (_, __) => SizedBox(
-                          height: 10,
-                        ),
+                        separatorBuilder: (_, __) =>
+                            SizedBox(
+                              height: 10,
+                            ),
                         itemBuilder: (context, index) {
                           return Container(
                             width: double.infinity,
@@ -681,11 +688,13 @@ class NextVisitDateDialog extends StatelessWidget {
                             decoration: BoxDecoration(
                               color: AppColors.kPrimaryLightColor,
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: AppColors.kPrimaryColor),
+                              border: Border.all(
+                                  color: AppColors.kPrimaryColor),
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
+
                                 /// Date (Top Center)
                                 Center(
                                   child: Column(
@@ -697,7 +706,8 @@ class NextVisitDateDialog extends StatelessWidget {
                                       ),
                                       const SizedBox(height: 8),
                                       Text(
-                                        state.list[index].visitDate ?? 'Not Assigned',
+                                        state.list[index].visitDate ??
+                                            'Not Assigned',
                                         style: TextStyle(
                                           fontSize: 18,
                                           fontWeight: FontWeight.w600,
@@ -709,7 +719,9 @@ class NextVisitDateDialog extends StatelessWidget {
                                 ),
 
                                 const SizedBox(height: 16),
-                                Divider(color: AppColors.kPrimaryColor.withOpacity(0.3)),
+                                Divider(
+                                    color: AppColors.kPrimaryColor.withOpacity(
+                                        0.3)),
 
                                 const SizedBox(height: 10),
 
@@ -743,7 +755,6 @@ class NextVisitDateDialog extends StatelessWidget {
                               ],
                             ),
                           );
-
                         }
                     ),
                   );

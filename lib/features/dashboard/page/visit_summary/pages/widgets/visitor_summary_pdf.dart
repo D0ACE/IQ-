@@ -16,7 +16,8 @@ class VisitorSummaryPdf {
             bold: pw.Font.helveticaBold(),
           ),
         ),
-        build: (context) => [
+        build: (context) =>
+        [
           _card(
             pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -93,69 +94,75 @@ class VisitorSummaryPdf {
     return pdf.save();
   }
 
-  static pw.Widget _title(bool updated) => pw.Text(
-    updated
-        ? 'Visitor Summary Report (Updated)'
-        : 'Visitor Summary Report',
-    style: pw.TextStyle(
-      fontSize: 22,
-      fontWeight: pw.FontWeight.bold,
-      color:updated ?PdfColors.orange800:PdfColor.fromHex('#2E86C1'),
-    ),
-  );
+  static pw.Widget _title(bool updated) =>
+      pw.Text(
+        updated
+            ? 'Visitor Summary Report (Updated)'
+            : 'Visitor Summary Report',
+        style: pw.TextStyle(
+          fontSize: 22,
+          fontWeight: pw.FontWeight.bold,
+          color: updated ? PdfColors.orange800 : PdfColor.fromHex('#2E86C1'),
+        ),
+      );
 
-  static pw.Widget _desc(bool updated) => pw.Padding(
-    padding: const pw.EdgeInsets.only(top: 8, bottom: 12),
-    child: pw.Text(
-      updated
-          ? 'This report has been updated. Please review the latest visit summary and compliance details.'
-          : 'Please review the visit summary and compliance details.',
-      style: pw.TextStyle(color: PdfColors.grey700),
-    ),
-  );
+  static pw.Widget _desc(bool updated) =>
+      pw.Padding(
+        padding: const pw.EdgeInsets.only(top: 8, bottom: 12),
+        child: pw.Text(
+          updated
+              ? 'This report has been updated. Please review the latest visit summary and compliance details.'
+              : 'Please review the visit summary and compliance details.',
+          style: pw.TextStyle(color: PdfColors.grey700),
+        ),
+      );
 
-  static pw.Widget _sectionTitle(String t) => pw.Padding(
-    padding: const pw.EdgeInsets.only(top: 14, bottom: 6),
-    child: pw.Text(
-      t,
-      style: pw.TextStyle(
-          fontSize: 14, fontWeight: pw.FontWeight.bold),
-    ),
-  );
+  static pw.Widget _sectionTitle(String t) =>
+      pw.Padding(
+        padding: const pw.EdgeInsets.only(top: 14, bottom: 6),
+        child: pw.Text(
+          t,
+          style: pw.TextStyle(
+              fontSize: 14, fontWeight: pw.FontWeight.bold),
+        ),
+      );
 
-  static pw.Widget _kv(String k, String? v) => pw.Padding(
-    padding: const pw.EdgeInsets.only(bottom: 4),
-    child: pw.RichText(
-      text: pw.TextSpan(
-        text: '$k: ',
-        style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-        children: [
-          pw.TextSpan(
-              text: v ?? '',
-              style:
-              pw.TextStyle(fontWeight: pw.FontWeight.normal)),
-        ],
-      ),
-    ),
-  );
+  static pw.Widget _kv(String k, String? v) =>
+      pw.Padding(
+        padding: const pw.EdgeInsets.only(bottom: 4),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            text: '$k: ',
+            style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+            children: [
+              pw.TextSpan(
+                  text: v ?? '',
+                  style:
+                  pw.TextStyle(fontWeight: pw.FontWeight.normal)),
+            ],
+          ),
+        ),
+      );
 
-  static pw.Widget _box(String? text) => pw.Container(
-    width: double.infinity,
-    padding: const pw.EdgeInsets.all(10),
-    margin: const pw.EdgeInsets.only(bottom: 8),
-    decoration: pw.BoxDecoration(
-      color: PdfColors.grey100,
-      borderRadius: pw.BorderRadius.circular(4),
-    ),
-    child: pw.Text(text ?? ''),
-  );
+  static pw.Widget _box(String? text) =>
+      pw.Container(
+        width: double.infinity,
+        padding: const pw.EdgeInsets.all(10),
+        margin: const pw.EdgeInsets.only(bottom: 8),
+        decoration: pw.BoxDecoration(
+          color: PdfColors.grey100,
+          borderRadius: pw.BorderRadius.circular(4),
+        ),
+        child: pw.Text(text ?? ''),
+      );
 
-  static pw.Widget _card(pw.Widget child) => pw.Container(
-    padding: const pw.EdgeInsets.all(18),
-    decoration: pw.BoxDecoration(
-      color: PdfColors.white,
-      borderRadius: pw.BorderRadius.circular(8),
-    ),
-    child: child,
-  );
+  static pw.Widget _card(pw.Widget child) =>
+      pw.Container(
+        padding: const pw.EdgeInsets.all(18),
+        decoration: pw.BoxDecoration(
+          color: PdfColors.white,
+          borderRadius: pw.BorderRadius.circular(8),
+        ),
+        child: child,
+      );
 }

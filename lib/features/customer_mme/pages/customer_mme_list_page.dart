@@ -90,7 +90,9 @@ class _CustomerMMEListPageState extends State<CustomerMMEListPage> {
         onPressed: () {
           context.push(
             AppRoutes.customerMMEForm, // route path for edit page
-            extra: widget.customerId, // pass the customer object
+            extra: {
+              'customerId': widget.customerId,
+            },
           );
         },
         child: const Icon(Icons.add,color: AppColors.whiteColor,),
@@ -126,11 +128,30 @@ class _CustomerMMEListPageState extends State<CustomerMMEListPage> {
                           leading:
                           CircleAvatar(child: Text(mme.id.toUpperCase(),)),
                           title: Text(mme.deviceName[0].toUpperCase() + mme.deviceName.substring(1)),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: () {
-                              _showDeleteConfirmDialog(context, mme,widget.customerId);
-                            },
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                tooltip: 'Edit',
+                                icon: const Icon(Icons.edit, color: Colors.blue),
+                                onPressed: () {
+                                  context.push(
+                                    AppRoutes.customerMMEForm,
+                                    extra: {
+                                      'customerId': widget.customerId,
+                                      'mme': mme,
+                                    },
+                                  );
+                                },
+                              ),
+                              IconButton(
+                                tooltip: 'Delete',
+                                icon: const Icon(Icons.delete, color: Colors.red),
+                                onPressed: () {
+                                  _showDeleteConfirmDialog(context, mme, widget.customerId);
+                                },
+                              ),
+                            ],
                           ),
                         ),
                       ),

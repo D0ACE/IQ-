@@ -114,7 +114,6 @@ class AppRouter {
         builder: (context, state) {
           return MultiBlocProvider(
             providers: [
-              BlocProvider(create: (_) => getIt<CustomerMMECubit>()),
               BlocProvider(create: (_) => getIt<VisitorSummaryCubit>()),
             ],
             child: DashboardPage(),
@@ -243,10 +242,7 @@ class AppRouter {
         path: AppRoutes.customerMMEList,
         builder: (context, state) {
           final customer = state.extra as String;
-          return BlocProvider(
-            create: (_) => getIt<CustomerMMECubit>(),
-            child: CustomerMMEListPage(customerId: customer),
-          );
+          return CustomerMMEListPage(customerId: customer);
         },
       ),
 
@@ -254,10 +250,10 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.customerMMEForm,
         builder: (context, state) {
-          final customer = state.extra as String;
-          return BlocProvider(
-            create: (_) => getIt<CustomerMMECubit>(),
-            child: CustomerMMEFormPage(customerId: customer),
+          final extra = state.extra as Map?;
+          return CustomerMMEFormPage(
+            customerId: extra?['customerId'],
+            mme: extra?['mme'],
           );
         },
       ),

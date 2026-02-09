@@ -12,12 +12,10 @@ class VisitorSummaryListPage extends StatefulWidget {
   const VisitorSummaryListPage({super.key});
 
   @override
-  State<VisitorSummaryListPage> createState() =>
-      _VisitorSummaryListPageState();
+  State<VisitorSummaryListPage> createState() => _VisitorSummaryListPageState();
 }
 
 class _VisitorSummaryListPageState extends State<VisitorSummaryListPage> {
-
   @override
   void initState() {
     super.initState();
@@ -46,9 +44,7 @@ class _VisitorSummaryListPageState extends State<VisitorSummaryListPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
-      appBar: AppBar(
-        title: const Text('Visitor Summary'),
-      ),
+      appBar: AppBar(title: const Text('Visitor Summary')),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           context.push(AppRoutes.visitorSummary);
@@ -102,7 +98,6 @@ class _VisitorSummaryListPageState extends State<VisitorSummaryListPage> {
                     ),
                     child: Row(
                       children: [
-
                         /// ─── DATE BADGE ─────────────────────────
                         Container(
                           width: 60,
@@ -167,7 +162,7 @@ class _VisitorSummaryListPageState extends State<VisitorSummaryListPage> {
                         IconButton(
                           icon: const Icon(
                             Icons.edit_outlined,
-                            color:AppColors.kPrimaryColor,
+                            color: AppColors.kPrimaryColor,
                           ),
                           onPressed: () {
                             context.push(
@@ -179,7 +174,8 @@ class _VisitorSummaryListPageState extends State<VisitorSummaryListPage> {
                             );
                           },
                         ),
-                         /// ─── DELETE ────────────────────────────
+
+                        /// ─── DELETE ────────────────────────────
                         IconButton(
                           icon: const Icon(
                             Icons.delete_outline,
@@ -226,19 +222,12 @@ class _VisitorSummaryListPageState extends State<VisitorSummaryListPage> {
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () {
-              context
-                  .read<VisitorSummaryCubit>()
-                  .deleteVisitorSummary(id);
+              context.read<VisitorSummaryCubit>().deleteVisitorSummary(id);
               Navigator.pop(context);
             },
-            child: const Text(
-              'Delete',
-              style: TextStyle(color: Colors.white),
-            ),
+            child: const Text('Delete', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),

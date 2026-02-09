@@ -8,7 +8,8 @@ import 'dart:convert';
 import 'package:pdf/widgets.dart' as pw;
 
 class BrevoEmailService {
-  static const String _apiKey = 'REMOVED_BREVO_KEY';
+  static const String _apiKey =
+      'REMOVED_BREVO_KEY';
 
   static Future<void> sendCustomerCreatedMail({
     required String companyName,
@@ -26,16 +27,10 @@ class BrevoEmailService {
       },
       body: jsonEncode({
         "to": [
-          {
-            "email": email,
-            "name": companyName,
-          }
+          {"email": email, "name": companyName},
         ],
         "templateId": templateId,
-        "params": {
-          "companyName": companyName,
-          "email": email,
-        }
+        "params": {"companyName": companyName, "email": email},
       }),
     );
 
@@ -62,14 +57,14 @@ class BrevoEmailService {
       },
       body: jsonEncode({
         "to": [
-          {"email": email, "name": companyName}
+          {"email": email, "name": companyName},
         ],
         "templateId": templateId,
         "params": {
           "companyName": companyName,
           "email": email,
           "password": password,
-        }
+        },
       }),
     );
 
@@ -84,14 +79,13 @@ class BrevoEmailService {
     required CustomerModel? selectedCustomer,
     required UserModel? consultantUserModel,
     required Map<String, dynamic> payload,
-    bool isUpdateVisitorSummary=false,
+    bool isUpdateVisitorSummary = false,
   }) async {
-    final int templateId =isUpdateVisitorSummary? 6:4; // Brevo template ID
-    Map<String, dynamic> paramsData={
-
+    final int templateId = isUpdateVisitorSummary ? 6 : 4; // Brevo template ID
+    Map<String, dynamic> paramsData = {
       // ✅ Customer
       "customerName": selectedCustomer?.companyName,
-      "customerEmail":selectedCustomer?.email ,
+      "customerEmail": selectedCustomer?.email,
 
       // ✅ Consultant
       "consultantName": consultantUserModel?.userName,
@@ -141,7 +135,7 @@ class BrevoEmailService {
       body: jsonEncode({
         "templateId": templateId,
         "to": [
-          {"email": toEmail, "name": toName}
+          {"email": toEmail, "name": toName},
         ],
         "params": paramsData,
         "attachment": [
@@ -149,9 +143,9 @@ class BrevoEmailService {
             "content": base64Encode(pdfBytes),
             "name": isUpdateVisitorSummary
                 ? "Visitor_Summary_Updated.pdf"
-                : "Visitor_Summary.pdf"
-          }
-        ]
+                : "Visitor_Summary.pdf",
+          },
+        ],
       }),
     );
 
@@ -160,18 +154,21 @@ class BrevoEmailService {
     }
   }
 
-
   static String _formatMap(Map map) {
     return map.entries.map((e) => "${e.key}: ${e.value}").join('\n');
   }
 
   static String _formatList(List list) {
     if (list.isEmpty) return 'None';
-    return list.asMap().entries.map((e) {
-      final i = e.key + 1;
-      final v = e.value as Map;
-      return "$i) ${v.entries.map((x) => "${x.key}: ${x.value}").join(', ')}";
-    }).join('\n');
+    return list
+        .asMap()
+        .entries
+        .map((e) {
+          final i = e.key + 1;
+          final v = e.value as Map;
+          return "$i) ${v.entries.map((x) => "${x.key}: ${x.value}").join(', ')}";
+        })
+        .join('\n');
   }
 
   static Future<void> sendNextVisitDateAssignedMail({
@@ -193,14 +190,8 @@ class BrevoEmailService {
 
         /// Send to both customer & consultant
         "to": [
-          {
-            "email": customer.email,
-            "name": customer.companyName,
-          },
-          {
-            "email": consultant?.email,
-            "name": consultant?.userName,
-          }
+          {"email": customer.email, "name": customer.companyName},
+          {"email": consultant?.email, "name": consultant?.userName},
         ],
 
         "params": {
@@ -214,7 +205,7 @@ class BrevoEmailService {
 
           // Visit Info
           "nextVisitDate": nextVisitDate,
-        }
+        },
       }),
     );
 
@@ -224,7 +215,6 @@ class BrevoEmailService {
     }
   }
 
-
   static Future<String> generateVisitorSummaryPdfBase64({
     required Map<String, dynamic> params,
   }) async {
@@ -233,8 +223,10 @@ class BrevoEmailService {
     pdf.addPage(
       pw.MultiPage(
         build: (context) => [
-          pw.Text('Visitor Summary Report',
-              style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
+          pw.Text(
+            'Visitor Summary Report',
+            style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
+          ),
           pw.SizedBox(height: 10),
 
           pw.Text('Company: ${params["customerName"]}'),
@@ -264,5 +256,4 @@ class BrevoEmailService {
     final bytes = await pdf.save();
     return base64Encode(bytes);
   }
-
 }

@@ -40,7 +40,9 @@ class VisitorSummaryRepository {
   Future<List<VisitorSummaryModel>> fetchVisitorSummaries() async {
     final snapshot = await firestore
         .collection('visitor_summaries')
-        .where('consultantId', isEqualTo: getIt<HiveService>().getUser()?.userId)
+        .where('consultantId', isEqualTo: getIt<HiveService>()
+        .getUser()
+        ?.userId)
         .get();
 
     return snapshot.docs
@@ -51,7 +53,9 @@ class VisitorSummaryRepository {
   Future<List<VisitorSummaryModel>> fetchVisitorSummariesForCustomer() async {
     final snapshot = await firestore
         .collection('visitor_summaries')
-        .where('customerId', isEqualTo: getIt<HiveService>().getCustomer()?.customerId)
+        .where('customerId', isEqualTo: getIt<HiveService>()
+        .getCustomer()
+        ?.customerId)
         .get();
 
     return snapshot.docs
@@ -61,10 +65,10 @@ class VisitorSummaryRepository {
 
   /// ✅ DELETE
   Future<void> deleteVisitorSummary(String id) async {
-   try{
-     await firestore.collection('visitor_summaries').doc(id).delete();
-   }catch(e){
-     print(e.toString());
-   }
+    try {
+      await firestore.collection('visitor_summaries').doc(id).delete();
+    } catch (e) {
+      print(e.toString());
+    }
   }
 }

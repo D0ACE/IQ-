@@ -6,12 +6,14 @@ import 'package:intl/intl.dart';
 import 'package:iq_plus/common/app_widget/app_text_field_widget.dart';
 import 'package:iq_plus/features/customer_mme/cubit/customer_mme_cubit.dart';
 import 'package:iq_plus/features/customer_mme/cubit/customer_mme_state.dart';
+import 'package:iq_plus/features/customer_mme/models/mme_model_req.dart';
 
 class CustomerMMEFormPage extends StatefulWidget {
   final String customerId;
+  final CustomerMMEModel? mme; // 👈 nullable for edit
+  const CustomerMMEFormPage({super.key, required this.customerId,this.mme});
 
-  const CustomerMMEFormPage({super.key, required this.customerId});
-
+  bool get isEdit => mme != null;
   @override
   State<CustomerMMEFormPage> createState() => _CustomerMMEFormPageState();
 }
@@ -28,13 +30,39 @@ class _CustomerMMEFormPageState extends State<CustomerMMEFormPage> {
   DateTime? nextDate;
 
   @override
+  void initState() {
+    if (widget.mme != null) {
+      final m = widget.mme!;
+
+      serialCtrl.text = m.serialNumber;
+      deviceCtrl.text = m.deviceName;
+
+      lastDate = m.lastCalibrationDate;
+      nextDate = m.nextCalibrationDate;
+
+      lastDateCtrl.text =
+          DateFormat('dd MMM yyyy').format(m.lastCalibrationDate);
+      nextDateCtrl.text =
+          DateFormat('dd MMM yyyy').format(m.nextCalibrationDate);
+    }
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return BlocConsumer<CustomerMMECubit, CustomerMMEState>(
       listener: (context, state) {
         if (state is CustomerMMESuccess) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('MME Created Successfully')),
+            SnackBar(
+              content: Text(
+                widget.isEdit
+                    ? 'MME Updated Successfully'
+                    : 'MME Created Successfully',
+              ),
+            ),
           );
+          context.read<CustomerMMECubit>().loadMME(widget.customerId);
           GoRouter.of(context).pop();
         }
 
@@ -46,7 +74,7 @@ class _CustomerMMEFormPageState extends State<CustomerMMEFormPage> {
       },
       builder: (context, state) {
         return Scaffold(
-          appBar: AppBar(title: const Text('Add MME')),
+          appBar: AppBar(  title: Text(widget.isEdit ? 'Edit MME' : 'Add MME'),),
           body: Form(
             key: _formKey,
             child: SingleChildScrollView(
@@ -148,13 +176,24 @@ inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                           : () {
                         if (!_formKey.currentState!.validate()) return;
 
-                        context.read<CustomerMMECubit>().createMME(
+                        if (widget.isEdit) {
+                          context.read<CustomerMMECubit>().updateMME(
+                            docId: widget.mme!.docId??"",
+                            mmeId: widget.mme!.id,
+                            customerId: widget.customerId,
+                            device: deviceCtrl.text.trim(),
+                            lastDate: lastDate!,
+                            nextDate: nextDate!, serial: serialCtrl.text.trim(),
+                          );
+                        } else {
+                          context.read<CustomerMMECubit>().createMME(
                           customerId: widget.customerId,
                           serial: serialCtrl.text.trim(),
                           device: deviceCtrl.text.trim(),
                           lastDate: lastDate!,
                           nextDate: nextDate!,
                         );
+                        }
                       },
                       child: state is CustomerMMELoading
                           ? const SizedBox(

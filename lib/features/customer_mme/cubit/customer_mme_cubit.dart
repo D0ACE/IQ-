@@ -35,8 +35,6 @@ class CustomerMMECubit extends Cubit<CustomerMMEState> {
         nextDate: nextDate,
       );
       emit(CustomerMMESuccess());
-      /// reload list after save
-      await loadMME(customerId);
     } catch (e) {
       emit(CustomerMMEError(e.toString()));
     }
@@ -62,6 +60,32 @@ class CustomerMMECubit extends Cubit<CustomerMMEState> {
       // reload list after delete
       final list = await repository.fetchCustomerMME(customerId);
       emit(CustomerMMELoaded(list));
+    } catch (e) {
+      emit(CustomerMMEError(e.toString()));
+    }
+  }
+
+  Future<void> updateMME({
+    required String docId,
+    required String customerId,
+    required String mmeId,
+    required String serial,
+    required String device,
+    required DateTime lastDate,
+    required DateTime nextDate,
+  }) async {
+    emit(CustomerMMELoading());
+    try {
+      await repository.updateMME(
+        docId: docId,
+        customerId: customerId,
+        mmeId: mmeId,
+        serial: serial,
+        device: device,
+        lastDate: lastDate,
+        nextDate: nextDate,
+      );
+      emit(CustomerMMESuccess());
     } catch (e) {
       emit(CustomerMMEError(e.toString()));
     }

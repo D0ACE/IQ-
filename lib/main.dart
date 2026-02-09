@@ -4,6 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:iq_plus/common/routes/app.dart';
+import 'package:iq_plus/features/customer_mme/cubit/customer_mme_cubit.dart';
 import 'package:provider/provider.dart';
 
 
@@ -46,6 +47,7 @@ void main() async {
         providers: [
           BlocProvider(create: (_) => getIt<AuthCubit>()),
           BlocProvider(create: (_) => getIt<CustomerCubit>()),
+          BlocProvider(create: (_) => getIt<CustomerMMECubit>()),
           BlocProvider(create: (_) => getIt<VisitorSummaryCubit>()),
         ],
         child: const MyApp(),

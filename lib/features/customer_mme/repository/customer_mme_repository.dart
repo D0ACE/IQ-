@@ -77,6 +77,25 @@ class CustomerMMERepository {
     }
   }
 
+  Future<void> updateMME({
+    required String docId,
+    required String customerId,
+    required String mmeId,
+    required String serial,
+    required String device,
+    required DateTime lastDate,
+    required DateTime nextDate,
+  }) async {
+    await firestore
+        .collection('customer_mme').doc(docId).update({
+      'serialNumber': serial,
+      'deviceName': device,
+      'lastCalibrationDate': Timestamp.fromDate(lastDate).toDate(),
+      'nextCalibrationDate': Timestamp.fromDate(nextDate).toDate(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
 
 }
 
