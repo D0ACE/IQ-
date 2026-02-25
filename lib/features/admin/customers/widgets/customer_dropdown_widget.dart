@@ -34,7 +34,7 @@ class CustomerDropdownWidget extends StatelessWidget {
 
           if (state is CustomerListLoaded) {
             return DropdownButtonFormField<CustomerModel>(
-              value: selectedCustomer,
+              initialValue: selectedCustomer,
               isExpanded: true,
               hint: Text(hint),
               decoration: InputDecoration(
@@ -50,7 +50,7 @@ class CustomerDropdownWidget extends StatelessWidget {
                     children: [
                       CircleAvatar(
                         radius: 14,
-                        backgroundColor: AppColors.primary.withOpacity(0.15),
+                        backgroundColor: AppColors.primary.withValues(alpha:0.15),
                         child: Text(
                           customer.companyName.isNotEmpty
                               ? customer.companyName[0].toUpperCase()

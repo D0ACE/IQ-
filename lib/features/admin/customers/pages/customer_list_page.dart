@@ -2,16 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:iq_plus/common/routes/go_route.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
-import 'package:iq_plus/common/themes/app_extension.dart';
 import 'package:iq_plus/common/themes/app_theme_data.dart';
 import 'package:iq_plus/common/themes/app_ui_helper.dart';
 import 'package:iq_plus/di/service_locator.dart';
-import 'package:iq_plus/features/admin/consultants/cubit/consultant_cubit.dart';
 import 'package:iq_plus/features/admin/customers/cubit/customer_list_cubit.dart';
 import 'package:iq_plus/features/admin/customers/cubit/customer_list_state.dart';
-import 'package:iq_plus/features/admin/customers/pages/customer_detail_page.dart';
 import 'package:iq_plus/features/auth/model/customer_model.dart';
-import 'package:iq_plus/features/auth/repository/auth_repository.dart';
 import 'package:go_router/go_router.dart';
 
 class CustomerListPage extends StatelessWidget {
@@ -46,7 +42,7 @@ class CustomerListPage extends StatelessWidget {
               return ListView.separated(
                 padding: const EdgeInsets.all(appHorizontalPadding15),
                 itemCount: approvedCustomers.length,
-                separatorBuilder: (_, __) =>
+                separatorBuilder: (_, _) =>
                     const SizedBox(height: 20), // vertical spacing
                 itemBuilder: (context, index) {
                   return _CustomerCard(
@@ -94,7 +90,7 @@ class _CustomerCard extends StatelessWidget {
               /// Avatar
               CircleAvatar(
                 radius: 26,
-                backgroundColor: AppColors.primary.withOpacity(0.15),
+                backgroundColor: AppColors.primary.withValues(alpha:0.15),
                 child: Text(
                   customer.companyName.isNotEmpty
                       ? customer.companyName[0].toUpperCase()
@@ -147,8 +143,8 @@ class _CustomerCard extends StatelessWidget {
                 ),
                 decoration: BoxDecoration(
                   color: customer.isProfileApproved
-                      ? Colors.green.withOpacity(0.15)
-                      : Colors.orange.withOpacity(0.15),
+                      ? Colors.green.withValues(alpha:0.15)
+                      : Colors.orange.withValues(alpha:0.15),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(

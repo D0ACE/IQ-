@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:equatable/equatable.dart';
+import "package:equatable/equatable.dart";
 import 'package:iq_plus/features/admin/model/admin_model.dart';
 import 'package:iq_plus/features/admin/repository/admin_repository.dart';
 

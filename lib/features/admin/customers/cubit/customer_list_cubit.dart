@@ -14,7 +14,7 @@ class CustomerListCubit extends Cubit<CustomerListState> {
     emit(CustomerListLoading());
     try {
       final customers = await repo.getAllCustomers();
-      print(customers.toString());
+      
       emit(CustomerListLoaded(customers));
     } catch (e) {
       emit(CustomerListError(e.toString()));
@@ -25,7 +25,7 @@ class CustomerListCubit extends Cubit<CustomerListState> {
     emit(CustomerListLoading());
     try {
       final customers = await repo.getFetchAssignCustomers(consultantId);
-      print(customers.toString());
+      
       emit(CustomerListLoaded(customers));
     } catch (e) {
       emit(CustomerListError(e.toString()));
@@ -37,11 +37,11 @@ class CustomerListCubit extends Cubit<CustomerListState> {
     try {
       if((consultantId??'').isNotEmpty){
         final customers = await repo.getFetchConsultantCustomers(consultantId);
-        print(customers.toString());
+        
         emit(CustomerListLoaded(customers));
       }else{
         final customers = await repo.getFetchAllApprovedCustomers();
-        print(customers.toString());
+        
         emit(CustomerListLoaded(customers));
       }
     } catch (e) {

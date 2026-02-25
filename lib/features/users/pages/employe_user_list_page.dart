@@ -6,7 +6,6 @@ import 'package:iq_plus/common/themes/app_colors.dart';
 import 'package:iq_plus/common/utility/utility.dart';
 import 'package:iq_plus/features/users/cubit/employee_user_cubit.dart';
 import 'package:iq_plus/features/users/cubit/employee_user_state.dart';
-import 'package:iq_plus/features/users/models/employe_user.dart';
 import 'package:iq_plus/features/users/pages/add_user_dialog.dart';
 
 class UserListPage extends StatelessWidget {
@@ -71,7 +70,7 @@ class UserListPage extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               child: ListView.separated(
                 itemCount: context.read<UserCubit>().users.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 10),
+                separatorBuilder: (_, _) => const SizedBox(height: 10),
                 itemBuilder: (context, index) {
                   final user = context.read<UserCubit>().users[index];
 
@@ -261,76 +260,4 @@ class UserListPage extends StatelessWidget {
     );
   }
 
-  void _showEditUserDialog(BuildContext context, EmployeeUserModel user) {
-    final nameController = TextEditingController(text: user.userName);
-    final emailController = TextEditingController(text: user.email);
-    final phoneController = TextEditingController(text: user.phoneNumber);
-
-    String roleId = user.roleId;
-    DateTime? joiningDate = user.joiningDate;
-
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: const Text(
-          "Edit User",
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              /// NAME
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(labelText: "Name"),
-              ),
-
-              /// EMAIL
-              TextField(
-                controller: emailController,
-                decoration: const InputDecoration(labelText: "Email"),
-              ),
-
-              /// PHONE
-              TextField(
-                controller: phoneController,
-                keyboardType: TextInputType.phone,
-                decoration: const InputDecoration(labelText: "Phone"),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => GoRouter.of(context).pop(),
-            child: const Text(
-              "Cancel",
-              style: TextStyle(
-                color: AppColors.kPrimaryColor,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              GoRouter.of(context).pop();
-
-              /// 🔥 ONLY UPDATE FUNCTION TRIGGERS HERE
-              context.read<UserCubit>().updateUser(
-                userId: user.userId,
-                userName: nameController.text.trim(),
-                email: emailController.text.trim(),
-                phoneNumber: phoneController.text.trim(),
-                roleId: roleId,
-                joiningDate: joiningDate,
-              );
-            },
-            child: const Text("Update"),
-          ),
-        ],
-      ),
-    );
-  }
 }

@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:iq_plus/core/local_storage/hive_service.dart';
 import 'package:iq_plus/di/service_locator.dart';
 import 'package:iq_plus/features/dashboard/page/visit_summary/model/visitor_summary_model.dart';
@@ -68,7 +69,7 @@ class VisitorSummaryRepository {
     try {
       await firestore.collection('visitor_summaries').doc(id).delete();
     } catch (e) {
-      print(e.toString());
+      debugPrint(e.toString());
     }
   }
 }

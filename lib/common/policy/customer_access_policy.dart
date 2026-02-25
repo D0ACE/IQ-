@@ -16,9 +16,7 @@ class CustomerAccessPolicy {
         return customer.consultantId == currentUserId;
       case UserRole.customer:
         return customer.customerId == currentUserId;
-      default:
-        return false;
-    }
+      }
   }
 
   // Edit rules

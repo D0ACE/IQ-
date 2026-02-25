@@ -167,7 +167,7 @@ class CustomerModel extends HiveObject {
     lowLevelName: lowLevelName ?? this.lowLevelName,
     lowLevelEmail: lowLevelEmail ?? this.lowLevelEmail,
     lowLevelMobile: lowLevelMobile ?? this.lowLevelMobile,
-    nextVisitDate: nextVisitDate ?? this.nextVisitDate,
+    nextVisitDate: nextVisitDate ?? nextVisitDate,
   );
 }
   /// 🔁 Firestore → CustomerModel

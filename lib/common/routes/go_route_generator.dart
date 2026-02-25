@@ -23,7 +23,6 @@ import 'package:iq_plus/features/admin/consultants/cubit/consultant_cubit.dart';
 import 'package:iq_plus/features/auth/repository/auth_repository.dart';
 import 'package:iq_plus/features/chatbot/chat_screen.dart';
 import 'package:iq_plus/features/consultant/consultant_profile_page.dart';
-import 'package:iq_plus/features/customer_mme/cubit/customer_mme_cubit.dart';
 import 'package:iq_plus/features/customer_mme/pages/customer_mme_form_page.dart';
 import 'package:iq_plus/features/customer_mme/pages/customer_mme_list_page.dart';
 import 'package:iq_plus/features/dashboard/page/admin_dashbaord_page.dart';
@@ -31,7 +30,7 @@ import 'package:iq_plus/features/dashboard/page/consultant_dashbaord_page.dart';
 import 'package:iq_plus/features/dashboard/page/contact_us_page.dart';
 import 'package:iq_plus/features/dashboard/page/customer_dashbaord_page.dart';
 import 'package:iq_plus/features/dashboard/page/visit_summary/pages/visitor_summary_list_page.dart';
-import 'package:iq_plus/features/superadmin/pages/superAdmin_dashboard.dart';
+import 'package:iq_plus/features/superadmin/pages/super_admin_dashboard.dart';
 import 'package:iq_plus/features/dashboard/page/visit_summary/cubit/visitor_summary_cubit.dart';
 import 'package:iq_plus/features/dashboard/page/visit_summary/visit_summary_page.dart';
 import 'package:iq_plus/features/users/cubit/employee_user_cubit.dart';
@@ -233,7 +232,7 @@ class AppRouter {
       ),
 
       GoRoute(
-        path: AppRoutes.NCRFormPage,
+        path: AppRoutes.nCRFormPage,
         builder: (context, state) => const NCRFormPage(),
       ),
 

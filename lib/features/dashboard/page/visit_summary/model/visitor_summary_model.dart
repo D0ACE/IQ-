@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:intl/intl.dart';
 import 'package:iq_plus/common/utility/utility.dart';
 
 class VisitorSummaryModel {

@@ -17,7 +17,6 @@ import 'package:iq_plus/features/dashboard/page/visit_summary/cubit/visitor_summ
 import 'package:iq_plus/ncr_form/ncr_provider.dart';
 import 'package:iq_plus/features/auth/model/customer_model.dart';
 
-import 'package:provider/provider.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -44,11 +43,6 @@ class _DashboardPageState extends State<DashboardPage> {
   //   super.initState();
   // }
 
-  void _refreshCustomer() {
-    setState(() {
-      customerModel = getIt<HiveService>().getCustomer();
-    });
-  }
 
   @override
   void initState() {
@@ -332,7 +326,7 @@ class _DashboardPageState extends State<DashboardPage> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: color.withOpacity(0.2), width: 1.2),
+            border: Border.all(color: color.withValues(alpha:0.2), width: 1.2),
             boxShadow: const [
               BoxShadow(
                 color: Color(0x14000000),
@@ -348,7 +342,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 height: 48,
                 width: 48,
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.15),
+                  color: color.withValues(alpha:0.15),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -674,7 +668,7 @@ class NextVisitDateDialog extends StatelessWidget {
                   return Expanded(
                     child: ListView.separated(
                         itemCount: state.list.length,
-                        separatorBuilder: (_, __) =>
+                        separatorBuilder: (_, _) =>
                             SizedBox(
                               height: 10,
                             ),
@@ -720,7 +714,7 @@ class NextVisitDateDialog extends StatelessWidget {
 
                                 const SizedBox(height: 16),
                                 Divider(
-                                    color: AppColors.kPrimaryColor.withOpacity(
+                                    color: AppColors.kPrimaryColor.withValues(alpha:
                                         0.3)),
 
                                 const SizedBox(height: 10),

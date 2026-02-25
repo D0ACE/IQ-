@@ -242,7 +242,7 @@ class VisitorSummaryDetailsDialog extends StatelessWidget {
 
     return Chip(
       label: Text(status),
-      backgroundColor: color.withOpacity(0.15),
+      backgroundColor: color.withValues(alpha:0.15),
       labelStyle: TextStyle(color: color),
     );
   }

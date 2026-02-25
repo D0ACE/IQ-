@@ -1,12 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
 import 'package:iq_plus/common/themes/components/background.dart';
 import 'package:iq_plus/common/themes/responsive.dart';
-import 'package:iq_plus/di/service_locator.dart';
-import 'package:iq_plus/features/auth/cubit/customer/customer_cubit.dart';
-import 'package:iq_plus/features/auth/customer_onboarding/onboarding_mode.dart';
-import 'package:iq_plus/features/auth/customer_onboarding/page/customer_onboarding_page.dart';
 
 import 'components/login_form.dart';
 import 'components/login_screen_top_image.dart';
@@ -76,7 +71,7 @@ class _LoginPageState extends State<LoginPage> {
               borderRadius: BorderRadius.circular(40),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
+                  color: Colors.black.withValues(alpha:0.08),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),

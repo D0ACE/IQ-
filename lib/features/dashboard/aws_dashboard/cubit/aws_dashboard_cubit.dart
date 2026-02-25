@@ -1,6 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../services/aws_api_service.dart';
-import '../models/aws_resources_model.dart';
 import 'aws_dashboard_state.dart';
 
 class AwsDashboardCubit extends Cubit<AwsDashboardState> {
@@ -15,7 +15,9 @@ class AwsDashboardCubit extends Cubit<AwsDashboardState> {
       final data = await _service.fetchAwsResources();
       emit(AwsDashboardLoaded(data));
     } catch (e) {
-      print(e.toString());
+      if (kDebugMode) {
+        print(e.toString());
+      }
       emit(AwsDashboardError(e.toString()));
     }
   }

@@ -27,7 +27,9 @@ class HiveService {
     final box = Hive.box<UserModel>(userBox);
     return box.get('user');
   }catch(e){
-    print(e);
+    if (kDebugMode) {
+      print(e);
+    }
     return null;
   }
   }

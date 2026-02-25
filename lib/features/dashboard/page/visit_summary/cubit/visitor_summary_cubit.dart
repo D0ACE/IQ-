@@ -68,8 +68,8 @@ class VisitorSummaryCubit extends Cubit<VisitorSummaryState> {
       for (var admin in adminUsers) {
         //  if ((admin.email ?? '').isNotEmpty) {
         BrevoEmailService.sendVisitorSummaryMailFromPayload(
-          toEmail: admin.email ?? '',
-          toName: admin.userName ?? '',
+          toEmail: admin.email,
+          toName: admin.userName,
           payload: payload,
           selectedCustomer: selectedCustomer,
           consultantUserModel: consultantUserModel,
@@ -122,8 +122,8 @@ class VisitorSummaryCubit extends Cubit<VisitorSummaryState> {
       for (var admin in adminUsers) {
         //  if ((admin.email ?? '').isNotEmpty) {
         BrevoEmailService.sendVisitorSummaryMailFromPayload(
-          toEmail: admin.email ?? '',
-          toName: admin.userName ?? '',
+          toEmail: admin.email,
+          toName: admin.userName,
           payload: payload,
           selectedCustomer: selectedCustomer,
           consultantUserModel: consultantUserModel,
@@ -167,7 +167,9 @@ class VisitorSummaryCubit extends Cubit<VisitorSummaryState> {
   Timestamp? _toTimestamp(dynamic value) {
     if (value == null || value
         .toString()
-        .isEmpty) return null;
+        .isEmpty) {
+      return null;
+    }
     try {
       // Parse "10 Jan 2026" format
       final date = DateFormat('dd MMM yyyy').parse(value.toString());

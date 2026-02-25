@@ -1,9 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:iq_plus/common/constants/user_role.dart';
 import 'package:iq_plus/common/routes/go_route.dart';
 import 'package:iq_plus/common/themes/app_const.dart';
 import 'package:iq_plus/common/utility/utility.dart';
@@ -61,7 +59,7 @@ class _NcrPageState extends State<NcrPage> {
           onPressed: () {
             GoRouter.of(
               context,
-            ).push(AppRoutes.NCRFormPage); // navigate using GoRouter
+            ).push(AppRoutes.nCRFormPage); // navigate using GoRouter
           },
         ),
       ),
@@ -196,7 +194,7 @@ class _NcrListCardState extends State<NcrListCard> {
                 height: 50,
                 width: 50,
                 decoration: BoxDecoration(
-                  color: Utility.getNCRStatusColor(status).withOpacity(0.2),
+                  color: Utility.getNCRStatusColor(status).withValues(alpha:0.2),
                   shape: BoxShape.circle,
                 ),
                 child: Center(

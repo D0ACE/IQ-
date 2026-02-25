@@ -1,10 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:iq_plus/common/themes/app_extension.dart';
 import 'package:iq_plus/features/admin/model/admin_model.dart';
-import 'package:iq_plus/common/routes/go_route.dart';
-import 'package:iq_plus/features/admin/pages/admin_detail_page.dart';
 
 class AdminListPage extends StatelessWidget {
   const AdminListPage({super.key});

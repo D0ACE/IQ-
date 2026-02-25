@@ -9,7 +9,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:iq_plus/common/routes/app.dart';
 
-import 'package:iq_plus/main.dart';
 
 void main() {
   

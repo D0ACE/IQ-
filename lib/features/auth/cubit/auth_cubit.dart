@@ -3,7 +3,6 @@ import 'package:iq_plus/common/utility/exception_utils.dart';
 import 'package:iq_plus/core/local_storage/hive_service.dart';
 import 'package:iq_plus/di/service_locator.dart';
 import 'package:iq_plus/features/auth/cubit/sate/auth_state.dart';
-import 'package:iq_plus/features/auth/model/customer_model.dart';
 import 'package:iq_plus/features/auth/model/role_model.dart';
 import 'package:iq_plus/features/auth/repository/auth_repository.dart';
 import 'package:iq_plus/common/constants/role_index_mapper.dart';

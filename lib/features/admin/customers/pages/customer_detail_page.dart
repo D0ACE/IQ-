@@ -1,11 +1,8 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:iq_plus/common/app_widget/app_text_field_widget.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
-import 'package:iq_plus/common/themes/app_extension.dart';
 import 'package:iq_plus/common/themes/app_ui_helper.dart';
-import 'package:iq_plus/di/service_locator.dart';
 import 'package:iq_plus/features/admin/consultants/cubit/consultant_cubit.dart';
 import 'package:iq_plus/features/admin/consultants/cubit/consultant_state.dart';
 import 'package:iq_plus/features/admin/customers/cubit/customer_list_cubit.dart';
@@ -76,7 +73,6 @@ class _CustomerDetailViewState extends State<CustomerDetailPage> {
                           }).toList(),
                           onChanged: (value) {
                             selectedConsultantId=value;
-                            print('Selected consultant id: $value');
                           },
                         );
                       }

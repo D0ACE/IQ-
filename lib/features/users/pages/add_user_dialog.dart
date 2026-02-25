@@ -147,7 +147,7 @@ inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     /// 🧩 Role dropdown
                     _field(
                       DropdownButtonFormField<String>(
-                        value: selectedRoleId,
+                        initialValue: selectedRoleId,
                         decoration: _dropdownDecoration("Select Role"),
                         items: cubit.roles.map((role) {
                           return DropdownMenuItem(
@@ -164,7 +164,7 @@ inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     /// 🚫 User status
                     _field(
                       DropdownButtonFormField<bool>(
-                        value: blockStatus,
+                        initialValue: blockStatus,
                         decoration: _dropdownDecoration("User Status"),
                         items: const [
                           DropdownMenuItem(value: false, child: Text("Active")),

@@ -1,7 +1,5 @@
-import 'dart:io';
 
 import 'package:csv/csv.dart';
-import 'package:excel/excel.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -9,8 +7,6 @@ import 'package:iq_plus/features/customer_mme/cubit/customer_mme_state.dart';
 import 'package:iq_plus/features/customer_mme/models/mme_model_req.dart';
 import 'dart:typed_data';
 import 'package:iq_plus/features/customer_mme/repository/customer_mme_repository.dart';
-import 'package:excel/excel.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:universal_html/html.dart' as html;
 
 class CustomerMMECubit extends Cubit<CustomerMMEState> {
@@ -215,7 +211,7 @@ serialNumber,deviceName,lastCalibrationDate,nextCalibrationDate
     final blob = html.Blob([csv], 'text/csv');
     final url = html.Url.createObjectUrlFromBlob(blob);
 
-    final anchor = html.AnchorElement(href: url)
+    final _ = html.AnchorElement(href: url)
       ..download = 'customer_mme_template.csv'
       ..click();
 

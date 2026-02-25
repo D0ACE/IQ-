@@ -5,7 +5,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:iq_plus/common/routes/go_route.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
-import 'package:iq_plus/common/themes/app_extension.dart';
 import 'package:iq_plus/common/themes/responsive.dart';
 import 'package:iq_plus/common/widgets/common_app_bar.dart';
 
@@ -13,18 +12,10 @@ import 'package:iq_plus/core/local_storage/hive_service.dart';
 import 'package:iq_plus/di/service_locator.dart';
 import 'package:iq_plus/features/admin/customers/cubit/customer_list_cubit.dart';
 import 'package:iq_plus/features/admin/customers/cubit/customer_list_state.dart';
-import 'package:iq_plus/features/auth/Login/login_page.dart';
-import 'package:iq_plus/features/consultant/consultant_profile_page.dart';
-import 'package:iq_plus/features/dashboard/page/contact_us_page.dart';
 import 'package:iq_plus/features/dashboard/page/visit_summary/cubit/visitor_summary_cubit.dart';
 import 'package:iq_plus/features/dashboard/page/visit_summary/cubit/visitor_summary_state.dart';
-import 'package:iq_plus/features/dashboard/page/visit_summary/repository/visitor_summary_repository.dart';
-import 'package:iq_plus/features/dashboard/page/visit_summary/visit_summary_page.dart';
 import 'package:iq_plus/ncr_form/ncr/repository/ncr_repository.dart';
-import 'package:iq_plus/ncr_form/ncr_page.dart';
 import 'package:iq_plus/ncr_form/ncr_provider.dart';
-
-import 'package:provider/provider.dart';
 
 class ConsultantDashboardPage extends StatefulWidget {
   const ConsultantDashboardPage({super.key});
@@ -88,49 +79,10 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage> {
     );
   }
 
-  void _showSuccessDialog(BuildContext context, String message) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: const Text("Success"),
-        content: Text(message),
-        actions: [
-          ElevatedButton(
-            onPressed: () {
-              GoRouter.of(context).pop(); // close dialog
-              GoRouter.of(context).pop(); // back to dashboard
-            },
-            child: const Text("OK"),
-          ),
-        ],
-      ),
-    );
-  }
 
-  void _showErrorDialog(BuildContext context, String error) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: const Text("Failed"),
-        content: Text(error),
-        actions: [
-          TextButton(
-            onPressed: () => GoRouter.of(context).pop(), // closes the dialog
-            child: const Text("Retry"),
-          ),
-        ],
-      ),
-    );
-  }
 
   /// 🌈 Drawer
   Widget _buildBeautifulDrawer() {
-    final hiveService = getIt<HiveService>();
-    final currentUser = hiveService.getUser();
-    final assignedCustomers = [];
     // final assignedCustomers = hiveService.getAssignedCustomers(
     //   currentUser?.userId ?? '',
     // );

@@ -25,8 +25,8 @@ class GradientButton extends StatelessWidget {
           gradient: LinearGradient(
             colors: isLoading
                 ? [
-                    AppColors.kPrimaryLightColor.withOpacity(0.6),
-                    AppColors.kPrimaryColor.withOpacity(0.6),
+                    AppColors.kPrimaryLightColor.withValues(alpha:0.6),
+                    AppColors.kPrimaryColor.withValues(alpha:0.6),
                   ]
                 : [
                     AppColors.kPrimaryLightColor,

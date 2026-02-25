@@ -71,7 +71,7 @@ class _VisitorSummaryListPageState extends State<VisitorSummaryListPage> {
             return ListView.separated(
               padding: const EdgeInsets.all(16),
               itemCount: state.list.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              separatorBuilder: (_, _) => const SizedBox(height: 12),
               itemBuilder: (_, index) {
                 final item = state.list[index];
 
@@ -90,7 +90,7 @@ class _VisitorSummaryListPageState extends State<VisitorSummaryListPage> {
                       borderRadius: BorderRadius.circular(14),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.04),
+                          color: Colors.black.withValues(alpha:0.04),
                           blurRadius: 8,
                           offset: const Offset(0, 4),
                         ),
@@ -103,7 +103,7 @@ class _VisitorSummaryListPageState extends State<VisitorSummaryListPage> {
                           width: 60,
                           height: 60,
                           decoration: BoxDecoration(
-                            color: AppColors.kPrimaryColor.withOpacity(0.1),
+                            color: AppColors.kPrimaryColor.withValues(alpha:0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Center(

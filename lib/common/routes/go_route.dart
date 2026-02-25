@@ -16,7 +16,7 @@ class AppRoutes {
   static const adminProfile = '/adminProfile';
   static const onboardingRequest = '/onboardingRequest';
   static const String consultantProfile = '/consultant-profile';
-  static const String NCRFormPage = '/ncr-form-page';
+  static const String nCRFormPage = '/ncr-form-page';
   static const String visitorSummary = '/visitor-summary';
   static const String visitorSummaryList = '/visitorSummaryList';
   static const String chat = '/chat';

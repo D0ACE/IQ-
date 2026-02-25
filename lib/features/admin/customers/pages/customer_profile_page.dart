@@ -5,7 +5,6 @@ import 'package:iq_plus/common/routes/go_route.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
 import 'package:iq_plus/common/themes/app_ui_helper.dart';
 import 'package:iq_plus/core/access/access_control.dart';
-import 'package:iq_plus/features/admin/customers/pages/customer_profile_edit_page.dart';
 import 'package:iq_plus/features/admin/customers/widgets/customer_hierarchy_graph.dart';
 import 'package:iq_plus/features/auth/model/customer_model.dart';
 

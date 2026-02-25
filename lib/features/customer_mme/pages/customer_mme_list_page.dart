@@ -7,8 +7,6 @@ import 'package:iq_plus/common/themes/app_colors.dart';
 import 'package:iq_plus/features/customer_mme/cubit/customer_mme_cubit.dart';
 import 'package:iq_plus/features/customer_mme/cubit/customer_mme_state.dart';
 import 'package:iq_plus/features/customer_mme/models/mme_model_req.dart';
-import 'package:iq_plus/features/customer_mme/pages/customer_mme_form_page.dart';
-import 'package:iq_plus/features/customer_mme/repository/customer_mme_repository.dart';
 
 class CustomerMMEListPage extends StatefulWidget {
   final String customerId;
@@ -62,7 +60,7 @@ class _CustomerMMEListPageState extends State<CustomerMMEListPage> {
             icon: const Icon(Icons.download),
             onPressed: () async {
               try {
-                final file = await context
+                final _ = await context
                     .read<CustomerMMECubit>()
                     .downloadMMECsvTemplateWeb();
 
@@ -207,7 +205,7 @@ class _CustomerMMEListPageState extends State<CustomerMMEListPage> {
                     children: [
                       CircleAvatar(
                         radius: 18,
-                        backgroundColor: Colors.deepPurple.withOpacity(0.1),
+                        backgroundColor: Colors.deepPurple.withValues(alpha:0.1),
                         child: const Icon(
                           Icons.settings,
                           color: Colors.deepPurple,
@@ -374,7 +372,7 @@ class _CustomerMMEListPageState extends State<CustomerMMEListPage> {
                     children: [
                       CircleAvatar(
                         radius: 22,
-                        backgroundColor: Colors.deepPurple.withOpacity(0.1),
+                        backgroundColor: Colors.deepPurple.withValues(alpha:0.1),
                         child: const Icon(
                           Icons.upload_file,
                           color: Colors.deepPurple,
@@ -396,7 +394,7 @@ class _CustomerMMEListPageState extends State<CustomerMMEListPage> {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.deepPurple.withOpacity(0.1),
+                          color: Colors.deepPurple.withValues(alpha:0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
@@ -420,7 +418,7 @@ class _CustomerMMEListPageState extends State<CustomerMMEListPage> {
                     )
                         : ListView.separated(
                       itemCount: list.length,
-                      separatorBuilder: (_, __) =>
+                      separatorBuilder: (_, _) =>
                       const SizedBox(height: 8),
                       itemBuilder: (_, i) {
                         final mme = list[i];
@@ -437,7 +435,7 @@ class _CustomerMMEListPageState extends State<CustomerMMEListPage> {
                               CircleAvatar(
                                 radius: 16,
                                 backgroundColor:
-                                Colors.deepPurple.withOpacity(0.15),
+                                Colors.deepPurple.withValues(alpha:0.15),
                                 child: Text(
                                   '${i + 1}',
                                   style: const TextStyle(

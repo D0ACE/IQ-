@@ -5,8 +5,6 @@ import 'package:iq_plus/common/themes/app_colors.dart';
 import 'package:iq_plus/common/themes/app_ui_helper.dart';
 import 'package:iq_plus/features/auth/cubit/customer/customer_cubit.dart';
 import 'package:iq_plus/features/auth/cubit/customer/state/customer_state.dart';
-import 'package:iq_plus/features/auth/customer_onboarding/onboarding_mode.dart';
-import 'package:iq_plus/features/auth/customer_onboarding/page/customer_onboarding_page.dart';
 
 class OnboardingRequestPage extends StatefulWidget {
   const OnboardingRequestPage({super.key});
@@ -51,7 +49,7 @@ class _OnboardingRequestPageState extends State<OnboardingRequestPage> {
             return ListView.separated(
               padding: const EdgeInsets.all(16),
               itemCount: state.customers.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              separatorBuilder: (_, _) => const SizedBox(height: 12),
               itemBuilder: (_, index) {
                 final customer = state.customers[index];
                 return Card(
@@ -59,7 +57,7 @@ class _OnboardingRequestPageState extends State<OnboardingRequestPage> {
                     borderRadius: BorderRadius.circular(appHorizontalPadding12),
                   ),
                   elevation: 4,
-                  shadowColor: AppColors.greyTextColor.withOpacity(0.2),
+                  shadowColor: AppColors.greyTextColor.withValues(alpha:0.2),
                   child: ListTile(
                     contentPadding: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 12),

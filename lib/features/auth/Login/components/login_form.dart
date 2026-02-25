@@ -15,15 +15,9 @@ import 'package:iq_plus/di/service_locator.dart';
 import 'package:iq_plus/features/auth/Login/change_password_dialog.dart';
 import 'package:iq_plus/features/auth/cubit/auth_cubit.dart';
 import 'package:iq_plus/features/auth/cubit/change_password_cubit.dart';
-import 'package:iq_plus/features/auth/cubit/customer/customer_cubit.dart';
 import 'package:iq_plus/features/auth/cubit/sate/auth_state.dart';
 import 'package:iq_plus/features/auth/customer_onboarding/onboarding_mode.dart';
-import 'package:iq_plus/features/auth/customer_onboarding/page/customer_onboarding_page.dart';
 import 'package:iq_plus/features/auth/repository/auth_repository.dart';
-import 'package:iq_plus/features/dashboard/page/admin_dashbaord_page.dart';
-import 'package:iq_plus/features/dashboard/page/consultant_dashbaord_page.dart';
-import 'package:iq_plus/features/dashboard/page/customer_dashbaord_page.dart';
-import 'package:iq_plus/common/constants/role_index_mapper.dart';
 
 class LoginForm extends StatefulWidget {
   final int selectedRole;

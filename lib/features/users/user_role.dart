@@ -1,18 +1,18 @@
 
 
-import 'package:iq_plus/common/constants/user_role.dart' as HelperRole;
+import 'package:iq_plus/common/constants/user_role.dart' as helper_role;
 
-HelperRole.UserRole parseUserRole(String roleId) {
+helper_role.UserRole parseUserRole(String roleId) {
   switch (roleId.toLowerCase()) {
     case 'superadmin':
-      return HelperRole.UserRole.superAdmin;
+      return helper_role.UserRole.superAdmin;
     case 'admin':
-      return HelperRole.UserRole.admin;
+      return helper_role.UserRole.admin;
     case 'consultant':
-      return HelperRole.UserRole.consultant;
+      return helper_role.UserRole.consultant;
     case 'customer':
-      return HelperRole.UserRole.customer;
+      return helper_role.UserRole.customer;
     default:
-      return HelperRole.UserRole.customer; // fallback
+      return helper_role.UserRole.customer; // fallback
   }
 }

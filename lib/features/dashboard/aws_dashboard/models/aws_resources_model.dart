@@ -8,19 +8,19 @@ class AwsResourcesModel {
   AwsResourcesModel.fromJson(Map<String, dynamic> json) {
     region = json['region'];
     summary =
-    json['summary'] != null ? new Summary.fromJson(json['summary']) : null;
+    json['summary'] != null ? Summary.fromJson(json['summary']) : null;
     details =
-    json['details'] != null ? new Details.fromJson(json['details']) : null;
+    json['details'] != null ? Details.fromJson(json['details']) : null;
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['region'] = this.region;
-    if (this.summary != null) {
-      data['summary'] = this.summary!.toJson();
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['region'] = region;
+    if (summary != null) {
+      data['summary'] = summary!.toJson();
     }
-    if (this.details != null) {
-      data['details'] = this.details!.toJson();
+    if (details != null) {
+      data['details'] = details!.toJson();
     }
     return data;
   }
@@ -46,11 +46,11 @@ class Summary {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['s3Buckets'] = this.s3Buckets;
-    data['ec2Instances'] = this.ec2Instances;
-    data['iamUsers'] = this.iamUsers;
-    data['cloudFrontDistributions'] = this.cloudFrontDistributions;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['s3Buckets'] = s3Buckets;
+    data['ec2Instances'] = ec2Instances;
+    data['iamUsers'] = iamUsers;
+    data['cloudFrontDistributions'] = cloudFrontDistributions;
     return data;
   }
 }
@@ -68,51 +68,51 @@ class Details {
     if (json['s3'] != null) {
       s3 = <S3>[];
       json['s3'].forEach((v) {
-        s3!.add(new S3.fromJson(v));
+        s3!.add(S3.fromJson(v));
       });
     }
     if (json['ec2'] != null) {
       ec2 = <Ec2>[];
       json['ec2'].forEach((v) {
-        ec2!.add(new Ec2.fromJson(v));
+        ec2!.add(Ec2.fromJson(v));
       });
     }
     if (json['iam'] != null) {
       iam = <Iam>[];
       json['iam'].forEach((v) {
-        iam!.add(new Iam.fromJson(v));
+        iam!.add(Iam.fromJson(v));
       });
     }
     if (json['cloudFront'] != null) {
       cloudFront = <CloudFront>[];
       json['cloudFront'].forEach((v) {
-        cloudFront!.add(new CloudFront.fromJson(v));
+        cloudFront!.add(CloudFront.fromJson(v));
       });
     }
     if (json['billing'] != null) {
       billing = <Billing>[];
       json['billing'].forEach((v) {
-        billing!.add(new Billing.fromJson(v));
+        billing!.add(Billing.fromJson(v));
       });
     }
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    if (this.s3 != null) {
-      data['s3'] = this.s3!.map((v) => v.toJson()).toList();
+    final Map<String, dynamic> data = <String, dynamic>{};
+    if (s3 != null) {
+      data['s3'] = s3!.map((v) => v.toJson()).toList();
     }
-    if (this.ec2 != null) {
-      data['ec2'] = this.ec2!.map((v) => v.toJson()).toList();
+    if (ec2 != null) {
+      data['ec2'] = ec2!.map((v) => v.toJson()).toList();
     }
-    if (this.iam != null) {
-      data['iam'] = this.iam!.map((v) => v.toJson()).toList();
+    if (iam != null) {
+      data['iam'] = iam!.map((v) => v.toJson()).toList();
     }
-    if (this.cloudFront != null) {
-      data['cloudFront'] = this.cloudFront!.map((v) => v.toJson()).toList();
+    if (cloudFront != null) {
+      data['cloudFront'] = cloudFront!.map((v) => v.toJson()).toList();
     }
-    if (this.billing != null) {
-      data['billing'] = this.billing!.map((v) => v.toJson()).toList();
+    if (billing != null) {
+      data['billing'] = billing!.map((v) => v.toJson()).toList();
     }
     return data;
   }
@@ -134,11 +134,11 @@ class S3 {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['name'] = this.name;
-    data['createdAt'] = this.createdAt;
-    data['region'] = this.region;
-    data['versioning'] = this.versioning;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['name'] = name;
+    data['createdAt'] = createdAt;
+    data['region'] = region;
+    data['versioning'] = versioning;
     return data;
   }
 }
@@ -191,32 +191,32 @@ class Ec2 {
     if (json['securityGroups'] != null) {
       securityGroups = <SecurityGroups>[];
       json['securityGroups'].forEach((v) {
-        securityGroups!.add(new SecurityGroups.fromJson(v));
+        securityGroups!.add(SecurityGroups.fromJson(v));
       });
     }
-    tags = json['tags'] != null ? new Tags.fromJson(json['tags']) : null;
+    tags = json['tags'] != null ? Tags.fromJson(json['tags']) : null;
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['instanceId'] = this.instanceId;
-    data['name'] = this.name;
-    data['state'] = this.state;
-    data['instanceType'] = this.instanceType;
-    data['amiId'] = this.amiId;
-    data['launchTime'] = this.launchTime;
-    data['publicIp'] = this.publicIp;
-    data['privateIp'] = this.privateIp;
-    data['availabilityZone'] = this.availabilityZone;
-    data['vpcId'] = this.vpcId;
-    data['subnetId'] = this.subnetId;
-    data['keyName'] = this.keyName;
-    if (this.securityGroups != null) {
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['instanceId'] = instanceId;
+    data['name'] = name;
+    data['state'] = state;
+    data['instanceType'] = instanceType;
+    data['amiId'] = amiId;
+    data['launchTime'] = launchTime;
+    data['publicIp'] = publicIp;
+    data['privateIp'] = privateIp;
+    data['availabilityZone'] = availabilityZone;
+    data['vpcId'] = vpcId;
+    data['subnetId'] = subnetId;
+    data['keyName'] = keyName;
+    if (securityGroups != null) {
       data['securityGroups'] =
-          this.securityGroups!.map((v) => v.toJson()).toList();
+          securityGroups!.map((v) => v.toJson()).toList();
     }
-    if (this.tags != null) {
-      data['tags'] = this.tags!.toJson();
+    if (tags != null) {
+      data['tags'] = tags!.toJson();
     }
     return data;
   }
@@ -234,9 +234,9 @@ class SecurityGroups {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['id'] = this.id;
-    data['name'] = this.name;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['id'] = id;
+    data['name'] = name;
     return data;
   }
 }
@@ -255,10 +255,10 @@ class Tags {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['Name'] = this.name;
-    data['backup'] = this.backup;
-    data['Environment'] = this.environment;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['Name'] = name;
+    data['backup'] = backup;
+    data['Environment'] = environment;
     return data;
   }
 }
@@ -286,12 +286,12 @@ class Iam {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['userName'] = this.userName;
-    data['arn'] = this.arn;
-    data['createdAt'] = this.createdAt;
-    data['attachedPolicies'] = this.attachedPolicies;
-    data['passwordLastUsed'] = this.passwordLastUsed;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['userName'] = userName;
+    data['arn'] = arn;
+    data['createdAt'] = createdAt;
+    data['attachedPolicies'] = attachedPolicies;
+    data['passwordLastUsed'] = passwordLastUsed;
     return data;
   }
 }
@@ -329,23 +329,23 @@ class CloudFront {
     if (json['origins'] != null) {
       origins = <Origins>[];
       json['origins'].forEach((v) {
-        origins!.add(new Origins.fromJson(v));
+        origins!.add(Origins.fromJson(v));
       });
     }
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['id'] = this.id;
-    data['domain'] = this.domain;
-    data['enabled'] = this.enabled;
-    data['priceClass'] = this.priceClass;
-    data['lastModified'] = this.lastModified;
-    if (this.aliases != null) {
-      data['aliases'] = this.aliases!.map((v) => v.toJson()).toList();
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['id'] = id;
+    data['domain'] = domain;
+    data['enabled'] = enabled;
+    data['priceClass'] = priceClass;
+    data['lastModified'] = lastModified;
+    if (aliases != null) {
+      data['aliases'] = aliases!.map((v) => v.toJson()).toList();
     }
-    if (this.origins != null) {
-      data['origins'] = this.origins!.map((v) => v.toJson()).toList();
+    if (origins != null) {
+      data['origins'] = origins!.map((v) => v.toJson()).toList();
     }
     return data;
   }
@@ -363,9 +363,9 @@ class Origins {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['id'] = this.id;
-    data['domain'] = this.domain;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['id'] = id;
+    data['domain'] = domain;
     return data;
   }
 }
@@ -384,10 +384,10 @@ class Billing {
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['service'] = this.service;
-    data['amount'] = this.amount;
-    data['unit'] = this.unit;
+    final Map<String, dynamic> data = <String, dynamic>{};
+    data['service'] = service;
+    data['amount'] = amount;
+    data['unit'] = unit;
     return data;
   }
 }

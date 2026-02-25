@@ -67,7 +67,7 @@ class CustomerHierarchyCustom extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: color.withOpacity(0.4)),
+        border: Border.all(color: color.withValues(alpha:0.4)),
         boxShadow: const [
           BoxShadow(
             color: Colors.black12,

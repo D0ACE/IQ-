@@ -55,9 +55,6 @@ class CustomerCubit extends Cubit<CustomerState> {
           .where('isProfileApproved', isEqualTo: false)
           .get();
 
-      // Debugging: print number of pending customers
-      print("Pending customers found: ${snap.docs.length}");
-
       final customers = snap.docs
           .map(
             (doc) => CustomerModel.fromJson(

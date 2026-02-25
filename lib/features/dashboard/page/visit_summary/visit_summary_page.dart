@@ -551,7 +551,7 @@ class _VisitorSummaryPageState extends State<VisitorSummaryPage> {
                       // ================= COMPLIANCE STATUS
                       sectionCard('Compliance Status', [
                         DropdownButtonFormField<String>(
-                          value: complianceStatus,
+                          initialValue: complianceStatus,
                           validator: (v) => dropdownValidator(v, 'Compliance Status'),
                           decoration: const InputDecoration(labelText: 'Status'),
                           items: const [
@@ -656,7 +656,7 @@ class _VisitorSummaryPageState extends State<VisitorSummaryPage> {
                       // ================= OVERALL ASSESSMENT
                       sectionCard('Overall Assessment', [
                         DropdownButtonFormField<String>(
-                          value: overallAssessment,
+                          initialValue: overallAssessment,
                           validator: (v) => dropdownValidator(v, 'Assessment'),
                           decoration: const InputDecoration(labelText: 'Assessment'),
                           items: const [

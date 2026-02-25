@@ -5,10 +5,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:iq_plus/common/utility/utility.dart';
 import 'package:iq_plus/common/widgets/common_app_bar.dart';
-import 'package:iq_plus/features/admin/create_admin/create_admin_page.dart';
 import 'package:iq_plus/features/admin/customers/cubit/customer_list_cubit.dart';
 import 'package:iq_plus/features/admin/customers/cubit/customer_list_state.dart';
-import 'package:provider/provider.dart';
 
 import 'package:iq_plus/common/routes/go_route.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
@@ -69,9 +67,6 @@ class SuperadminDashboardPage extends StatelessWidget {
   // 🌈 DRAWER
   // =========================
   Drawer _buildDrawer(BuildContext context) {
- final hiveService = getIt<HiveService>();
-  final user = hiveService.getUser();
-//  final allCustomers = hiveService.getAllCustomers(); // fetch all customers
     
     return Drawer(
       child: Container(
@@ -285,7 +280,7 @@ class SuperadminDashboardPage extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 24,
-              backgroundColor: color.withOpacity(.15),
+              backgroundColor: color.withValues(alpha:0.15),
               child: Icon(Icons.analytics, color: color),
             ),
             const SizedBox(width: 16),

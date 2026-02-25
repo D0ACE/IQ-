@@ -5,11 +5,9 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 import 'package:iq_plus/common/app_widget/app_text_field_widget.dart';
 import 'package:iq_plus/common/app_widget/common_gradient_button.dart';
-import 'package:iq_plus/common/constants/user_role.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
 import 'package:iq_plus/common/themes/app_const.dart';
 import 'package:iq_plus/common/themes/app_theme_data.dart';
@@ -183,56 +181,6 @@ class _NCRFormPageState extends State<NCRFormPage> {
     );
   }
 
-  /// 🔹 Status Button Widget
-  // Widget _statusButton(String value, String label) {
-  //   final isActive = currentStatus == value;
-
-  //   return Expanded(
-  //     child: ElevatedButton(
-  //       style: ElevatedButton.styleFrom(
-  //         backgroundColor: isActive
-  //             ? value == AppConst.openNCRStatusKey
-  //                   ? AppColors.orange
-  //                   : value == AppConst.inProgressNCRStatusKey
-  //                   ? AppColors.blue
-  //                   : AppColors.green
-  //             : AppColors.greyTextFormFiledColor,
-  //       ),
-  //       onPressed: () async {
-  //         final docId = widget.ncrData?['id'];
-  //         if (docId == null) return;
-
-  //         await _ncrRepository.updateNcrStatus(docId, value);
-
-  //         setState(() {
-  //           currentStatus = value;
-  //         });
-
-  //         ScaffoldMessenger.of(context).showSnackBar(
-  //           SnackBar(content: Text("Status updated to ${value.toUpperCase()}")),
-  //         );
-  //       },
-
-  //       child: Text(
-  //         label,
-  //         style: TextStyle(
-  //           color: isActive ? Colors.white : AppColors.blackTextColor,
-  //         ),
-  //       ),
-  //     ),
-  //   );
-  // }
-  Widget _statusButton(String value, String label) {
-    return Expanded(
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-        onPressed: () async {
-          await _updateStatus(value);
-        },
-        child: Text(label),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -246,7 +194,7 @@ class _NCRFormPageState extends State<NCRFormPage> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                border: Border.all(color: AppColors.greyBorderColor!),
+                border: Border.all(color: AppColors.greyBorderColor),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -258,7 +206,7 @@ class _NCRFormPageState extends State<NCRFormPage> {
                       height: 80,
                       width: 80,
                       decoration: BoxDecoration(
-                        border: Border.all(color: AppColors.greyBorderColor!),
+                        border: Border.all(color: AppColors.greyBorderColor),
                       ),
                       child: logo == null
                           ? const Center(
@@ -330,10 +278,10 @@ class _NCRFormPageState extends State<NCRFormPage> {
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: currentStatus == AppConst.openNCRStatusKey
-                    ? AppColors.orange.withOpacity(0.2)
+                    ? AppColors.orange.withValues(alpha:0.2)
                     : currentStatus == AppConst.inProgressNCRStatusKey
-                    ? AppColors.blue.withOpacity(0.2)
-                    : AppColors.green.withOpacity(0.2),
+                    ? AppColors.blue.withValues(alpha:0.2)
+                    : AppColors.green.withValues(alpha:0.2),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
@@ -646,7 +594,6 @@ class _NCRFormPageState extends State<NCRFormPage> {
                 onPressed: () async {
                   final hiveService = getIt<HiveService>();
                   UserModel? consultantUserModel = hiveService.getUser();
-                  print("Consultant ${consultantUserModel?.userId}");
                   if ((selectedCustomer?.customerId ?? '').isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
