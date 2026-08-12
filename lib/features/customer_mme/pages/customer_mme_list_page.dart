@@ -42,9 +42,11 @@ class _CustomerMMEListPageState extends State<CustomerMMEListPage> {
                 final excelList = await cubit.readMMEFromCsvWeb();
 
                 if (excelList.isNotEmpty){
+                  if (!mounted) return;
                   _showExcelPreviewDialog(context, excelList);
                 }
               }catch(e){
+                if (!mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     backgroundColor: Colors.red,
@@ -70,6 +72,7 @@ class _CustomerMMEListPageState extends State<CustomerMMEListPage> {
                 //   ),
                 // );
               } catch (e) {
+                if (!mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     backgroundColor: Colors.red,

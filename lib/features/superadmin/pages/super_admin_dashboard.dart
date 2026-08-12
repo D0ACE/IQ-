@@ -163,7 +163,8 @@ class SuperadminDashboardPage extends StatelessWidget {
                          onTap: () {
                            context.pop(); // close drawer
                            context.push(
-                             '${AppRoutes.customerProfile}?customerId=${customer.customerId}',
+                             AppRoutes.customerProfile,
+                             extra: customer,
                            );
                          },
                        );
@@ -207,6 +208,13 @@ class SuperadminDashboardPage extends StatelessWidget {
               icon: Icons.admin_panel_settings,
               title: 'Admins',
               route: AppRoutes.adminList,
+            ),
+
+            _drawerItem(
+              context,
+              icon: Icons.description,
+              title: 'Policies & Procedures',
+              route: AppRoutes.documentList,
             ),
 
 
@@ -376,6 +384,11 @@ class SuperadminDashboardPage extends StatelessWidget {
           title: 'Visit Summary',
           icon: Icons.event_available,
           onTap: () => context.push(AppRoutes.visitorSummary),
+        ),
+        _dashboardCard(
+          title: 'Policies & Procedures',
+          icon: Icons.description,
+          onTap: () => context.push(AppRoutes.documentList),
         ),
       ],
     );

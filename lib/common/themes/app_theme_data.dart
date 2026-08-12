@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import 'app_colors.dart';
@@ -150,7 +151,9 @@ class AppThemeData {
   static MaterialColor buildMaterialColor(Color color) {
     List strengths = <double>[.05];
     Map<int, Color> swatch = {};
-    final int r = color.red, g = color.green, b = color.blue;
+    final int r = (color.r * 255).round().clamp(0, 255);
+    final int g = (color.g * 255).round().clamp(0, 255);
+    final int b = (color.b * 255).round().clamp(0, 255);
 
     for (int i = 1; i < 10; i++) {
       strengths.add(0.1 * i);

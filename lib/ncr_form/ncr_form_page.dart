@@ -134,6 +134,7 @@ class _NCRFormPageState extends State<NCRFormPage> {
 
     await _ncrRepository.updateNcrStatus(docId, newStatus);
 
+    if (!mounted) return;
     setState(() {
       currentStatus = newStatus;
     });
@@ -643,6 +644,7 @@ class _NCRFormPageState extends State<NCRFormPage> {
 
                   await _ncrRepository.saveNcrForm(model);
 
+                  if (!mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text("NCR Saved Successfully")),
                   );

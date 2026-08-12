@@ -34,7 +34,7 @@ class AuthCubit extends Cubit<AuthState> {
     }
 
     // ✅ success
-    emit(AuthSuccess(role.id, role.name));
+    emit(AuthSuccess(role.id, role.name,role.customerId));
   } catch (e) {
     emit(AuthFailure(ExceptionUtils.getMessage(e)));
   }

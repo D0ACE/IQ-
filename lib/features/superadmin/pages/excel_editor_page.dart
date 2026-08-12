@@ -1,0 +1,505 @@
+import 'dart:typed_data';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:iq_plus/common/app_widget/app_text_field_widget.dart';
+import 'package:iq_plus/common/themes/app_colors.dart';
+import 'package:iq_plus/common/widgets/common_app_bar.dart';
+import 'package:iq_plus/features/admin/consultants/cubit/consultant_cubit.dart';
+import 'package:iq_plus/features/admin/consultants/cubit/consultant_state.dart';
+import 'package:iq_plus/features/admin/customers/cubit/customer_list_cubit.dart';
+import 'package:iq_plus/features/admin/customers/cubit/customer_list_state.dart';
+import 'package:iq_plus/features/superadmin/cubit/document_cubit.dart';
+import 'package:iq_plus/features/superadmin/cubit/document_state.dart';
+import 'package:iq_plus/features/superadmin/models/document_model.dart';
+import 'package:pluto_grid/pluto_grid.dart';
+import 'package:excel_plus/excel_plus.dart' as excel_pkg;
+import 'package:http/http.dart' as http;
+import 'dart:developer' as developer;
+import 'package:file_picker/file_picker.dart';
+
+class ExcelEditorPage extends StatefulWidget {
+  final DocumentModel? document;
+  const ExcelEditorPage({super.key, this.document});
+
+  @override
+  State<ExcelEditorPage> createState() => _ExcelEditorPageState();
+}
+
+class _ExcelEditorPageState extends State<ExcelEditorPage> {
+  PlutoGridStateManager? stateManager;
+  List<PlutoColumn> columns = [];
+  List<PlutoRow> rows = [];
+  bool _isLoading = true;
+  final titleCtrl = TextEditingController();
+  final changeDescriptionCtrl = TextEditingController();
+  String? selectedCustomerId;
+  String? selectedReviewerId;
+  String? selectedReviewerName;
+  bool _isGridDirty = false; // 👈 Track content changes
+
+  @override
+  void initState() {
+    super.initState();
+    context.read<CustomerListCubit>().fetchCustomers();
+    context.read<ConsultantCubit>().fetchConsultants();
+    
+    if (widget.document != null) {
+      titleCtrl.text = widget.document!.title;
+      selectedCustomerId = widget.document!.customerId;
+      selectedReviewerId = widget.document!.assignedReviewerId;
+      selectedReviewerName = widget.document!.assignedReviewerName;
+      _loadExcelData();
+    } else {
+      _initEmptyGrid();
+    }
+  }
+
+  @override
+  void dispose() {
+    titleCtrl.dispose();
+    changeDescriptionCtrl.dispose();
+    super.dispose();
+  }
+
+  void _initEmptyGrid() {
+    columns = List.generate(5, (i) => PlutoColumn(
+      title: 'Col ${i + 1}',
+      field: 'col$i',
+      type: PlutoColumnType.text(),
+      width: 150,
+    ));
+    
+    rows = List.generate(10, (i) => PlutoRow(
+      cells: { for (var j=0; j<5; j++) 'col$j' : PlutoCell(value: '') },
+    ));
+    
+    setState(() => _isLoading = false);
+  }
+
+  Future<void> _loadExcelData() async {
+    try {
+      final response = await http.get(Uri.parse(widget.document!.fileUrl));
+      final bytes = response.bodyBytes;
+      final excel = excel_pkg.Excel.decodeBytes(bytes);
+      final sheetName = excel.tables.keys.first;
+      final table = excel.tables[sheetName];
+
+      if (table != null) {
+        final int maxCols = table.maxColumns;
+        
+        List<PlutoColumn> loadedColumns = [];
+        List<PlutoRow> loadedRows = [];
+
+        // 1. Build Columns
+        for (int i = 0; i < maxCols; i++) {
+          loadedColumns.add(PlutoColumn(
+            title: 'Col ${i + 1}',
+            field: 'col$i',
+            type: PlutoColumnType.text(),
+            width: 150,
+          ));
+        }
+
+        // 2. Build Rows
+        for (var excelRow in table.rows) {
+          Map<String, PlutoCell> cells = {};
+          for (int i = 0; i < maxCols; i++) {
+            final val = i < excelRow.length ? excelRow[i]?.value?.toString() ?? "" : "";
+            cells['col$i'] = PlutoCell(value: val);
+          }
+          loadedRows.add(PlutoRow(cells: cells));
+        }
+
+        setState(() {
+          columns = loadedColumns;
+          rows = loadedRows;
+        });
+
+      } else {
+        _initEmptyGrid();
+      }
+    } catch (e) {
+      developer.log("Error loading excel: $e");
+      _initEmptyGrid();
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _handleImport() async {
+    developer.log("📥 Starting Excel Import Process...");
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['xlsx', 'xls'],
+        withData: true,
+      );
+
+      if (result == null || result.files.isEmpty) {
+        developer.log("ℹ️ Import cancelled by user.");
+        return;
+      }
+
+      setState(() => _isLoading = true);
+
+      final file = result.files.first;
+      final bytes = file.bytes;
+      if (bytes == null) {
+        developer.log("❌ Error: File bytes are null.");
+        throw Exception("Could not read file bytes");
+      }
+
+      developer.log("📊 Decoding file: ${file.name}");
+      final excel = excel_pkg.Excel.decodeBytes(bytes);
+      final sheetName = excel.tables.keys.first;
+      final table = excel.tables[sheetName];
+
+      if (table != null) {
+        final int maxCols = table.maxColumns;
+        developer.log("📏 Table found. Columns: $maxCols, Rows: ${table.rows.length}");
+        
+        List<PlutoColumn> newColumns = [];
+        List<PlutoRow> newRows = [];
+
+        // 1. Build Columns
+        for (int i = 0; i < maxCols; i++) {
+          newColumns.add(PlutoColumn(
+            title: 'Col ${i + 1}',
+            field: 'col$i',
+            type: PlutoColumnType.text(),
+            width: 150,
+          ));
+        }
+
+        // 2. Build Rows
+        for (var excelRow in table.rows) {
+          Map<String, PlutoCell> cells = {};
+          for (int i = 0; i < maxCols; i++) {
+            final val = i < excelRow.length ? excelRow[i]?.value?.toString() ?? "" : "";
+            cells['col$i'] = PlutoCell(value: val);
+          }
+          newRows.add(PlutoRow(cells: cells));
+        }
+
+        if (stateManager != null) {
+          developer.log("🔄 Updating existing Grid StateManager...");
+          stateManager!.setShowLoading(true);
+          stateManager!.removeColumns(stateManager!.columns);
+          stateManager!.removeAllRows();
+          stateManager!.insertColumns(0, newColumns);
+          stateManager!.insertRows(0, newRows);
+          stateManager!.setShowLoading(false);
+        } else {
+          developer.log("✨ Initializing local columns/rows for first load...");
+          setState(() {
+            columns = newColumns;
+            rows = newRows;
+          });
+        }
+        
+        developer.log("✅ Import Completed.");
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Excel imported successfully")));
+      } else {
+        developer.log("⚠️ Error: No table found in the decoded Excel file.");
+      }
+    } catch (e, stackTrace) {
+      developer.log("❌ CRITICAL ERROR during Excel import:", error: e, stackTrace: stackTrace);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Import failed: $e"), backgroundColor: Colors.red));
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Future<void> _handleSave() async {
+    developer.log("💾 Starting Excel Policy Save Process...");
+    if (titleCtrl.text.trim().isEmpty) {
+      developer.log("⚠️ Validation Failed: Policy title is empty.");
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please enter a title")));
+      return;
+    }
+
+    if (widget.document != null && changeDescriptionCtrl.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please enter description of the change")));
+      return;
+    }
+    
+    if (stateManager == null) {
+      developer.log("⚠️ Error: Grid StateManager is null.");
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    try {
+      developer.log("📊 Encoding Grid Data to XLSX...");
+      final excel = excel_pkg.Excel.createExcel();
+      final sheet = excel['Sheet1'];
+
+      // Process rows from PlutoGrid
+      for (int rowIndex = 0; rowIndex < stateManager!.rows.length; rowIndex++) {
+        final plutoRow = stateManager!.rows[rowIndex];
+        for (int colIndex = 0; colIndex < stateManager!.columns.length; colIndex++) {
+          final field = stateManager!.columns[colIndex].field;
+          final value = plutoRow.cells[field]?.value?.toString() ?? "";
+          
+          sheet.updateCell(
+            excel_pkg.CellIndex.indexByColumnRow(columnIndex: colIndex, rowIndex: rowIndex),
+            excel_pkg.TextCellValue(value),
+          );
+        }
+      }
+
+      final List<int>? fileBytes = excel.encode();
+      if (fileBytes == null) {
+        developer.log("❌ Error: Excel encoding returned null bytes.");
+        throw Exception("Failed to encode excel");
+      }
+      
+      final Uint8List uint8Bytes = Uint8List.fromList(fileBytes);
+      developer.log("📂 XLSX Encoded successfully. Size: ${uint8Bytes.length} bytes");
+
+      developer.log("☁️ Dispatching save command to DocumentCubit...");
+      await context.read<DocumentCubit>().saveExcelDocument(
+        docId: widget.document?.docId,
+        title: titleCtrl.text.trim(),
+        bytes: uint8Bytes,
+        customerId: selectedCustomerId,
+        currentFilePath: widget.document?.filePath,
+        assignedReviewerId: selectedReviewerId,
+        assignedReviewerName: selectedReviewerName,
+        changeDescription: changeDescriptionCtrl.text.trim(),
+        isContentChanged: _isGridDirty, // 👈 Pass the dirty flag
+      );
+
+      developer.log("✅ Save Process Completed Successfully.");
+      setState(() => _isGridDirty = false); // Reset after save
+
+    } catch (e, stackTrace) {
+      developer.log("❌ CRITICAL ERROR during Excel save:", error: e, stackTrace: stackTrace);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Save failed: $e"), backgroundColor: Colors.red));
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocListener<DocumentCubit, DocumentState>(
+      listener: (context, state) {
+        if (state is DocumentOperationSuccess) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.message)));
+          context.pop();
+        }
+        if (state is DocumentError) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.message), backgroundColor: Colors.red));
+          setState(() => _isLoading = false);
+        }
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.scaffoldBg,
+        appBar: CommonAppBar(
+          title: widget.document == null ? 'Create Excel Policy' : 'Edit Excel Policy',
+        ),
+        body: _isLoading 
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: AppTextFieldWidget(
+                              hintText: "Policy Title",
+                              textFieldController: titleCtrl,
+                              isRequired: true,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          ElevatedButton.icon(
+                            onPressed: _handleImport,
+                            icon: const Icon(Icons.file_upload),
+                            label: const Text("Import File"),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blueGrey,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+
+                      if (widget.document != null) ...[
+                        AppTextFieldWidget(
+                          hintText: "Description of the change",
+                          textFieldController: changeDescriptionCtrl,
+                          isRequired: true,
+                          maxLines: 2,
+                        ),
+                        const SizedBox(height: 12),
+                      ],
+                      
+                      Row(
+                        children: [
+                          // 👥 Customer Dropdown
+                          Expanded(
+                            child: BlocBuilder<CustomerListCubit, CustomerListState>(
+                              builder: (context, customerState) {
+                                if (customerState is CustomerListLoaded) {
+                                  return DropdownButtonFormField<String>(
+                                    initialValue: selectedCustomerId,
+                                    decoration: InputDecoration(
+                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                      labelText: "Select Customer",
+                                      labelStyle: const TextStyle(color: AppColors.purple),
+                                      fillColor: Colors.white,
+                                      filled: true,
+                                    ),
+                                    hint: const Text("Assign to Customer"),
+                                    items: customerState.customers.map((c) {
+                                      return DropdownMenuItem(
+                                        value: c.customerId,
+                                        child: Text(c.companyName),
+                                      );
+                                    }).toList(),
+                                    onChanged: (val) => setState(() => selectedCustomerId = val),
+                                  );
+                                }
+                                return const LinearProgressIndicator();
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          // 👨‍💼 Reviewer Dropdown
+                          Expanded(
+                            child: BlocBuilder<ConsultantCubit, ConsultantState>(
+                              builder: (context, consultantState) {
+                                if (consultantState is ConsultantLoaded) {
+                                  return DropdownButtonFormField<String>(
+                                    initialValue: selectedReviewerId,
+                                    decoration: InputDecoration(
+                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                      labelText: "Assign Reviewer",
+                                      labelStyle: const TextStyle(color: AppColors.purple),
+                                      fillColor: Colors.white,
+                                      filled: true,
+                                    ),
+                                    hint: const Text("Assign Reviewer"),
+                                    items: consultantState.consultants.map((c) {
+                                      return DropdownMenuItem(
+                                        value: c.id,
+                                        child: Text(c.userName),
+                                      );
+                                    }).toList(),
+                                    onChanged: (val) {
+                                      setState(() {
+                                        selectedReviewerId = val;
+                                        selectedReviewerName = consultantState.consultants
+                                            .firstWhere((c) => c.id == val)
+                                            .userName;
+                                      });
+                                    },
+                                  );
+                                }
+                                return const LinearProgressIndicator();
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                
+                Expanded(
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      border: Border.all(color: Colors.grey.shade300),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: PlutoGrid(
+                      columns: columns,
+                      rows: rows,
+                      onChanged: (event) => _isGridDirty = true, // 👈 Mark as dirty on edit
+                      onLoaded: (event) {
+                        stateManager = event.stateManager;
+                        stateManager!.setSelectingMode(PlutoGridSelectingMode.cell);
+                      },
+                      configuration: const PlutoGridConfiguration(
+                        style: PlutoGridStyleConfig(
+                          gridBorderColor: Colors.transparent,
+                          columnTextStyle: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                
+                Container(
+                  padding: const EdgeInsets.all(16.0),
+                  color: Colors.white,
+                  child: Row(
+                    children: [
+                      _actionBtn(Icons.add_box, "Row", () {
+                        stateManager?.insertRows(stateManager!.currentRowIdx ?? 0 + 1, [stateManager!.getNewRow()]);
+                        _isGridDirty = true; // 👈 Mark as dirty
+                      }, Colors.blue),
+                      const SizedBox(width: 8),
+                      _actionBtn(Icons.view_column, "Col", () {
+                         final String field = 'col${stateManager!.columns.length}';
+                         stateManager?.insertColumns(stateManager!.columns.length, [
+                           PlutoColumn(
+                             title: 'Col ${stateManager!.columns.length + 1}',
+                             field: field,
+                             type: PlutoColumnType.text(),
+                             width: 150,
+                           )
+                         ]);
+                         // Update all existing rows to have the new cell field
+                         for (var row in stateManager!.rows) {
+                           row.cells[field] = PlutoCell(value: '');
+                         }
+                         stateManager?.notifyListeners();
+                         _isGridDirty = true; // 👈 Mark as dirty
+                      }, Colors.orange),
+                      const SizedBox(width: 8),
+                      _actionBtn(Icons.save, "SAVE", _handleSave, AppColors.purple),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+      ),
+    );
+  }
+
+  Widget _actionBtn(IconData icon, String label, VoidCallback onPressed, Color color) {
+    return Expanded(
+      child: ElevatedButton.icon(
+        onPressed: onPressed,
+        icon: Icon(icon, size: 18),
+        label: Text(label),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      ),
+    );
+  }
+}

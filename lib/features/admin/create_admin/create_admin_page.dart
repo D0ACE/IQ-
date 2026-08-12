@@ -37,12 +37,14 @@ class _CreateAdminPageState extends State<CreateAdminPage> {
         password: _passwordCtrl.text.trim(),
       );
 
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Admin created successfully')),
       );
 
       _formKey.currentState!.reset();
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Error: $e')));

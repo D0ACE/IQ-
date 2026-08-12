@@ -157,6 +157,7 @@ class _CustomerCard extends StatelessWidget {
                     );
 
                     if (nextVisitDate != null) {
+                      if (!context.mounted) return;
                       context.read<CustomerListCubit>().updateCustomerNextVisitDate(customer: customer, consultant: getIt<HiveService>().getUser(), nextVisitDate: nextVisitDate);
                     }
                   },

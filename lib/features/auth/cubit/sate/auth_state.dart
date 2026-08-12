@@ -7,7 +7,8 @@ class AuthLoading extends AuthState {}
 class AuthSuccess extends AuthState {
   final String roleId;
   final String roleName;
-  AuthSuccess(this.roleId,this.roleName);
+  final String customerId;
+  AuthSuccess(this.roleId,this.roleName,this.customerId);
 }
 
 class AuthFailure extends AuthState {

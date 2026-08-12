@@ -55,13 +55,13 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
 
         if (state is CustomerPasswordSuccess) {
           // close loader
-          GoRouter.of(context).pop();
+          Navigator.of(context, rootNavigator: true).pop();
 
           // close dialog
-          GoRouter.of(context).pop();
+          Navigator.of(context).pop();
 
           // go to dashboard (replace stack)
-          GoRouter.of(context).go(AppRoutes.customerDashboard);
+          context.go(AppRoutes.customerDashboard);
 
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text("Password updated successfully")),
@@ -69,79 +69,76 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
         }
 
         if (state is CustomerPasswordError) {
-          GoRouter.of(context).pop(); // close loader
+          Navigator.of(context, rootNavigator: true).pop(); // close loader
 
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(SnackBar(content: Text(state.message)));
         }
-
-        AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: const Text("Change Password"),
-          content: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                /// 🔐 New Password
-                AppTextFieldWidget(
-                  hintText: "New Password",
-                  validator: AppValidation.currentPasswordValidator,
-                  textFieldController: passwordController,
-                  isPasswordTextField: true,
-                  inputFormatters: [LengthLimitingTextInputFormatter(20)],
-                  prefixIconWidget: const Padding(
-                    padding: EdgeInsets.all(defaultPadding),
-                    child: Icon(
-                      Icons.lock,
-                      color: AppColors.kPrimaryColor,
-                      size: 23,
-                    ),
-                  ),
-                  contentPadding: const EdgeInsets.fromLTRB(10, 17, 10, 17),
-                  disableFocusBorder: true,
-                  decoration: const InputDecoration(),
-                ),
-
-                const SizedBox(height: defaultPadding),
-
-                /// 🔐 Confirm Password
-                AppTextFieldWidget(
-                  hintText: "Confirm Password",
-                  validator: (value) => AppValidation.confirmPasswordValidator(
-                    value,
-                    passwordController.text,
-                  ),
-                  textFieldController: confirmPasswordController,
-                  isPasswordTextField: true,
-                  inputFormatters: [LengthLimitingTextInputFormatter(20)],
-                  prefixIconWidget: const Padding(
-                    padding: EdgeInsets.all(defaultPadding),
-                    child: Icon(
-                      Icons.lock_outline,
-                      color: AppColors.kPrimaryColor,
-                      size: 23,
-                    ),
-                  ),
-                  contentPadding: const EdgeInsets.fromLTRB(10, 17, 10, 17),
-                  disableFocusBorder: true,
-                  decoration: const InputDecoration(),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => GoRouter.of(context).pop(),
-              child: const Text("Cancel"),
-            ),
-            ElevatedButton(onPressed: _submit, child: const Text("Update")),
-          ],
-        );
       },
+      child: AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: const Text("Change Password"),
+        content: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              /// 🔐 New Password
+              AppTextFieldWidget(
+                hintText: "New Password",
+                validator: AppValidation.currentPasswordValidator,
+                textFieldController: passwordController,
+                isPasswordTextField: true,
+                inputFormatters: [LengthLimitingTextInputFormatter(20)],
+                prefixIconWidget: const Padding(
+                  padding: EdgeInsets.all(defaultPadding),
+                  child: Icon(
+                    Icons.lock,
+                    color: AppColors.kPrimaryColor,
+                    size: 23,
+                  ),
+                ),
+                contentPadding: const EdgeInsets.fromLTRB(10, 17, 10, 17),
+                disableFocusBorder: true,
+              ),
+
+              const SizedBox(height: defaultPadding),
+
+              /// 🔐 Confirm Password
+              AppTextFieldWidget(
+                hintText: "Confirm Password",
+                validator: (value) => AppValidation.confirmPasswordValidator(
+                  value,
+                  passwordController.text,
+                ),
+                textFieldController: confirmPasswordController,
+                isPasswordTextField: true,
+                inputFormatters: [LengthLimitingTextInputFormatter(20)],
+                prefixIconWidget: const Padding(
+                  padding: EdgeInsets.all(defaultPadding),
+                  child: Icon(
+                    Icons.lock_outline,
+                    color: AppColors.kPrimaryColor,
+                    size: 23,
+                  ),
+                ),
+                contentPadding: const EdgeInsets.fromLTRB(10, 17, 10, 17),
+                disableFocusBorder: true,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(onPressed: _submit, child: const Text("Update")),
+        ],
+      ),
     );
   }
 }

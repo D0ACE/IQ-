@@ -118,6 +118,7 @@ class _CustomerProfileEditPageState extends State<CustomerProfileEditPage> {
     // Save to Hive
     await getIt<HiveService>().saveCustomer(updatedCustomer);
 
+    if (!mounted) return;
     context.pop(updatedCustomer);
     // Return updated customer
   }

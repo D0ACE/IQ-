@@ -37,6 +37,13 @@ import 'package:iq_plus/features/users/cubit/employee_user_cubit.dart';
 import 'package:iq_plus/features/users/pages/employe_user_list_page.dart';
 import 'package:iq_plus/ncr_form/ncr_form_page.dart';
 import 'package:iq_plus/ncr_form/ncr_page.dart';
+import 'package:iq_plus/features/superadmin/pages/document_editor_page.dart';
+import 'package:iq_plus/features/superadmin/pages/document_list_page.dart';
+import 'package:iq_plus/features/superadmin/pages/document_add_edit_page.dart';
+import 'package:iq_plus/features/superadmin/pages/excel_editor_page.dart';
+import 'package:iq_plus/features/customer_policies/pages/customer_policy_list_page.dart';
+import 'package:iq_plus/features/customer_policies/pages/customer_policy_detail_page.dart';
+import 'package:iq_plus/features/superadmin/models/document_model.dart';
 
 class AppRouter {
   static final GoRouter router = GoRouter(
@@ -95,7 +102,13 @@ class AppRouter {
         path: '/customer-onboarding',
         name: 'customerOnboarding',
         builder: (context, state) {
-          final customer = state.extra as CustomerModel;
+          final customer = state.extra as CustomerModel?;
+
+          if (customer == null) {
+            return const Scaffold(
+              body: Center(child: Text('Error: Customer data is missing.')),
+            );
+          }
 
           return BlocProvider.value(
             value: context.read<CustomerCubit>(),
@@ -184,7 +197,12 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.consultantProfile,
         builder: (context, state) {
-          final consultantId = state.extra as String;
+          final consultantId = state.extra as String?;
+          if (consultantId == null) {
+             return const Scaffold(
+               body: Center(child: Text('Error: Consultant ID is missing.')),
+             );
+          }
           return ConsultantProfilePage(consultantId: consultantId);
         },
       ),
@@ -217,8 +235,12 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.customerProfile,
         builder: (context, state) {
-          final customer = state.extra as CustomerModel;
-
+          final customer = state.extra as CustomerModel?;
+          if (customer == null) {
+            return const Scaffold(
+              body: Center(child: Text('Error: Customer data is missing.')),
+            );
+          }
           return CustomerProfilePage(customer: customer);
         },
       ),
@@ -226,7 +248,12 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.customerProfileEdit,
         builder: (context, state) {
-          final customer = state.extra as CustomerModel;
+          final customer = state.extra as CustomerModel?;
+          if (customer == null) {
+            return const Scaffold(
+              body: Center(child: Text('Error: Customer data is missing.')),
+            );
+          }
           return CustomerProfileEditPage(customer: customer);
         },
       ),
@@ -240,7 +267,12 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.customerMMEList,
         builder: (context, state) {
-          final customer = state.extra as String;
+          final customer = state.extra as String?;
+          if (customer == null) {
+            return const Scaffold(
+              body: Center(child: Text('Error: Customer ID is missing.')),
+            );
+          }
           return CustomerMMEListPage(customerId: customer);
         },
       ),
@@ -258,13 +290,7 @@ class AppRouter {
       ),
       GoRoute(
         path: AppRoutes.superAdminDashboard,
-        builder: (context, state) {
-          return BlocProvider<CustomerListCubit>(
-            create: (_) =>
-                CustomerListCubit(getIt<AuthRepository>())..fetchCustomers(),
-            child: SuperadminDashboardPage(),
-          );
-        },
+        builder: (context, state) => const SuperadminDashboardPage(),
       ),
       GoRoute(
         path: '/create-admin',
@@ -290,12 +316,55 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.assignCustomers,
         builder: (context, state) {
-          final consultantId = state.extra as String;
+          final consultantId = state.extra as String?;
+          if (consultantId == null) {
+            return const Scaffold(
+              body: Center(child: Text('Error: Consultant ID is missing.')),
+            );
+          }
           return BlocProvider(
             create: (_) =>
                 getIt<CustomerListCubit>()..fetchAssignCustomers(consultantId),
             child: AssignCustomersPage(consultantId: consultantId),
           );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.documentEditor,
+        builder: (context, state) {
+          final doc = state.extra as DocumentModel?;
+          return DocumentEditorPage(
+            document: doc,
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.documentList,
+        builder: (context, state) => const DocumentListPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.documentAddEdit,
+        builder: (context, state) {
+          final doc = state.extra as DocumentModel?;
+          return DocumentAddEditPage(document: doc);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.excelEditor,
+        builder: (context, state) {
+          final doc = state.extra as DocumentModel?;
+          return ExcelEditorPage(document: doc);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.customerPolicyList,
+        builder: (context, state) => const CustomerPolicyListPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.customerPolicyDetail,
+        builder: (context, state) {
+          final doc = state.extra as DocumentModel;
+          return CustomerPolicyDetailPage(document: doc);
         },
       ),
     ],

@@ -29,4 +29,10 @@ class AppRoutes {
   static const String adminList = '/admins';
   static const String adminDetail = '/admins/:adminId';
   static const String assignCustomers = '/assignCustomers';
+  static const String documentEditor = '/documentEditor';
+  static const String documentList = '/documentList';
+  static const String documentAddEdit = '/documentAddEdit';
+  static const String excelEditor = '/excelEditor';
+  static const String customerPolicyList = '/customerPolicyList';
+  static const String customerPolicyDetail = '/customerPolicyDetail';
 }

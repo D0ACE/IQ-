@@ -189,6 +189,15 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage> {
               },
             ),
 
+            _drawerItem(
+              icon: Icons.policy_outlined,
+              title: 'Policies & Procedures',
+              onTap: () {
+                GoRouter.of(context).pop();
+                GoRouter.of(context).push(AppRoutes.documentList);
+              },
+            ),
+
             // 🔵 My Customers (Expandable)
             _drawerItem(
               icon: Icons.supervised_user_circle_outlined,
@@ -399,6 +408,12 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage> {
           onTap: () {
             GoRouter.of(context).push(AppRoutes.visitorSummaryList);
           },
+        ),
+
+        _clickableCard(
+          title: 'Policies & Procedures',
+          icon: Icons.policy,
+          onTap: () => GoRouter.of(context).push(AppRoutes.documentList),
         ),
 
         // _clickableCard(

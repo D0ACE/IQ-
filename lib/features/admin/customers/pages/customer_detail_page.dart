@@ -141,6 +141,7 @@ class _CustomerDetailViewState extends State<CustomerDetailPage> {
                 consultantId: selectedConsultantId ?? '',
               );
 
+          if (!mounted) return;
           GoRouter.of(context).pop();// ✅ GoRouter pop
         } else {
           ScaffoldMessenger.of(context).showSnackBar(

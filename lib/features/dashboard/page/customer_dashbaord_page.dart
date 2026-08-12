@@ -195,6 +195,15 @@ class _DashboardPageState extends State<DashboardPage> {
             //   },
             // ),
             _drawerItem(
+              icon: Icons.policy_outlined,
+              title: 'Policies & Procedures',
+              onTap: () {
+                GoRouter.of(context).pop();
+                context.push(AppRoutes.customerPolicyList);
+              },
+            ),
+
+            _drawerItem(
               icon: Icons.contact_mail,
               title: 'Contact Us',
               onTap: () {
@@ -250,6 +259,12 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
           onTap: () async {
             GoRouter.of(context).pop();
+            if (customer == null) {
+               ScaffoldMessenger.of(context).showSnackBar(
+                 const SnackBar(content: Text('Customer data not found.')),
+               );
+               return;
+            }
             final result =
             await context.push(AppRoutes.customerProfile, extra: customer)
             as CustomerModel?;
@@ -264,6 +279,12 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
           onTap: () async {
             GoRouter.of(context).pop();
+            if (customer == null) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Customer data not found.')),
+              );
+              return;
+            }
             await context.push(AppRoutes.customerProfileEdit, extra: customer);
           },
         ),
@@ -485,6 +506,14 @@ class _DashboardPageState extends State<DashboardPage> {
           title: 'Next Training',
           icon: Icons.school,
           onTap: () {},
+        ),
+
+        _clickableCard(
+          title: 'Policies & Procedures',
+          icon: Icons.policy,
+          onTap: () {
+            context.push(AppRoutes.customerPolicyList);
+          },
         ),
       ],
     );

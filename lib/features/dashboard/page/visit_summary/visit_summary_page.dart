@@ -242,7 +242,11 @@ class _VisitorSummaryPageState extends State<VisitorSummaryPage> {
       context: context,
       initialTime: TimeOfDay.now(),
     );
-    if (time != null) ctrl.text = time.format(context);
+    if (!mounted) return;
+    if (time != null) {
+      final formattedTime = time.format(context);
+      ctrl.text = formattedTime;
+    }
   }
 
   // ================= TABLE HELPERS
@@ -497,19 +501,24 @@ class _VisitorSummaryPageState extends State<VisitorSummaryPage> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(k, style: labelStyle),
-                              Row(
-                                children: ['Yes', 'No'].map((option) {
-                                  return Expanded(
-                                    child: RadioListTile<String>(
-                                      contentPadding: EdgeInsets.zero,
-                                      title: Text(option),
-                                      value: option,
-                                      groupValue: scopeReview[k],
-                                      onChanged: (v) =>
-                                          setState(() => scopeReview[k] = v!),
-                                    ),
-                                  );
-                                }).toList(),
+                              RadioGroup<String>(
+                                groupValue: scopeReview[k],
+                                onChanged: (v) => setState(() => scopeReview[k] = v!),
+                                child: Row(
+                                  children: ['Yes', 'No'].map((option) {
+                                    return Expanded(
+                                      child: Row(
+                                        children: [
+                                          // ignore: deprecated_member_use
+                                          Radio<String>(
+                                            value: option,
+                                          ),
+                                          Text(option),
+                                        ],
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
                               ),
                               const SizedBox(height: 8),
                             ],
