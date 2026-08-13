@@ -35,4 +35,5 @@ class AppRoutes {
   static const String excelEditor = '/excelEditor';
   static const String customerPolicyList = '/customerPolicyList';
   static const String customerPolicyDetail = '/customerPolicyDetail';
+  static const String globalVersionHistory = '/globalVersionHistory';
 }

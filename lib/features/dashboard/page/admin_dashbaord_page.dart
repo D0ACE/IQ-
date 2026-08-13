@@ -190,6 +190,14 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               },
             ),
             _drawerItem(
+              icon: Icons.history,
+              title: 'All Policies Version History',
+              onTap: () {
+                context.pop();
+                context.push(AppRoutes.globalVersionHistory);
+              },
+            ),
+            _drawerItem(
               icon: Icons.logout,
               title: 'Logout',
               onTap: () {
@@ -340,6 +348,12 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           title: 'Next Training',
           icon: Icons.school,
           onTap: () {},
+        ),
+
+        _clickableCard(
+          title: 'All Policies Version History',
+          icon: Icons.history,
+          onTap: () => context.push(AppRoutes.globalVersionHistory),
         ),
       ],
     );

@@ -217,6 +217,13 @@ class SuperadminDashboardPage extends StatelessWidget {
               route: AppRoutes.documentList,
             ),
 
+            _drawerItem(
+              context,
+              icon: Icons.history,
+              title: 'All Policies Version History',
+              route: AppRoutes.globalVersionHistory,
+            ),
+
 
             // 🔹 COMMON
             _drawerItem(
@@ -389,6 +396,11 @@ class SuperadminDashboardPage extends StatelessWidget {
           title: 'Policies & Procedures',
           icon: Icons.description,
           onTap: () => context.push(AppRoutes.documentList),
+        ),
+        _dashboardCard(
+          title: 'All Policies Version History',
+          icon: Icons.history,
+          onTap: () => context.push(AppRoutes.globalVersionHistory),
         ),
       ],
     );

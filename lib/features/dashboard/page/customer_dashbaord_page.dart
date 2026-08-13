@@ -204,6 +204,15 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
 
             _drawerItem(
+              icon: Icons.history,
+              title: 'All Policies Version History',
+              onTap: () {
+                GoRouter.of(context).pop();
+                context.push(AppRoutes.globalVersionHistory);
+              },
+            ),
+
+            _drawerItem(
               icon: Icons.contact_mail,
               title: 'Contact Us',
               onTap: () {
@@ -513,6 +522,14 @@ class _DashboardPageState extends State<DashboardPage> {
           icon: Icons.policy,
           onTap: () {
             context.push(AppRoutes.customerPolicyList);
+          },
+        ),
+
+        _clickableCard(
+          title: 'All Policies Version History',
+          icon: Icons.history,
+          onTap: () {
+            context.push(AppRoutes.globalVersionHistory);
           },
         ),
       ],

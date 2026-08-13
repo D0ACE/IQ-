@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:iq_plus/features/superadmin/cubit/document_state.dart';
+import 'package:iq_plus/features/superadmin/models/version_history_model.dart';
 import 'package:iq_plus/features/superadmin/repository/document_repository.dart';
 import 'dart:developer' as developer;
 
@@ -169,9 +170,28 @@ class DocumentCubit extends Cubit<DocumentState> {
   }
 
   Future<void> updateStatus(String docId, String status) async {
+    emit(DocumentLoading());
     try {
       await _repository.updateStatus(docId, status);
       _refresh();
+    } catch (e) {
+      emit(DocumentError(e.toString()));
+    }
+  }
+
+  Future<void> loadGlobalVersionHistory({
+    String? userId,
+    bool isConsultant = false,
+    String? customerId,
+  }) async {
+    emit(DocumentLoading());
+    try {
+      final history = await _repository.getGlobalVersionHistory(
+        userId: userId,
+        isConsultant: isConsultant,
+        customerId: customerId,
+      );
+      emit(GlobalVersionHistoryLoaded(history));
     } catch (e) {
       emit(DocumentError(e.toString()));
     }

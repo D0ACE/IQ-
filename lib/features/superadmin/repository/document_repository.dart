@@ -70,9 +70,23 @@ class DocumentRepository {
 
   Future<String> _calculateNextVersionFromHistory(String docId) async {
     try {
-      final lastVersionStr = await _getCurrentVersionFromHistory(docId);
+      final historySnapshot = await _firestore
+          .collection('documents')
+          .doc(docId)
+          .collection('version_history')
+          .orderBy('performedDate', descending: true)
+          .limit(1)
+          .get();
+
+      if (historySnapshot.docs.isEmpty) {
+        return 'V1'; // First activation results in V1
+      }
+
+      final lastVersionStr = historySnapshot.docs.first.data()['versionNo'] as String? ?? 'V1';
       if (lastVersionStr.startsWith('V')) {
-        int versionNum = int.parse(lastVersionStr.substring(1));
+        // Handle sub-versions like V2.1, V2.2 by extracting the major number
+        final String versionCore = lastVersionStr.substring(1).split('.').first;
+        int versionNum = int.parse(versionCore);
         return 'V${versionNum + 1}';
       }
     } catch (e) {
@@ -90,6 +104,8 @@ class DocumentRepository {
     DateTime? approvedDate,
     required String status,
     String? assignedReviewerName,
+    String? assignedReviewerEmail,
+    String? docTitle,
   }) async {
     final historyRef = _firestore.collection('documents').doc(docId).collection('version_history');
     await historyRef.add({
@@ -102,6 +118,8 @@ class DocumentRepository {
       'approvedDate': approvedDate != null ? Timestamp.fromDate(approvedDate) : null,
       'status': status,
       'assignedReviewerName': assignedReviewerName,
+      'assignedReviewerEmail': assignedReviewerEmail,
+      'docTitle': docTitle,
     });
   }
 
@@ -111,6 +129,7 @@ class DocumentRepository {
     String? customerId,
     String? assignedReviewerId,
     String? assignedReviewerName,
+    String? assignedReviewerEmail,
   }) async {
     final fileName = p.basename(file.path);
     final extension = p.extension(file.path);
@@ -145,6 +164,9 @@ class DocumentRepository {
       'customer_id': customerId,
       'assigned_reviewer_id': assignedReviewerId,
       'assigned_reviewer_name': assignedReviewerName,
+      'assigned_reviewer_email': assignedReviewerEmail,
+      'last_change_description': 'Initial document upload',
+      'last_updated_by': userEmail,
     });
   }
 
@@ -155,47 +177,26 @@ class DocumentRepository {
     String? customerId,
     String? assignedReviewerId,
     String? assignedReviewerName,
+    String? assignedReviewerEmail,
     String? changeDescription,
   }) async {
     final user = getIt<HiveService>().getUser();
     final userEmail = user?.email ?? 'unknown';
     
     if (docId != null) {
-      final docSnapshot = await _firestore.collection('documents').doc(docId).get();
-      final currentData = docSnapshot.data();
-      final String oldContent = currentData?['content'] ?? '';
-      
-      bool contentChanged = oldContent != content;
-      
-      String versionToUse;
-      if (contentChanged) {
-        versionToUse = await _calculateNextVersionFromHistory(docId);
-      } else {
-        versionToUse = await _getCurrentVersionFromHistory(docId);
-      }
-
+      // 🚀 Manual Update: Just update main doc. NO history log and NO version change.
       await _firestore.collection('documents').doc(docId).update({
         'title': title,
         'content': content,
         'customer_id': customerId,
         'assigned_reviewer_id': assignedReviewerId,
         'assigned_reviewer_name': assignedReviewerName,
+        'assigned_reviewer_email': assignedReviewerEmail,
         'status': 'draft', 
-        'version': 'V1',
-        'current_version': versionToUse,
+        'last_change_description': changeDescription ?? 'Rich text updated',
+        'last_updated_by': userEmail,
         'updated_at': FieldValue.serverTimestamp(),
       });
-
-      if (changeDescription != null && changeDescription.isNotEmpty) {
-        await _addVersionHistory(
-          docId: docId,
-          versionNo: versionToUse,
-          changeDescription: changeDescription,
-          performedBy: userEmail,
-          status: 'draft',
-          assignedReviewerName: assignedReviewerName,
-        );
-      }
     } else {
       final nextId = await _getNextId();
       await _firestore.collection('documents').add({
@@ -215,6 +216,9 @@ class DocumentRepository {
         'customer_id': customerId,
         'assigned_reviewer_id': assignedReviewerId,
         'assigned_reviewer_name': assignedReviewerName,
+        'assigned_reviewer_email': assignedReviewerEmail,
+        'last_change_description': 'Initial rich text creation',
+        'last_updated_by': userEmail,
       });
     }
   }
@@ -227,6 +231,7 @@ class DocumentRepository {
     String? currentFilePath,
     String? assignedReviewerId,
     String? assignedReviewerName,
+    String? assignedReviewerEmail,
     String? changeDescription,
     bool isContentChanged = true,
   }) async {
@@ -256,13 +261,7 @@ class DocumentRepository {
     final String fileUrl = _supabase.storage.from(SupabaseConfig.bucketName).getPublicUrl(supabasePath);
 
     if (docId != null) {
-      String versionToUse;
-      if (isContentChanged) {
-        versionToUse = await _calculateNextVersionFromHistory(docId);
-      } else {
-        versionToUse = await _getCurrentVersionFromHistory(docId);
-      }
-
+      // 🚀 Manual Update: Just update main doc. NO history log and NO version change.
       await _firestore.collection('documents').doc(docId).update({
         'title': title,
         'file_url': fileUrl,
@@ -271,22 +270,12 @@ class DocumentRepository {
         'customer_id': customerId,
         'assigned_reviewer_id': assignedReviewerId,
         'assigned_reviewer_name': assignedReviewerName,
+        'assigned_reviewer_email': assignedReviewerEmail,
         'status': 'draft', 
-        'version': 'V1',
-        'current_version': versionToUse,
+        'last_change_description': changeDescription ?? 'Spreadsheet updated',
+        'last_updated_by': userEmail,
         'updated_at': FieldValue.serverTimestamp(),
       });
-
-      if (changeDescription != null && changeDescription.isNotEmpty) {
-        await _addVersionHistory(
-          docId: docId,
-          versionNo: versionToUse,
-          changeDescription: changeDescription,
-          performedBy: userEmail,
-          status: 'draft',
-          assignedReviewerName: assignedReviewerName,
-        );
-      }
     } else {
       final nextId = await _getNextId();
       await _firestore.collection('documents').add({
@@ -305,6 +294,9 @@ class DocumentRepository {
         'customer_id': customerId,
         'assigned_reviewer_id': assignedReviewerId,
         'assigned_reviewer_name': assignedReviewerName,
+        'assigned_reviewer_email': assignedReviewerEmail,
+        'last_change_description': 'Initial excel creation',
+        'last_updated_by': userEmail,
       });
     }
   }
@@ -317,19 +309,22 @@ class DocumentRepository {
     String? customerId,
     String? assignedReviewerId,
     String? assignedReviewerName,
+    String? assignedReviewerEmail,
     String? changeDescription,
   }) async {
+    final user = getIt<HiveService>().getUser();
+    final userEmail = user?.email ?? 'unknown';
     Map<String, dynamic> updateData = {
       'title': title,
       'customer_id': customerId,
       'assigned_reviewer_id': assignedReviewerId,
       'assigned_reviewer_name': assignedReviewerName,
+      'assigned_reviewer_email': assignedReviewerEmail,
       'status': 'draft', 
-      'version': 'V1',
+      'last_change_description': changeDescription ?? 'Document updated',
+      'last_updated_by': userEmail,
       'updated_at': FieldValue.serverTimestamp(),
     };
-
-    bool contentChanged = newFile != null;
 
     if (newFile != null) {
       if (currentFilePath != null && currentFilePath.isNotEmpty) {
@@ -354,27 +349,8 @@ class DocumentRepository {
       updateData['file_type'] = extension;
     }
 
-    String versionToUse;
-    if (contentChanged) {
-      versionToUse = await _calculateNextVersionFromHistory(docId);
-    } else {
-      versionToUse = await _getCurrentVersionFromHistory(docId);
-    }
-    
-    updateData['current_version'] = versionToUse;
-
+    // 🚀 Manual Update: Just update main doc. NO history log and NO version change.
     await _firestore.collection('documents').doc(docId).update(updateData);
-
-    if (changeDescription != null && changeDescription.isNotEmpty) {
-      await _addVersionHistory(
-        docId: docId,
-        versionNo: versionToUse,
-        changeDescription: changeDescription,
-        performedBy: getIt<HiveService>().getUser()?.email ?? 'unknown',
-        status: 'draft',
-        assignedReviewerName: assignedReviewerName,
-      );
-    }
   }
 
   Future<void> deleteDocument(String docId, String? supabasePath) async {
@@ -392,39 +368,51 @@ class DocumentRepository {
     final user = getIt<HiveService>().getUser();
     final userEmail = user?.email ?? 'unknown';
 
-    Map<String, dynamic> updateData = {
-      'status': status,
-      'updated_at': FieldValue.serverTimestamp(),
-    };
-
     if (status == 'active') {
-      updateData['reviewed_by'] = userEmail;
-      updateData['reviewed_date'] = FieldValue.serverTimestamp();
-      
-      final historySnapshot = await _firestore
-          .collection('documents')
-          .doc(docId)
-          .collection('version_history')
-          .orderBy('performedDate', descending: true)
-          .limit(1)
-          .get();
-          
-      final String latestVersion = historySnapshot.docs.isNotEmpty 
-          ? historySnapshot.docs.first.data()['versionNo'] 
-          : 'V1';
+      // 🚀 Version change and history entry ONLY on activation
+      final docSnapshot = await _firestore.collection('documents').doc(docId).get();
+      final data = docSnapshot.data();
+      if (data == null) return;
 
+      final docTitle = data['title'];
+      final currentReviewerName = data['assigned_reviewer_name'];
+      final currentReviewerEmail = data['assigned_reviewer_email'];
+      final changeDescription = data['last_change_description'] ?? 'Approved and Activated';
+      final lastUpdatedBy = data['last_updated_by'] ?? 'System';
+
+      // Calculate next version
+      final nextVersion = await _calculateNextVersionFromHistory(docId);
+
+      Map<String, dynamic> updateData = {
+        'status': 'active',
+        'current_version': nextVersion,
+        'reviewed_by': userEmail,
+        'reviewed_date': FieldValue.serverTimestamp(),
+        'updated_at': FieldValue.serverTimestamp(),
+      };
+
+      await _firestore.collection('documents').doc(docId).update(updateData);
+
+      // Log the activation in history
       await _addVersionHistory(
         docId: docId,
-        versionNo: latestVersion,
-        changeDescription: 'Document Approved & Activated',
-        performedBy: userEmail,
+        versionNo: nextVersion,
+        changeDescription: changeDescription,
+        performedBy: lastUpdatedBy,
         approvedBy: userEmail, 
         approvedDate: DateTime.now(),
         status: 'active',
+        assignedReviewerName: currentReviewerName,
+        assignedReviewerEmail: currentReviewerEmail,
+        docTitle: docTitle,
       );
+    } else {
+      // Just set to draft or other status
+      await _firestore.collection('documents').doc(docId).update({
+        'status': status,
+        'updated_at': FieldValue.serverTimestamp(),
+      });
     }
-
-    await _firestore.collection('documents').doc(docId).update(updateData);
   }
 
   Future<List<VersionHistoryModel>> getVersionHistory(String docId) async {
@@ -435,5 +423,58 @@ class DocumentRepository {
         .orderBy('performedDate', descending: true)
         .get();
     return snapshot.docs.map((doc) => VersionHistoryModel.fromFirestore(doc)).toList();
+  }
+
+  Future<List<VersionHistoryModel>> getGlobalVersionHistory({
+    String? userId,
+    bool isConsultant = false,
+    String? customerId,
+  }) async {
+    // 🚀 Collection Group query to fetch history from ALL documents at once
+    Query query = _firestore.collectionGroup('version_history');
+
+    if (isConsultant && userId != null) {
+      final docs = await getDocuments(userId: userId, isConsultant: true);
+      final docIds = docs.map((d) => d.docId).toList();
+      if (docIds.isEmpty) return [];
+      query = query.where('docId', whereIn: docIds);
+    } else if (customerId != null) {
+      final docs = await getDocuments(customerId: customerId);
+      final docIds = docs.map((d) => d.docId).toList();
+      if (docIds.isEmpty) return [];
+      query = query.where('docId', whereIn: docIds);
+    }
+
+    final snapshot = await query.orderBy('performedDate', descending: true).get();
+    
+    List<VersionHistoryModel> history = [];
+    
+    // Map to cache document titles to avoid repeated DB hits
+    Map<String, String> titleCache = {};
+
+    for (var doc in snapshot.docs) {
+      final data = doc.data() as Map<String, dynamic>;
+      String? title = data['docTitle'];
+      final String dId = data['docId'] ?? '';
+
+      // If title is missing in history entry, fetch from parent document
+      if ((title == null || title.isEmpty) && dId.isNotEmpty) {
+        if (titleCache.containsKey(dId)) {
+          title = titleCache[dId];
+        } else {
+          try {
+            final parentDoc = await _firestore.collection('documents').doc(dId).get();
+            title = parentDoc.data()?['title'] ?? 'Unknown Policy';
+            titleCache[dId] = title!;
+          } catch (e) {
+            title = 'Unknown Policy';
+          }
+        }
+      }
+
+      history.add(VersionHistoryModel.fromFirestore(doc, docTitle: title));
+    }
+    
+    return history;
   }
 }

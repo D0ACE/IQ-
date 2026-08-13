@@ -65,6 +65,10 @@ class _DocumentListPageState extends State<DocumentListPage> {
                 final isRichDoc = doc.content != null;
                 final isDocx = doc.fileName.toLowerCase().endsWith('.docx');
 
+                final user = getIt<HiveService>().getUser();
+                final bool isCreator = doc.createdByUserId == user?.userId;
+                final bool isSystemAdmin = Utility.isSuperAdmin(user?.roleId) || Utility.isAdmin(user?.roleId);
+
                 return Card(
                   margin: const EdgeInsets.only(bottom: 16),
                   elevation: 4,
@@ -109,20 +113,21 @@ class _DocumentListPageState extends State<DocumentListPage> {
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            IconButton(
-                              tooltip: (isRichDoc || isDocx) ? 'Edit / Read Content' : 'Edit (Rich Text)',
-                              icon: Icon(
-                                isDocx ? Icons.chrome_reader_mode : Icons.edit_note, 
-                                color: Colors.blue
+                            if (isSystemAdmin || isCreator)
+                              IconButton(
+                                tooltip: (isRichDoc || isDocx) ? 'Edit / Read Content' : 'Edit (Rich Text)',
+                                icon: Icon(
+                                  isDocx ? Icons.chrome_reader_mode : Icons.edit_note, 
+                                  color: Colors.blue
+                                ),
+                                onPressed: () {
+                                  if (doc.fileType.toLowerCase() == '.xlsx'){
+                                    context.push(AppRoutes.excelEditor, extra: doc);
+                                  } else {
+                                    context.push(AppRoutes.documentEditor, extra: doc);
+                                  }
+                                },
                               ),
-                              onPressed: () {
-                                if (doc.fileType.toLowerCase() == '.xlsx'){
-                                  context.push(AppRoutes.excelEditor, extra: doc);
-                                } else {
-                                  context.push(AppRoutes.documentEditor, extra: doc);
-                                }
-                              },
-                            ),
                             IconButton(
                               tooltip: 'Status',
                               icon: Icon(
@@ -138,7 +143,13 @@ class _DocumentListPageState extends State<DocumentListPage> {
                                                  doc.assignedReviewerId == user?.userId;
                                 
                                 if (isAllowed) {
-                                  _showStatusDialog(context, doc.docId, doc.status);
+                                  if (doc.status == 'active') {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text("This policy is already Active.")),
+                                    );
+                                  } else {
+                                    _showStatusDialog(context, doc.docId, doc.status);
+                                  }
                                 } else {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(content: Text("You are not authorized to change this policy status.")),
@@ -151,25 +162,12 @@ class _DocumentListPageState extends State<DocumentListPage> {
                               icon: const Icon(Icons.history, color: Colors.blueGrey),
                               onPressed: () => _showVersionHistoryDialog(context, doc.docId, doc.title),
                             ),
-                            IconButton(
-                              tooltip: 'Delete',
-                              icon: const Icon(Icons.delete, color: Colors.red),
-                              onPressed: () {
-                                // Allow delete if user is Admin/SuperAdmin OR created the doc
-                                final user = getIt<HiveService>().getUser();
-                                final isAllowed = Utility.isSuperAdmin(user?.roleId) || 
-                                                 Utility.isAdmin(user?.roleId) || 
-                                                 doc.createdByUserId == user?.userId;
-                                
-                                if (isAllowed) {
-                                  _confirmDelete(context, doc.docId, doc.filePath);
-                                } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text("Only the creator or an admin can delete this policy.")),
-                                  );
-                                }
-                              },
-                            ),
+                            if (isSystemAdmin || isCreator)
+                              IconButton(
+                                tooltip: 'Delete',
+                                icon: const Icon(Icons.delete, color: Colors.red),
+                                onPressed: () => _confirmDelete(context, doc.docId, doc.filePath),
+                              ),
                           ],
                         ),
                       ),
@@ -279,20 +277,21 @@ class _DocumentListPageState extends State<DocumentListPage> {
   }
 
   void _showStatusDialog(BuildContext context, String docId, String currentStatus) {
-    final nextStatus = currentStatus == 'active' ? 'draft' : 'active';
+    if (currentStatus == 'active') return; // Should not reach here based on UI logic
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Change Status to ${nextStatus.toUpperCase()}?'),
-        content: Text('Are you sure you want to mark this policy as $nextStatus?'),
+        title: const Text('Approve & Activate Policy?'),
+        content: const Text('Are you sure you want to mark this policy as ACTIVE? This will increment the version number in history.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           TextButton(
             onPressed: () {
-              context.read<DocumentCubit>().updateStatus(docId, nextStatus);
+              context.read<DocumentCubit>().updateStatus(docId, 'active');
               Navigator.pop(ctx);
             },
-            child: const Text('Confirm', style: TextStyle(fontWeight: FontWeight.bold)),
+            child: const Text('Approve', style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -361,11 +360,12 @@ class _DocumentListPageState extends State<DocumentListPage> {
                       const SizedBox(height: 4),
                       Text("Description of the change: ${v.changeDescription}", style: const TextStyle(fontSize: 13)),
                       const SizedBox(height: 4),
-                      Text("Performed By: ${v.performedBy}", style: const TextStyle(fontSize: 11, fontStyle: FontStyle.italic)),
-                      if (v.status == 'draft' && v.assignedReviewerName != null) 
+                      Text("Performed By: ${v.performedBy} on ${DateFormat('dd MMM yyyy').format(v.performedDate)}", 
+                           style: const TextStyle(fontSize: 11, fontStyle: FontStyle.italic)),
+                      if (v.status == 'draft' && v.assignedReviewerName != null)
                         Padding(
                           padding: const EdgeInsets.only(top: 2),
-                          child: Text("Pending Review by: ${v.assignedReviewerName} on ${DateFormat('dd MMM yyyy').format(v.performedDate)}", 
+                          child: Text("Pending Review by: ${v.assignedReviewerName} on ${DateFormat('dd MMM yyyy').format(v.performedDate)}",
                                style: const TextStyle(fontSize: 11, color: Colors.blueGrey, fontWeight: FontWeight.bold)),
                         ),
                       if (v.status == 'active' && v.approvedBy != null)

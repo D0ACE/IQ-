@@ -11,6 +11,8 @@ class VersionHistoryModel {
   final DateTime? approvedDate;
   final String status;
   final String? assignedReviewerName;
+  final String? assignedReviewerEmail;
+  final String? docTitle; // 👈 Added for global listing
 
   VersionHistoryModel({
     required this.id,
@@ -23,9 +25,11 @@ class VersionHistoryModel {
     this.approvedDate,
     required this.status,
     this.assignedReviewerName,
+    this.assignedReviewerEmail,
+    this.docTitle,
   });
 
-  factory VersionHistoryModel.fromFirestore(DocumentSnapshot doc) {
+  factory VersionHistoryModel.fromFirestore(DocumentSnapshot doc, {String? docTitle}) {
     final data = doc.data() as Map<String, dynamic>;
     return VersionHistoryModel(
       id: doc.id,
@@ -38,6 +42,8 @@ class VersionHistoryModel {
       approvedDate: (data['approvedDate'] as Timestamp?)?.toDate(),
       status: data['status'] ?? 'draft',
       assignedReviewerName: data['assignedReviewerName'],
+      assignedReviewerEmail: data['assignedReviewerEmail'],
+      docTitle: docTitle ?? data['docTitle'],
     );
   }
 
@@ -52,6 +58,8 @@ class VersionHistoryModel {
       'approvedDate': approvedDate != null ? Timestamp.fromDate(approvedDate!) : null,
       'status': status,
       'assignedReviewerName': assignedReviewerName,
+      'assignedReviewerEmail': assignedReviewerEmail,
+      'docTitle': docTitle,
     };
   }
 }

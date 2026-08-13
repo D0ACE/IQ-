@@ -2,13 +2,11 @@ import * as admin from "firebase-admin";
 admin.initializeApp();
 
 import {onSchedule} from "firebase-functions/v2/scheduler";
-import {onDocumentUpdated} from "firebase-functions/v2/firestore";
 import {onRequest} from "firebase-functions/v2/https";
 import cors from "cors";
 
 /* =============================================================================
    LAZY INITIALIZATION HELPERS
-   Prevents deployment timeouts by delaying heavy imports/configs until needed.
 ============================================================================= */
 
 let AWS: any;
@@ -60,6 +58,7 @@ export const annualDocumentReviewTask = onSchedule(
     const {BrevoEmailService} = require("./services/BrevoEmailService");
     const db = admin.firestore();
     const now = new Date();
+    // 🚀 Check ALL documents for anniversary
     const docsSnapshot = await db.collection("documents").get();
 
     for (const doc of docsSnapshot.docs) {
@@ -67,6 +66,7 @@ export const annualDocumentReviewTask = onSchedule(
       const createdAt = data.created_at?.toDate();
       if (!createdAt) continue;
 
+      // 1. Anniversary Check (Same day/month, different year)
       const isAnniversary =
         now.getMonth() === createdAt.getMonth() &&
         now.getDate() === createdAt.getDate() &&
@@ -74,6 +74,22 @@ export const annualDocumentReviewTask = onSchedule(
 
       if (isAnniversary) {
         const historyRef = doc.ref.collection("version_history");
+
+        // 🛡️ 2. Idempotency Check: Don't run twice on the same anniversary day
+        const todayStart = new Date(
+          now.getFullYear(), now.getMonth(), now.getDate()
+        );
+        const existingReview = await historyRef
+          .where("changeDescription", "==",
+                 "Annual Compliance Review")
+          .where("performedDate", ">=", todayStart)
+          .limit(1)
+          .get();
+
+        if (!existingReview.empty) {
+          continue; // Already reviewed today
+        }
+
         const historySnapshot = await historyRef
           .orderBy("performedDate", "desc")
           .limit(1)
@@ -89,21 +105,25 @@ export const annualDocumentReviewTask = onSchedule(
         const minor = parts.length > 1 ? parseInt(parts[1]) : 0;
         const nextVersion = `V${major}.${minor + 1}`;
 
+        // 3. Log History
         await historyRef.add({
           docId: doc.id,
           versionNo: nextVersion,
-          changeDescription: "Annual Compliance Review - No changes required",
+          changeDescription: "Annual Compliance Review",
           performedBy: "System (Auto-Review)",
           performedDate: admin.firestore.FieldValue.serverTimestamp(),
-          status: "active",
+          status: data.status,
           assignedReviewerName: data.assigned_reviewer_name || "System",
+          docTitle: data.title || "Untitled Document",
         });
 
+        // 4. Update Main Doc
         await doc.ref.update({
           current_version: nextVersion,
           updated_at: admin.firestore.FieldValue.serverTimestamp(),
         });
 
+        // 5. Send Notification
         if (data.assigned_reviewer_id) {
           const userDoc = await db.collection("users")
             .doc(data.assigned_reviewer_id)
@@ -243,73 +263,5 @@ export const storeAwsBillingDaily = onSchedule(
     } catch (error) {
       console.error("❌ AWS Billing Scheduler Error:", error);
     }
-  }
-);
-
-/* =============================================================================
-   DOCUMENT VERSIONING TRIGGER
-============================================================================= */
-export const onDocumentUpdatedVersioning = onDocumentUpdated(
-  "documents/{docId}",
-  async (event) => {
-    const before = event.data?.before.data();
-    const after = event.data?.after.data();
-    if (!before || !after) return;
-
-    const contentChanged = before.content !== after.content;
-    const titleChanged = before.title !== after.title;
-    const reviewerChanged =
-      before.assigned_reviewer_id !== after.assigned_reviewer_id;
-
-    if (!contentChanged && !titleChanged && !reviewerChanged) return;
-
-    const historyRef = admin.firestore()
-      .collection("documents")
-      .doc(event.params.docId)
-      .collection("version_history");
-
-    const historySnapshot = await historyRef
-      .orderBy("performedDate", "desc")
-      .limit(1)
-      .get();
-
-    let lastVersion = "V1";
-    if (!historySnapshot.empty) {
-      lastVersion = historySnapshot.docs[0].data().versionNo || "V1";
-    }
-
-    let nextVersion: string;
-    if (contentChanged) {
-      const majorNum = parseInt(lastVersion.substring(1).split(".")[0]);
-      nextVersion = `V${majorNum + 1}`;
-    } else {
-      const parts = lastVersion.substring(1).split(".");
-      const major = parts[0];
-      const minor = parts.length > 1 ? parseInt(parts[1]) : 0;
-      nextVersion = `V${major}.${minor + 1}`;
-    }
-
-    if (after.current_version === nextVersion) return;
-
-    const description = after.last_change_description ||
-      (contentChanged ? "Content updated" : "Metadata updated");
-
-    await historyRef.add({
-      docId: event.params.docId,
-      versionNo: nextVersion,
-      changeDescription: description,
-      performedBy: after.last_updated_by || "System",
-      performedDate: admin.firestore.FieldValue.serverTimestamp(),
-      status: "draft",
-      assignedReviewerName: after.assigned_reviewer_name || null,
-    });
-
-    await event.data?.after.ref.update({
-      current_version: nextVersion,
-      status: "draft",
-      version: "V1",
-    });
-
-    console.log(`✅ Version ${nextVersion} for ${event.params.docId}`);
   }
 );

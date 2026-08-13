@@ -44,6 +44,7 @@ import 'package:iq_plus/features/superadmin/pages/excel_editor_page.dart';
 import 'package:iq_plus/features/customer_policies/pages/customer_policy_list_page.dart';
 import 'package:iq_plus/features/customer_policies/pages/customer_policy_detail_page.dart';
 import 'package:iq_plus/features/superadmin/models/document_model.dart';
+import 'package:iq_plus/features/superadmin/pages/history/global_version_history_page.dart';
 
 class AppRouter {
   static final GoRouter router = GoRouter(
@@ -366,6 +367,10 @@ class AppRouter {
           final doc = state.extra as DocumentModel;
           return CustomerPolicyDetailPage(document: doc);
         },
+      ),
+      GoRoute(
+        path: AppRoutes.globalVersionHistory,
+        builder: (context, state) => const GlobalVersionHistoryPage(),
       ),
     ],
 
