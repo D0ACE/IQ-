@@ -22,6 +22,7 @@ import 'package:iq_plus/ncr_form/ncr/repository/ncr_repository.dart';
 
 class NCRFormPage extends StatefulWidget {
   final Map<String, dynamic>? ncrData;
+
   const NCRFormPage({super.key, this.ncrData});
 
   @override
@@ -34,6 +35,7 @@ class _NCRFormPageState extends State<NCRFormPage> {
   final NcrRepository _ncrRepository = NcrRepository();
   late bool isReview;
   String roleId = '';
+
   // role fetched from Firebase
 
   /// 🔹 Controllers
@@ -67,7 +69,8 @@ class _NCRFormPageState extends State<NCRFormPage> {
 
   CustomerModel? selectedCustomer;
   final UserModel? userLoginDetails = getIt<HiveService>().getUser();
-  final CustomerModel? customerLoginDetails = getIt<HiveService>().getCustomer();
+  final CustomerModel? customerLoginDetails = getIt<HiveService>()
+      .getCustomer();
 
   @override
   void initState() {
@@ -100,11 +103,12 @@ class _NCRFormPageState extends State<NCRFormPage> {
       approvedCtrl.text = ncr['approvedBy'] ?? '';
       currentStatus = ncr['status'];
 
-
       fetchCustomer();
+
       /// Fetch user role from Firebase
       fetchUserRole();
-  }}
+    }
+  }
 
   Future<void> fetchCustomer() async {
     final doc = await getIt<FirebaseFirestore>()
@@ -115,17 +119,15 @@ class _NCRFormPageState extends State<NCRFormPage> {
     setState(() {
       selectedCustomer = CustomerModel.fromJson(
         doc.data()!,
-        customerId:  widget.ncrData?['customerId'] ?? '',
+        customerId: widget.ncrData?['customerId'] ?? '',
       );
     });
   }
 
-  void fetchUserRole()  {
-      roleId = userLoginDetails?.roleId??customerLoginDetails?.roleId??'';
-      isRoleLoaded = true;
-      setState(() {
-
-      });
+  void fetchUserRole() {
+    roleId = userLoginDetails?.roleId ?? customerLoginDetails?.roleId ?? '';
+    isRoleLoaded = true;
+    setState(() {});
   }
 
   Future<void> _updateStatus(String newStatus) async {
@@ -181,7 +183,6 @@ class _NCRFormPageState extends State<NCRFormPage> {
       ),
     );
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -279,10 +280,10 @@ class _NCRFormPageState extends State<NCRFormPage> {
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: currentStatus == AppConst.openNCRStatusKey
-                    ? AppColors.orange.withValues(alpha:0.2)
+                    ? AppColors.orange.withValues(alpha: 0.2)
                     : currentStatus == AppConst.inProgressNCRStatusKey
-                    ? AppColors.blue.withValues(alpha:0.2)
-                    : AppColors.green.withValues(alpha:0.2),
+                    ? AppColors.blue.withValues(alpha: 0.2)
+                    : AppColors.green.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
@@ -299,9 +300,7 @@ class _NCRFormPageState extends State<NCRFormPage> {
             ),
 
             /// Status Buttons (Consultant Only)
-            if (isReview &&
-                isRoleLoaded &&
-                 Utility.isConsultant(roleId)) ...[
+            if (isReview && isRoleLoaded && Utility.isConsultant(roleId)) ...[
               const SizedBox(height: 20),
 
               Row(
@@ -644,11 +643,12 @@ class _NCRFormPageState extends State<NCRFormPage> {
 
                   await _ncrRepository.saveNcrForm(model);
 
-                  if (!mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("NCR Saved Successfully")),
-                  );
-                  GoRouter.of(context).pop();
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("NCR Saved Successfully")),
+                    );
+                    GoRouter.of(context).pop();
+                  }
                 },
               ),
           ],

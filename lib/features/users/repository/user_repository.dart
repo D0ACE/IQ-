@@ -5,6 +5,7 @@ import 'package:iq_plus/di/service_locator.dart';
 import 'package:iq_plus/features/auth/model/role_model.dart';
 import 'package:iq_plus/features/auth/model/user_model.dart';
 import 'package:iq_plus/features/users/models/employe_user.dart';
+import 'package:iq_plus/common/themes/app_const.dart';
 
 class UserRepository {
   final FirebaseFirestore firestore;
@@ -15,33 +16,38 @@ class UserRepository {
   Future<List<RoleModel>> fetchRoles() async {
     final UserModel? userLoginDetails = getIt<HiveService>().getUser();
     if(Utility.isSuperAdmin(userLoginDetails?.roleId)){
-      final snapshot = await firestore.collection('roles') .where('roleId', whereNotIn: ['0', '3']).get();
+      final snapshot = await firestore.collection('roles') .where('roleId', whereNotIn: ['0']).get();
       return snapshot.docs
           .map((doc) => RoleModel.fromFirestore(doc.data()))
           .toList();
     }else{
-      final snapshot = await firestore.collection('roles') .where('roleId', whereNotIn: ['0','1', '3']).get();
+      final snapshot = await firestore.collection('roles') .where('roleId', whereNotIn: ['0','1']).get();
       return snapshot.docs
           .map((doc) => RoleModel.fromFirestore(doc.data()))
           .toList();
     }
-
   }
 
-  // 🔹 Create user
+  // 🔹 Create User (Handles both System Users and Customer Employees)
   Future<void> createUser(EmployeeUserModel user) async {
-    // prevent duplicate email
-    final existing = await firestore
+    // 1. Check uniqueness across all users and employees
+    final mainUserCheck = await firestore
         .collection('users')
         .where('email', isEqualTo: user.email)
         .limit(1)
         .get();
 
-    if (existing.docs.isNotEmpty) {
+    final employeeCheck = await firestore
+        .collectionGroup('employees')
+        .where('email', isEqualTo: user.email)
+        .limit(1)
+        .get();
+
+    if (mainUserCheck.docs.isNotEmpty || employeeCheck.docs.isNotEmpty) {
       throw Exception("Email already exists");
     }
 
-    await firestore.collection('users').add({
+    final userData = {
       "userName": user.userName,
       "email": user.email,
       "phoneNumber": user.phoneNumber,
@@ -50,41 +56,103 @@ class UserRepository {
       "blockStatus": user.blockStatus,
       "activeUser": true,
       "joiningDate": user.joiningDate,
+      "designation": user.designation,
+      "customerId": user.customerId,
+      "createdBy": user.createdBy,
       "fcmToken": "",
       "createdAt": FieldValue.serverTimestamp(),
-    });
+    };
+
+    if (user.roleId == AppConst.employeeRole && user.customerId != null) {
+      // 🚀 Store in sub-collection for Employees
+      await firestore
+          .collection('customers')
+          .doc(user.customerId)
+          .collection('employees')
+          .add(userData);
+    } else {
+      // 🚀 Store in main "users" collection for Admins/Consultants
+      await firestore.collection('users').add(userData);
+    }
   }
 
+  // 🔹 Fetch Users (System Consultants)
   Future<List<EmployeeUserModel>> fetchUsers() async {
     final snapshot = await firestore
         .collection('users')
-        .where('roleId', whereNotIn: ['1', '3','0'])
+        .where('roleId', isEqualTo: AppConst.consultantRole) // Only Consultants (Role 2)
         .get();
-
     return snapshot.docs
         .map((doc) => EmployeeUserModel.fromFirestore(doc.id, doc.data()))
         .toList();
   }
 
-  Future<void> deleteUser(String userId) async {
+  // 🔹 Fetch Employees (Role 4)
+  Future<List<EmployeeUserModel>> fetchEmployees({List<String>? customerIds}) async {
+    Query query = firestore.collectionGroup('employees');
+
+    if (customerIds != null && customerIds.isNotEmpty) {
+      // If we have a list of customer IDs (e.g. for a Consultant), filter them
+      // Firestore whereIn limit is 10. If more than 10, we might need multiple queries.
+      // For now, let's assume it's under 10 or handle the logic simply.
+      query = query.where('customerId', whereIn: customerIds);
+    }
+
+    final snapshot = await query.get();
+    return snapshot.docs
+        .map((doc) => EmployeeUserModel.fromFirestore(doc.id, doc.data() as Map<String, dynamic>))
+        .toList();
+  }
+
+  // 🔹 Delete User
+  Future<void> deleteUser(String userId, {String? customerId}) async {
     try {
-      await firestore
-          .collection('users')
-          .doc(userId)
-          .delete();
+      if (customerId != null) {
+        await firestore
+            .collection('customers')
+            .doc(customerId)
+            .collection('employees')
+            .doc(userId)
+            .delete();
+      } else {
+        // Try deleting from main users
+        final doc = await firestore.collection('users').doc(userId).get();
+        if (doc.exists) {
+          await doc.reference.delete();
+        } else {
+          // If not in main, search in all employees
+          final snap = await firestore.collectionGroup('employees').get();
+          final employeeDoc = snap.docs.firstWhere((d) => d.id == userId);
+          await employeeDoc.reference.delete();
+        }
+      }
     } catch (e) {
       throw Exception("Failed to delete user: $e");
     }
   }
 
+  // 🔹 Update User
   Future<void> updateUser({
-  required String userId,
-  required Map<String, dynamic> data,
-}) async {
-  await FirebaseFirestore.instance
-      .collection('users')
-      .doc(userId)
-      .update(data);
-}
-
+    required String userId,
+    required Map<String, dynamic> data,
+    String? customerId,
+  }) async {
+    if (customerId != null) {
+      await firestore
+          .collection('customers')
+          .doc(customerId)
+          .collection('employees')
+          .doc(userId)
+          .update(data);
+    } else {
+      final doc = await firestore.collection('users').doc(userId).get();
+      if (doc.exists) {
+        await doc.reference.update(data);
+      } else {
+        final snap = await firestore.collectionGroup('employees').get();
+        final employeeDoc = snap.docs.firstWhere((d) => d.id == userId);
+        await employeeDoc.reference.update(data);
+      }
+    }
+  }
 }

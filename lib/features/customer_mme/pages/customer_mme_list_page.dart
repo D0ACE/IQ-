@@ -28,8 +28,14 @@ class _CustomerMMEListPageState extends State<CustomerMMEListPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        leading: GestureDetector(onTap:()=> Navigator.pop(context),child: Icon(Icons.arrow_back,color: AppColors.whiteColor,)),
-        title: const Text('Monitoring and Measuring Equipment',style: TextStyle(color: AppColors.whiteTextColor),),
+        leading: GestureDetector(
+          onTap: () => Navigator.pop(context),
+          child: Icon(Icons.arrow_back, color: AppColors.whiteColor),
+        ),
+        title: const Text(
+          'Monitoring and Measuring Equipment',
+          style: TextStyle(color: AppColors.whiteTextColor),
+        ),
         backgroundColor: AppColors.kPrimaryColor,
         actions: [
           IconButton(
@@ -37,22 +43,24 @@ class _CustomerMMEListPageState extends State<CustomerMMEListPage> {
             color: AppColors.whiteColor,
             icon: const Icon(Icons.upload_file),
             onPressed: () async {
-              try{
+              try {
                 final cubit = context.read<CustomerMMECubit>();
                 final excelList = await cubit.readMMEFromCsvWeb();
 
-                if (excelList.isNotEmpty){
-                  if (!mounted) return;
-                  _showExcelPreviewDialog(context, excelList);
+                if (excelList.isNotEmpty) {
+                  if (context.mounted) {
+                    _showExcelPreviewDialog(context, excelList);
+                  }
                 }
-              }catch(e){
-                if (!mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    backgroundColor: Colors.red,
-                    content: Text('Failed to upload Excel'),
-                  ),
-                );
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      backgroundColor: Colors.red,
+                      content: Text('Failed to upload Excel'),
+                    ),
+                  );
+                }
               }
             },
           ),
@@ -72,31 +80,28 @@ class _CustomerMMEListPageState extends State<CustomerMMEListPage> {
                 //   ),
                 // );
               } catch (e) {
-                if (!mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     backgroundColor: Colors.red,
                     content: Text('Failed to generate Excel'),
                   ),
                 );
+                }
               }
             },
           ),
-
         ],
-
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: AppColors.kPrimaryColor,
         onPressed: () {
           context.push(
             AppRoutes.customerMMEForm, // route path for edit page
-            extra: {
-              'customerId': widget.customerId,
-            },
+            extra: {'customerId': widget.customerId},
           );
         },
-        child: const Icon(Icons.add,color: AppColors.whiteColor,),
+        child: const Icon(Icons.add, color: AppColors.whiteColor),
       ),
       body: BlocBuilder<CustomerMMECubit, CustomerMMEState>(
         builder: (context, state) {
@@ -119,22 +124,29 @@ class _CustomerMMEListPageState extends State<CustomerMMEListPage> {
                   borderRadius: BorderRadius.circular(12),
                   child: InkWell(
                     borderRadius: BorderRadius.circular(12),
-                    onTap: (){
+                    onTap: () {
                       _showMMEDetailsDialog(context, mme);
                     },
                     child: Card(
                       child: Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: ListTile(
-                          leading:
-                          CircleAvatar(child: Text(mme.id.toUpperCase(),)),
-                          title: Text(mme.deviceName[0].toUpperCase() + mme.deviceName.substring(1)),
+                          leading: CircleAvatar(
+                            child: Text(mme.id.toUpperCase()),
+                          ),
+                          title: Text(
+                            mme.deviceName[0].toUpperCase() +
+                                mme.deviceName.substring(1),
+                          ),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               IconButton(
                                 tooltip: 'Edit',
-                                icon: const Icon(Icons.edit, color: Colors.blue),
+                                icon: const Icon(
+                                  Icons.edit,
+                                  color: Colors.blue,
+                                ),
                                 onPressed: () {
                                   context.push(
                                     AppRoutes.customerMMEForm,
@@ -147,9 +159,16 @@ class _CustomerMMEListPageState extends State<CustomerMMEListPage> {
                               ),
                               IconButton(
                                 tooltip: 'Delete',
-                                icon: const Icon(Icons.delete, color: Colors.red),
+                                icon: const Icon(
+                                  Icons.delete,
+                                  color: Colors.red,
+                                ),
                                 onPressed: () {
-                                  _showDeleteConfirmDialog(context, mme, widget.customerId);
+                                  _showDeleteConfirmDialog(
+                                    context,
+                                    mme,
+                                    widget.customerId,
+                                  );
                                 },
                               ),
                             ],
@@ -173,10 +192,7 @@ class _CustomerMMEListPageState extends State<CustomerMMEListPage> {
     );
   }
 
-  void _showMMEDetailsDialog(
-      BuildContext context,
-      CustomerMMEModel mme,
-      ) {
+  void _showMMEDetailsDialog(BuildContext context, CustomerMMEModel mme) {
     final screenWidth = MediaQuery.of(context).size.width;
 
     double dialogWidth;
@@ -202,13 +218,14 @@ class _CustomerMMEListPageState extends State<CustomerMMEListPage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-
                   /// Title
                   Row(
                     children: [
                       CircleAvatar(
                         radius: 18,
-                        backgroundColor: Colors.deepPurple.withValues(alpha:0.1),
+                        backgroundColor: Colors.deepPurple.withValues(
+                          alpha: 0.1,
+                        ),
                         child: const Icon(
                           Icons.settings,
                           color: Colors.deepPurple,
@@ -217,7 +234,8 @@ class _CustomerMMEListPageState extends State<CustomerMMEListPage> {
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          mme.deviceName[0].toUpperCase() + mme.deviceName.substring(1),
+                          mme.deviceName[0].toUpperCase() +
+                              mme.deviceName.substring(1),
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
@@ -232,18 +250,20 @@ class _CustomerMMEListPageState extends State<CustomerMMEListPage> {
                   const SizedBox(height: 16),
 
                   _infoRow(Icons.tag, 'ID', mme.id.toString()),
-                  _infoRow(Icons.confirmation_number, 'Serial', mme.serialNumber),
+                  _infoRow(
+                    Icons.confirmation_number,
+                    'Serial',
+                    mme.serialNumber,
+                  ),
                   _infoRow(
                     Icons.event,
                     'Last Calibration',
-                    DateFormat('dd MMM yyyy')
-                        .format(mme.lastCalibrationDate),
+                    DateFormat('dd MMM yyyy').format(mme.lastCalibrationDate),
                   ),
                   _infoRow(
                     Icons.schedule,
                     'Next Due',
-                    DateFormat('dd MMM yyyy')
-                        .format(mme.nextCalibrationDate),
+                    DateFormat('dd MMM yyyy').format(mme.nextCalibrationDate),
                   ),
 
                   const SizedBox(height: 20),
@@ -258,7 +278,10 @@ class _CustomerMMEListPageState extends State<CustomerMMEListPage> {
                         ),
                       ),
                       onPressed: () => Navigator.pop(context),
-                      child: const Text('Close',style: TextStyle(color:AppColors.whiteTextColor),),
+                      child: const Text(
+                        'Close',
+                        style: TextStyle(color: AppColors.whiteTextColor),
+                      ),
                     ),
                   ),
                 ],
@@ -269,7 +292,6 @@ class _CustomerMMEListPageState extends State<CustomerMMEListPage> {
       },
     );
   }
-
 
   Widget _infoRow(IconData icon, String label, String value) {
     return Container(
@@ -287,20 +309,14 @@ class _CustomerMMEListPageState extends State<CustomerMMEListPage> {
             flex: 1,
             child: Text(
               label,
-              style: const TextStyle(
-                fontSize: 13,
-                color: Colors.grey,
-              ),
+              style: const TextStyle(fontSize: 13, color: Colors.grey),
             ),
           ),
           Expanded(
             flex: 2,
             child: Text(
               value,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
             ),
           ),
         ],
@@ -308,13 +324,11 @@ class _CustomerMMEListPageState extends State<CustomerMMEListPage> {
     );
   }
 
-
-
   void _showDeleteConfirmDialog(
-      BuildContext context,
-      CustomerMMEModel mme,
-      String customerId,
-      ) {
+    BuildContext context,
+    CustomerMMEModel mme,
+    String customerId,
+  ) {
     showDialog(
       context: context,
       builder: (_) {
@@ -329,19 +343,20 @@ class _CustomerMMEListPageState extends State<CustomerMMEListPage> {
               child: const Text('Cancel'),
             ),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-              ),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
               onPressed: () {
-                if((mme.docId??'').isNotEmpty)
-                {
+                if ((mme.docId ?? '').isNotEmpty) {
                   GoRouter.of(context).pop();
-                  context
-                      .read<CustomerMMECubit>()
-                      .deleteMME(mme.docId!, customerId);
+                  context.read<CustomerMMECubit>().deleteMME(
+                    mme.docId!,
+                    customerId,
+                  );
                 }
               },
-              child: const Text('Delete',style: TextStyle(color: AppColors.whiteTextColor),),
+              child: const Text(
+                'Delete',
+                style: TextStyle(color: AppColors.whiteTextColor),
+              ),
             ),
           ],
         );
@@ -350,9 +365,9 @@ class _CustomerMMEListPageState extends State<CustomerMMEListPage> {
   }
 
   void _showExcelPreviewDialog(
-      BuildContext context,
-      List<CustomerMMEModel> list,
-      ) {
+    BuildContext context,
+    List<CustomerMMEModel> list,
+  ) {
     showDialog(
       context: context,
       builder: (_) {
@@ -369,13 +384,14 @@ class _CustomerMMEListPageState extends State<CustomerMMEListPage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-
                   /// 🔷 Header
                   Row(
                     children: [
                       CircleAvatar(
                         radius: 22,
-                        backgroundColor: Colors.deepPurple.withValues(alpha:0.1),
+                        backgroundColor: Colors.deepPurple.withValues(
+                          alpha: 0.1,
+                        ),
                         child: const Icon(
                           Icons.upload_file,
                           color: Colors.deepPurple,
@@ -397,7 +413,7 @@ class _CustomerMMEListPageState extends State<CustomerMMEListPage> {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.deepPurple.withValues(alpha:0.1),
+                          color: Colors.deepPurple.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
@@ -417,65 +433,65 @@ class _CustomerMMEListPageState extends State<CustomerMMEListPage> {
                   Flexible(
                     child: list.isEmpty
                         ? const Center(
-                      child: Text('No valid MME records found'),
-                    )
+                            child: Text('No valid MME records found'),
+                          )
                         : ListView.separated(
-                      itemCount: list.length,
-                      separatorBuilder: (_, _) =>
-                      const SizedBox(height: 8),
-                      itemBuilder: (_, i) {
-                        final mme = list[i];
-                        return Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: Colors.grey.shade300,
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              CircleAvatar(
-                                radius: 16,
-                                backgroundColor:
-                                Colors.deepPurple.withValues(alpha:0.15),
-                                child: Text(
-                                  '${i + 1}',
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.deepPurple,
+                            itemCount: list.length,
+                            separatorBuilder: (_, _) =>
+                                const SizedBox(height: 8),
+                            itemBuilder: (_, i) {
+                              final mme = list[i];
+                              return Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: Colors.grey.shade300,
                                   ),
                                 ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment:
-                                  CrossAxisAlignment.start,
+                                child: Row(
                                   children: [
-                                    Text(
-                                      mme.deviceName,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w600,
+                                    CircleAvatar(
+                                      radius: 16,
+                                      backgroundColor: Colors.deepPurple
+                                          .withValues(alpha: 0.15),
+                                      child: Text(
+                                        '${i + 1}',
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.deepPurple,
+                                        ),
                                       ),
                                     ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      'SN: ${mme.serialNumber}',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey.shade600,
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            mme.deviceName,
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            'SN: ${mme.serialNumber}',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey.shade600,
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
                                   ],
                                 ),
-                              ),
-                            ],
+                              );
+                            },
                           ),
-                        );
-                      },
-                    ),
                   ),
 
                   const SizedBox(height: 20),
@@ -506,15 +522,15 @@ class _CustomerMMEListPageState extends State<CustomerMMEListPage> {
                           onPressed: list.isEmpty
                               ? null
                               : () {
-                            context
-                                .read<CustomerMMECubit>()
-                                .uploadExcelMME(
-                              widget.customerId,
-                              list,
-                            );
-                            GoRouter.of(context).pop();
-                          },
-                          child: const Text('CONFIRM & UPLOAD',style: TextStyle(color: AppColors.whiteTextColor),),
+                                  context
+                                      .read<CustomerMMECubit>()
+                                      .uploadExcelMME(widget.customerId, list);
+                                  GoRouter.of(context).pop();
+                                },
+                          child: const Text(
+                            'CONFIRM & UPLOAD',
+                            style: TextStyle(color: AppColors.whiteTextColor),
+                          ),
                         ),
                       ),
                     ],
@@ -527,8 +543,4 @@ class _CustomerMMEListPageState extends State<CustomerMMEListPage> {
       },
     );
   }
-
-
 }
-
-

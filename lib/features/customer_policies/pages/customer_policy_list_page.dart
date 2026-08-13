@@ -23,9 +23,15 @@ class _CustomerPolicyListPageState extends State<CustomerPolicyListPage> {
   @override
   void initState() {
     super.initState();
-    final customer = getIt<HiveService>().getCustomer();
+    final hive = getIt<HiveService>();
+    final customer = hive.getCustomer();
+    final user = hive.getUser();
+    
+    // 🚀 Determine customerId from either Customer or Employee session
+    final String? effectiveCustomerId = customer?.customerId ?? user?.customerId;
+
     context.read<DocumentCubit>().loadDocuments(
-      customerId: customer?.customerId,
+      customerId: effectiveCustomerId,
     );
   }
 

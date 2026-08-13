@@ -45,6 +45,10 @@ import 'package:iq_plus/features/customer_policies/pages/customer_policy_list_pa
 import 'package:iq_plus/features/customer_policies/pages/customer_policy_detail_page.dart';
 import 'package:iq_plus/features/superadmin/models/document_model.dart';
 import 'package:iq_plus/features/superadmin/pages/history/global_version_history_page.dart';
+import 'package:iq_plus/features/consultant/pages/add_employee_page.dart';
+import 'package:iq_plus/features/users/repository/user_repository.dart';
+import 'package:iq_plus/features/dashboard/page/employee_dashbaord_page.dart';
+import 'package:iq_plus/features/users/pages/employee_list_page.dart';
 
 class AppRouter {
   static final GoRouter router = GoRouter(
@@ -371,6 +375,27 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.globalVersionHistory,
         builder: (context, state) => const GlobalVersionHistoryPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.addEmployee,
+        builder: (context, state) => BlocProvider(
+          create: (_) => UserCubit(getIt<UserRepository>()),
+          child: const AddEmployeePage(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.employeeDashboard,
+        builder: (context, state) => const EmployeeDashboardPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.employeeListing,
+        builder: (context, state) => MultiBlocProvider(
+          providers: [
+            BlocProvider(create: (_) => UserCubit(getIt<UserRepository>())),
+            BlocProvider(create: (_) => CustomerListCubit(getIt<AuthRepository>())),
+          ],
+          child: const EmployeeListPage(),
+        ),
       ),
     ],
 

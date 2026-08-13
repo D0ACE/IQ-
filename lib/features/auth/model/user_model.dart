@@ -35,6 +35,9 @@ class UserModel extends HiveObject {
   @HiveField(9)
   DateTime createdAt;
 
+  @HiveField(10)
+  String? customerId;
+
   UserModel({
     required this.userId,
     required this.userName,
@@ -46,5 +49,6 @@ class UserModel extends HiveObject {
     required this.blockStatus,
     required this.fcmToken,
     required this.createdAt,
+    this.customerId,
   });
 }

@@ -10,6 +10,9 @@ class EmployeeUserModel {
   final DateTime createdAt;
   final DateTime? joiningDate;
   final bool blockStatus;
+  final String? designation;
+  final String? customerId;
+  final String? createdBy; // 👈 User ID of the person who created this employee
 
   EmployeeUserModel({
     required this.userId,
@@ -20,7 +23,10 @@ class EmployeeUserModel {
     required this.password,
     required this.createdAt,
     required this.blockStatus,
-     this.joiningDate,
+    this.joiningDate,
+    this.designation,
+    this.customerId,
+    this.createdBy,
   });
 
   factory EmployeeUserModel.fromFirestore(String id, Map<String, dynamic> json) {
@@ -31,10 +37,12 @@ class EmployeeUserModel {
       phoneNumber: json['phoneNumber'] ?? '',
       roleId: json['roleId'] ?? '',
       password: json['password'] ?? '',
-      blockStatus: json['blockStatus'] ?? '',
-      joiningDate: json['joiningDate'] is Timestamp?(json['joiningDate'] as Timestamp).toDate():null,
-
-      createdAt: (json['createdAt'] as Timestamp).toDate(),
+      blockStatus: json['blockStatus'] ?? false,
+      joiningDate: json['joiningDate'] is Timestamp ? (json['joiningDate'] as Timestamp).toDate() : null,
+      designation: json['designation'],
+      customerId: json['customerId'],
+      createdBy: json['createdBy'],
+      createdAt: (json['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
     );
   }
 }

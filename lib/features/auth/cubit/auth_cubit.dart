@@ -28,7 +28,13 @@ class AuthCubit extends Cubit<AuthState> {
         await repo.login(email, password, selectedRole);
 
     // 🔒 role validation (CRITICAL)
-    if (role.id != selectedRoleId) {
+    // If selected tab is Customer (index 3), allow both role '3' (Customer) and '4' (Employee)
+    if (selectedRole == 3) {
+      if (role.id != '3' && role.id != '4') {
+        emit(AuthFailure("Unauthorized role login"));
+        return;
+      }
+    } else if (role.id != selectedRoleId) {
       emit(AuthFailure("Unauthorized role login"));
       return;
     }

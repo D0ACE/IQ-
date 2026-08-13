@@ -18,10 +18,10 @@ class _LoginPageState extends State<LoginPage> {
 
   final List<String> roles = [
     'Super Admin',
-  'Admin',
-  'Consultant',
-  'Customer',
-];
+    'Admin',
+    'Consultant',
+    'Customer',
+  ];
 
   @override
   Widget build(BuildContext context) {

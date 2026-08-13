@@ -207,7 +207,15 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage> {
               },
             ),
 
-            // 🔵 My Customers (Expandable)
+            _drawerItem(
+              icon: Icons.assignment_ind_outlined,
+              title: 'Employees',
+              onTap: () {
+                GoRouter.of(context).pop();
+                GoRouter.of(context).push(AppRoutes.employeeListing);
+              },
+            ),
+
             _drawerItem(
               icon: Icons.supervised_user_circle_outlined,
               title: 'Assign Customers',
@@ -429,6 +437,12 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage> {
           title: 'All Policies Version History',
           icon: Icons.history,
           onTap: () => GoRouter.of(context).push(AppRoutes.globalVersionHistory),
+        ),
+
+        _clickableCard(
+          title: 'Employees',
+          icon: Icons.assignment_ind_outlined,
+          onTap: () => GoRouter.of(context).push(AppRoutes.employeeListing),
         ),
 
         // _clickableCard(

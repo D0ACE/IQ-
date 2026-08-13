@@ -72,6 +72,42 @@ class BrevoEmailService {
     }
   }
 
+  static Future<void> sendEmployeeCreatedMail({
+    required String userName,
+    required String email,
+    required String password,
+    required String companyName,
+  }) async {
+    const int templateId = 7; // Ensure this template exists on Brevo
+    final url = Uri.parse('https://api.brevo.com/v3/smtp/email');
+
+    final response = await http.post(
+      url,
+      headers: {
+        'api-key': _apiKey,
+        'Content-Type': 'application/json',
+        'accept': 'application/json',
+      },
+      body: jsonEncode({
+        "to": [
+          {"email": email, "name": userName},
+        ],
+        "templateId": templateId,
+        "params": {
+          "userName": userName,
+          "email": email,
+          "password": password,
+          "companyName": companyName,
+        },
+      }),
+    );
+
+    if (response.statusCode != 201) {
+      debugPrint("Employee Created Email Error: ${response.body}");
+      throw Exception("Failed to send employee credentials email");
+    }
+  }
+
   static Future<void> sendVisitorSummaryMailFromPayload({
     required String toEmail,
     required String toName,

@@ -4,7 +4,7 @@ class RoleIndexMapper {
       case 0: return '0'; // SuperAdmin
       case 1: return '1'; // Admin
       case 2: return '2'; // Consultant
-      case 3: return '3'; // Customer
+      case 3: return '3'; // Customer (Also covers Employee login)
       default: return '';
     }
   }

@@ -199,7 +199,10 @@ class _ExcelEditorPageState extends State<ExcelEditorPage> {
         }
         
         developer.log("✅ Import Completed.");
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Excel imported successfully")));
+
+        if(mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Excel imported successfully")));
+        }
       } else {
         developer.log("⚠️ Error: No table found in the decoded Excel file.");
       }

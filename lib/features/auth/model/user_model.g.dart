@@ -27,13 +27,14 @@ class UserModelAdapter extends TypeAdapter<UserModel> {
       blockStatus: fields[7] as bool,
       fcmToken: fields[8] as String,
       createdAt: fields[9] as DateTime,
+      customerId: fields[10] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, UserModel obj) {
     writer
-      ..writeByte(10)
+      ..writeByte(11)
       ..writeByte(0)
       ..write(obj.userId)
       ..writeByte(1)
@@ -53,7 +54,9 @@ class UserModelAdapter extends TypeAdapter<UserModel> {
       ..writeByte(8)
       ..write(obj.fcmToken)
       ..writeByte(9)
-      ..write(obj.createdAt);
+      ..write(obj.createdAt)
+      ..writeByte(10)
+      ..write(obj.customerId);
   }
 
   @override

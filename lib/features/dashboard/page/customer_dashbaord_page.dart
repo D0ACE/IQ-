@@ -231,6 +231,15 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
 
             _drawerItem(
+              icon: Icons.assignment_ind_outlined,
+              title: 'Our Employees',
+              onTap: () {
+                GoRouter.of(context).pop();
+                context.push(AppRoutes.employeeListing);
+              },
+            ),
+
+            _drawerItem(
               icon: Icons.logout,
               title: 'Logout',
               onTap: () {
@@ -522,6 +531,14 @@ class _DashboardPageState extends State<DashboardPage> {
           icon: Icons.policy,
           onTap: () {
             context.push(AppRoutes.customerPolicyList);
+          },
+        ),
+
+        _clickableCard(
+          title: 'Our Employees',
+          icon: Icons.assignment_ind_outlined,
+          onTap: () {
+            context.push(AppRoutes.employeeListing);
           },
         ),
 

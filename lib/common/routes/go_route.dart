@@ -36,4 +36,7 @@ class AppRoutes {
   static const String customerPolicyList = '/customerPolicyList';
   static const String customerPolicyDetail = '/customerPolicyDetail';
   static const String globalVersionHistory = '/globalVersionHistory';
+  static const String addEmployee = '/addEmployee';
+  static const String employeeListing = '/employeeListing';
+  static const String employeeDashboard = '/employeeDashboard';
 }

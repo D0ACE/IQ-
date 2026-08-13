@@ -7,7 +7,6 @@ import 'package:iq_plus/core/local_storage/hive_service.dart';
 import 'package:iq_plus/di/service_locator.dart';
 import 'package:iq_plus/features/superadmin/cubit/document_cubit.dart';
 import 'package:iq_plus/features/superadmin/cubit/document_state.dart';
-import 'package:iq_plus/features/superadmin/models/version_history_model.dart';
 import 'package:iq_plus/common/utility/utility.dart';
 
 class GlobalVersionHistoryPage extends StatefulWidget {
@@ -52,7 +51,7 @@ class _GlobalVersionHistoryPageState extends State<GlobalVersionHistoryPage> {
             return ListView.separated(
               padding: const EdgeInsets.all(16),
               itemCount: history.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              separatorBuilder: (_, _) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
                 final v = history[index];
                 return Card(

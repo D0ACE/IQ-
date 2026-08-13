@@ -12,8 +12,13 @@ import 'package:iq_plus/features/auth/cubit/change_password_state.dart';
 
 class ChangePasswordDialog extends StatefulWidget {
   final String customerId;
+  final bool isEmployee;
 
-  const ChangePasswordDialog({super.key, required this.customerId});
+  const ChangePasswordDialog({
+    super.key,
+    required this.customerId,
+    this.isEmployee = false,
+  });
 
   @override
   State<ChangePasswordDialog> createState() => _ChangePasswordDialogState();
@@ -37,6 +42,7 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
       context.read<CustomerPasswordCubit>().updatePassword(
         customerId: widget.customerId,
         newPassword: passwordController.text.trim(),
+        isEmployee: widget.isEmployee,
       );
     }
   }
@@ -61,7 +67,7 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
           Navigator.of(context).pop();
 
           // go to dashboard (replace stack)
-          context.go(AppRoutes.customerDashboard);
+          context.go(widget.isEmployee ? AppRoutes.employeeDashboard : AppRoutes.customerDashboard);
 
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text("Password updated successfully")),

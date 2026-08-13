@@ -9,6 +9,8 @@ import 'package:iq_plus/common/utility/app_validation.dart';
 import 'package:iq_plus/features/users/cubit/employee_user_cubit.dart';
 import 'package:iq_plus/features/users/cubit/employee_user_state.dart';
 import 'package:iq_plus/features/users/models/employe_user.dart';
+import 'package:iq_plus/core/local_storage/hive_service.dart';
+import 'package:iq_plus/di/service_locator.dart';
 
 class AddUserDialog extends StatefulWidget {
   final EmployeeUserModel? user;
@@ -45,9 +47,11 @@ class _AddUserDialogState extends State<AddUserDialog> {
       passwordController.text = u.password;
       blockStatus = u.blockStatus;
       joiningDate = u.joiningDate;
-      joiningDateController.text = DateFormat(
-        'dd MMM yyyy',
-      ).format(u.joiningDate!);
+      if (joiningDate != null) {
+        joiningDateController.text = DateFormat(
+          'dd MMM yyyy',
+        ).format(joiningDate!);
+      }
     }
   }
 
@@ -115,51 +119,53 @@ inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       ),
                     ),
 
-                    /// 📅 Joining Date Picker
-                    _field(
-                      TextFormField(
-                        controller: joiningDateController,
-                        readOnly: true,
-                        decoration: _dropdownDecoration("Joining Date"),
-                        validator: (value) => value == null || value.isEmpty
-                            ? "Joining date required"
-                            : null,
-                        onTap: () async {
-                          final pickedDate = await showDatePicker(
-                            context: context,
-                            initialDate: joiningDate ?? DateTime.now(),
-                            firstDate: DateTime(2000),
-                            lastDate: DateTime(2100),
-                          );
+                    /// 📅 Joining Date Picker (Show only for New User)
+                    if (widget.user == null)
+                      _field(
+                        TextFormField(
+                          controller: joiningDateController,
+                          readOnly: true,
+                          decoration: _dropdownDecoration("Joining Date"),
+                          validator: (value) => value == null || value.isEmpty
+                              ? "Joining date required"
+                              : null,
+                          onTap: () async {
+                            final pickedDate = await showDatePicker(
+                              context: context,
+                              initialDate: joiningDate ?? DateTime.now(),
+                              firstDate: DateTime(2000),
+                              lastDate: DateTime(2100),
+                            );
 
-                          if (pickedDate != null) {
-                            setState(() {
-                              joiningDate = pickedDate;
-                              joiningDateController.text = DateFormat(
-                                'dd MMM yyyy',
-                              ).format(pickedDate);
-                            });
-                          }
-                        },
+                            if (pickedDate != null) {
+                              setState(() {
+                                joiningDate = pickedDate;
+                                joiningDateController.text = DateFormat(
+                                  'dd MMM yyyy',
+                                ).format(pickedDate);
+                              });
+                            }
+                          },
+                        ),
                       ),
-                    ),
 
-                    /// 🧩 Role dropdown
-                    _field(
-                      DropdownButtonFormField<String>(
-                        initialValue: selectedRoleId,
-                        decoration: _dropdownDecoration("Select Role"),
-                        items: cubit.roles.map((role) {
-                          return DropdownMenuItem(
-                            value: role.id,
-                            child: Text(role.name.toUpperCase()),
-                          );
-                        }).toList(),
-                        onChanged: (value) =>
-                            setState(() => selectedRoleId = value),
-                        validator: (v) => v == null ? "Role required" : null,
+                    /// 🧩 Role dropdown (Show only for New User)
+                    if (widget.user == null)
+                      _field(
+                        DropdownButtonFormField<String>(
+                          initialValue: selectedRoleId,
+                          decoration: _dropdownDecoration("Select Role"),
+                          items: cubit.roles.map((role) {
+                            return DropdownMenuItem(
+                              value: role.id,
+                              child: Text(role.name.toUpperCase()),
+                            );
+                          }).toList(),
+                          onChanged: (value) =>
+                              setState(() => selectedRoleId = value),
+                          validator: (v) => v == null ? "Role required" : null,
+                        ),
                       ),
-                    ),
 
                     /// 🚫 User status
                     _field(
@@ -206,10 +212,13 @@ inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   phoneNumber: phoneController.text.trim(),
                   roleId: selectedRoleId!,
                   joiningDate: joiningDate,
+                  designation: widget.user!.designation, // 👈 Keep existing designation
+                  customerId: widget.user!.customerId,   // 👈 Keep existing customerId
                 );
               }
               /// ➕ ADD MODE
               else {
+                final currentUser = getIt<HiveService>().getUser();
                 context.read<UserCubit>().addUser(
                   EmployeeUserModel(
                     userId: '',
@@ -221,6 +230,7 @@ inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     blockStatus: blockStatus,
                     joiningDate: joiningDate!,
                     createdAt: DateTime.now(),
+                    createdBy: currentUser?.userId,
                   ),
                 );
               }

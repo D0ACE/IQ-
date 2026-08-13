@@ -49,7 +49,7 @@ class DocumentRepository {
     });
   }
 
-  Future<String> _getCurrentVersionFromHistory(String docId) async {
+/*  Future<String> _getCurrentVersionFromHistory(String docId) async {
     try {
       final historySnapshot = await _firestore
           .collection('documents')
@@ -66,7 +66,7 @@ class DocumentRepository {
       developer.log("Error fetching current version: $e");
     }
     return 'V1';
-  }
+  }*/
 
   Future<String> _calculateNextVersionFromHistory(String docId) async {
     try {

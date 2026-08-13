@@ -160,7 +160,15 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 context.push(AppRoutes.employeeList);
               },
             ),
-                       // ✅ Add Admin
+            _drawerItem(
+              icon: Icons.description_outlined,
+              title: 'Policies & Procedures',
+              onTap: () {
+                context.pop();
+                context.push(AppRoutes.documentList);
+              },
+            ),
+            // ✅ Add Admin
             if(Utility.isSuperAdmin(getIt<HiveService>().getUser()?.roleId??""))
             _drawerItem(
             icon: Icons.person_add_alt,
@@ -195,6 +203,14 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               onTap: () {
                 context.pop();
                 context.push(AppRoutes.globalVersionHistory);
+              },
+            ),
+            _drawerItem(
+              icon: Icons.assignment_ind_outlined,
+              title: 'Employees',
+              onTap: () {
+                context.pop();
+                context.push(AppRoutes.employeeListing);
               },
             ),
             _drawerItem(
@@ -351,9 +367,21 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         ),
 
         _clickableCard(
+          title: 'Policies & Procedures',
+          icon: Icons.description,
+          onTap: () => context.push(AppRoutes.documentList),
+        ),
+
+        _clickableCard(
           title: 'All Policies Version History',
           icon: Icons.history,
           onTap: () => context.push(AppRoutes.globalVersionHistory),
+        ),
+
+        _clickableCard(
+          title: 'Employees',
+          icon: Icons.assignment_ind_outlined,
+          onTap: () => context.push(AppRoutes.employeeListing),
         ),
       ],
     );

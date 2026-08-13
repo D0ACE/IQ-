@@ -248,7 +248,7 @@ class UserListPage extends StatelessWidget {
             style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
             onPressed: () {
               GoRouter.of(context).pop();
-              context.read<UserCubit>().deleteUser(userId);
+              context.read<UserCubit>().deleteUser(userId); // repo handles the search
             },
             child: const Text(
               "Delete",

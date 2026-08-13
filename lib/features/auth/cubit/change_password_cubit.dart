@@ -11,6 +11,7 @@ class CustomerPasswordCubit extends Cubit<CustomerPasswordState> {
   Future<void> updatePassword({
     required String customerId,
     required String newPassword,
+    bool isEmployee = false,
   }) async {
     try {
       emit(CustomerPasswordLoading());
@@ -18,6 +19,7 @@ class CustomerPasswordCubit extends Cubit<CustomerPasswordState> {
       await repository.updateCustomerPassword(
         customerId: customerId,
         newPassword: newPassword,
+        isEmployee: isEmployee,
       );
 
       emit(CustomerPasswordSuccess());
