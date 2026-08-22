@@ -265,3 +265,44 @@ export const storeAwsBillingDaily = onSchedule(
     }
   }
 );
+
+/* =============================================================================
+   BREVO EMAIL DISPATCHER (Option 1: Firebase Proxy)
+============================================================================= */
+export const triggerBrevoEmail = onRequest((req, res) => {
+  corsHandler(req, res, async () => {
+    try {
+      // 1. Basic Security: Only allow POST
+      if (req.method !== "POST") {
+        res.status(405).json({error: "Method Not Allowed"});
+        return;
+      }
+
+      const {templateId, to, toName, params} = req.body;
+
+      // 2. Validation
+      if (!templateId || !to || !toName) {
+        res.status(400).json({error: "Missing required fields"});
+        return;
+      }
+
+      const {BrevoEmailService} = require("./services/BrevoEmailService");
+
+      // 3. Dispatch Email via Brevo (from a fixed Google/Firebase IP)
+      await BrevoEmailService.sendTemplateEmail(
+        Number(templateId),
+        to,
+        toName,
+        params || {}
+      );
+
+      res.status(200).json({message: "Email dispatched successfully"});
+    } catch (error: any) {
+      console.error("🔥 BREVO TRIGGER ERROR:", error.response?.data || error);
+      res.status(500).json({
+        error: "Internal Server Error",
+        details: error.response?.data || error.message,
+      });
+    }
+  });
+});
