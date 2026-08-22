@@ -156,9 +156,19 @@ class SuperadminDashboardPage extends StatelessWidget {
                            customer.companyName,
                            style: const TextStyle(color: Colors.white70),
                          ),
-                         subtitle: Text(
-                           customer.email,
-                           style: const TextStyle(color: Colors.white54, fontSize: 12),
+                         subtitle: Column(
+                           crossAxisAlignment: CrossAxisAlignment.start,
+                           children: [
+                             Text(
+                               customer.email,
+                               style: const TextStyle(color: Colors.white54, fontSize: 12),
+                             ),
+                             if (customer.consultantId != null)
+                               Text(
+                                 "Assigned Consultant: ${customer.consultantId}",
+                                 style: const TextStyle(color: Colors.white30, fontSize: 10),
+                               ),
+                           ],
                          ),
                          onTap: () {
                            context.pop(); // close drawer
@@ -229,6 +239,13 @@ class SuperadminDashboardPage extends StatelessWidget {
               icon: Icons.assignment_ind_outlined,
               title: 'Employees',
               route: AppRoutes.employeeListing,
+            ),
+
+            _drawerItem(
+              context,
+              icon: Icons.video_library_outlined,
+              title: 'Training Videos',
+              route: AppRoutes.videoList,
             ),
 
 
@@ -413,6 +430,11 @@ class SuperadminDashboardPage extends StatelessWidget {
           title: 'Employees',
           icon: Icons.assignment_ind_outlined,
           onTap: () => context.push(AppRoutes.employeeListing),
+        ),
+        _dashboardCard(
+          title: 'Training Videos',
+          icon: Icons.video_library,
+          onTap: () => context.push(AppRoutes.videoList),
         ),
       ],
     );

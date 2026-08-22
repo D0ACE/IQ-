@@ -11,6 +11,11 @@ class CustomerListLoaded extends CustomerListState {
   CustomerListLoaded(this.customers);
 }
 
+class CustomerListOperationSuccess extends CustomerListState {
+  final String message;
+  CustomerListOperationSuccess(this.message);
+}
+
 class CustomerListError extends CustomerListState {
   final String message;
   CustomerListError(this.message);

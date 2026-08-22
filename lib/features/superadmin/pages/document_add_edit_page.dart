@@ -9,8 +9,11 @@ import 'package:iq_plus/common/themes/app_colors.dart';
 import 'package:iq_plus/common/widgets/common_app_bar.dart';
 import 'package:iq_plus/features/admin/consultants/cubit/consultant_cubit.dart';
 import 'package:iq_plus/features/admin/consultants/cubit/consultant_state.dart';
-import 'package:iq_plus/features/admin/customers/cubit/customer_list_cubit.dart';
-import 'package:iq_plus/features/admin/customers/cubit/customer_list_state.dart';
+import 'package:iq_plus/common/utility/utility.dart';
+import 'package:iq_plus/core/local_storage/hive_service.dart';
+import 'package:iq_plus/di/service_locator.dart';
+import 'package:iq_plus/features/admin/customers/widgets/customer_dropdown_widget.dart';
+import 'package:iq_plus/features/auth/model/customer_model.dart';
 import 'package:iq_plus/features/superadmin/cubit/document_cubit.dart';
 import 'package:iq_plus/features/superadmin/cubit/document_state.dart';
 import 'package:iq_plus/features/superadmin/models/document_model.dart';
@@ -33,13 +36,14 @@ class _DocumentAddEditPageState extends State<DocumentAddEditPage> {
   String? selectedCustomerId;
   String? selectedReviewerId;
   String? selectedReviewerName;
+  final _currentUser = getIt<HiveService>().getUser();
 
   bool get isEdit => widget.document != null;
 
   @override
   void initState() {
     super.initState();
-    context.read<CustomerListCubit>().fetchCustomers();
+    // context.read<CustomerListCubit>().fetchCustomers(); // Managed by widget now
     context.read<ConsultantCubit>().fetchConsultants();
     
     if (isEdit) {
@@ -108,28 +112,26 @@ class _DocumentAddEditPageState extends State<DocumentAddEditPage> {
                   ],
                   
                   // 👥 Customer Dropdown
-                  const Text("Select Customer", style: TextStyle(fontWeight: FontWeight.bold)),
+                  const Text("Select Customer *", style: TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
-                  BlocBuilder<CustomerListCubit, CustomerListState>(
-                    builder: (context, customerState) {
-                      if (customerState is CustomerListLoaded) {
-                        return DropdownButtonFormField<String>(
-                          initialValue: selectedCustomerId,
-                          decoration: InputDecoration(
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                          ),
-                          hint: const Text("Select a Customer"),
-                          items: customerState.customers.map((c) {
-                            return DropdownMenuItem(
-                              value: c.customerId,
-                              child: Text(c.companyName),
-                            );
-                          }).toList(),
-                          onChanged: (val) => setState(() => selectedCustomerId = val),
-                        );
-                      }
-                      return const Center(child: CircularProgressIndicator());
+                  CustomerDropdownWidget(
+                    selectedCustomer: selectedCustomerId != null 
+                        ? CustomerModel(
+                            customerId: selectedCustomerId!,
+                            companyName: '', email: '', phoneNumber: '', password: '', 
+                            certificateStandard: '', numberOfLocations: '', numberOfEmployees: '', 
+                            companyFunction: '', legitDocumentUrl: '', isProfileApproved: true, 
+                            fcmToken: '', roleId: '', createdAt: DateTime.now(), address: '', 
+                            lowLevelName: '', lowLevelEmail: '', lowLevelMobile: '', 
+                            mediumLevelName: '', mediumLevelEmail: '', mediumLevelMobile: '', 
+                            topLevelName: '', topLevelEmail: '', topLevelMobile: ''
+                          )
+                        : null,
+                    consultantId: Utility.isConsultant(_currentUser?.roleId) ? _currentUser?.userId : null,
+                    onChanged: (customer) {
+                      setState(() {
+                        selectedCustomerId = customer?.customerId;
+                      });
                     },
                   ),
 
@@ -142,7 +144,7 @@ class _DocumentAddEditPageState extends State<DocumentAddEditPage> {
                     builder: (context, consultantState) {
                       if (consultantState is ConsultantLoaded) {
                         return DropdownButtonFormField<String>(
-                          initialValue: selectedReviewerId,
+                          value: selectedReviewerId, // 🚀 Pre-select assigned consultant
                           decoration: InputDecoration(
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
@@ -245,6 +247,12 @@ class _DocumentAddEditPageState extends State<DocumentAddEditPage> {
 
   void _saveDocument() {
     if (!_formKey.currentState!.validate()) return;
+    
+    if (selectedCustomerId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please select a customer")));
+      return;
+    }
+
     if (!isEdit && selectedFile == null) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please select a file")));
       return;

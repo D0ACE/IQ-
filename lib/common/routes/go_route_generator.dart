@@ -49,6 +49,16 @@ import 'package:iq_plus/features/consultant/pages/add_employee_page.dart';
 import 'package:iq_plus/features/users/repository/user_repository.dart';
 import 'package:iq_plus/features/dashboard/page/employee_dashbaord_page.dart';
 import 'package:iq_plus/features/users/pages/employee_list_page.dart';
+import 'package:iq_plus/features/videos/cubit/video_cubit.dart';
+import 'package:iq_plus/features/videos/repository/video_repository.dart';
+import 'package:iq_plus/features/videos/models/video_model.dart';
+import 'package:iq_plus/features/videos/pages/video_list_page.dart';
+import 'package:iq_plus/features/videos/pages/video_upload_page.dart';
+import 'package:iq_plus/features/videos/pages/video_quiz_page.dart';
+import 'package:iq_plus/features/videos/pages/video_player_page.dart';
+import 'package:iq_plus/features/videos/pages/video_details_page.dart';
+import 'package:iq_plus/features/videos/pages/employee_training_page.dart';
+import 'package:iq_plus/features/videos/pages/training_results_page.dart';
 
 class AppRouter {
   static final GoRouter router = GoRouter(
@@ -115,12 +125,9 @@ class AppRouter {
             );
           }
 
-          return BlocProvider.value(
-            value: context.read<CustomerCubit>(),
-            child: CustomerOnboardingPage(
-              mode: OnboardingMode.approve,
-              customer: customer,
-            ),
+          return CustomerOnboardingPage(
+            mode: OnboardingMode.approve,
+            customer: customer,
           );
         },
       ),
@@ -162,10 +169,7 @@ class AppRouter {
         builder: (context, state) {
           final mode = state.extra as OnboardingMode? ?? OnboardingMode.create;
 
-          return BlocProvider(
-            create: (_) => getIt<CustomerCubit>(),
-            child: CustomerOnboardingPage(mode: mode),
-          );
+          return CustomerOnboardingPage(mode: mode);
         },
       ),
       GoRoute(
@@ -395,6 +399,59 @@ class AppRouter {
             BlocProvider(create: (_) => CustomerListCubit(getIt<AuthRepository>())),
           ],
           child: const EmployeeListPage(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.videoList,
+        builder: (context, state) => MultiBlocProvider(
+          providers: [
+            BlocProvider(create: (_) => VideoCubit(getIt<VideoRepository>())),
+            BlocProvider(create: (_) => CustomerListCubit(getIt<AuthRepository>())),
+          ],
+          child: const VideoListPage(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.videoUpload,
+        builder: (context, state) => BlocProvider(
+          create: (_) => VideoCubit(getIt<VideoRepository>()),
+          child: const VideoUploadPage(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.videoQuiz,
+        builder: (context, state) => BlocProvider(
+          create: (_) => VideoCubit(getIt<VideoRepository>()),
+          child: VideoQuizPage(video: state.extra as AwarenessVideoModel),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.videoPlayer,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>;
+          return VideoPlayerPage(
+            videoUrl: extra['videoUrl'],
+            title: extra['title'],
+            onVideoEnd: extra['onVideoEnd'],
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.videoDetails,
+        builder: (context, state) => VideoDetailsPage(video: state.extra as AwarenessVideoModel),
+      ),
+      GoRoute(
+        path: AppRoutes.employeeTraining,
+        builder: (context, state) => BlocProvider(
+          create: (_) => VideoCubit(getIt<VideoRepository>()),
+          child: const EmployeeTrainingPage(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.trainingResults,
+        builder: (context, state) => BlocProvider(
+          create: (_) => VideoCubit(getIt<VideoRepository>()),
+          child: const TrainingResultsPage(),
         ),
       ),
     ],

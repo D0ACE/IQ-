@@ -7,8 +7,11 @@ import 'package:iq_plus/common/themes/app_colors.dart';
 import 'package:iq_plus/common/widgets/common_app_bar.dart';
 import 'package:iq_plus/features/admin/consultants/cubit/consultant_cubit.dart';
 import 'package:iq_plus/features/admin/consultants/cubit/consultant_state.dart';
-import 'package:iq_plus/features/admin/customers/cubit/customer_list_cubit.dart';
-import 'package:iq_plus/features/admin/customers/cubit/customer_list_state.dart';
+import 'package:iq_plus/common/utility/utility.dart';
+import 'package:iq_plus/core/local_storage/hive_service.dart';
+import 'package:iq_plus/di/service_locator.dart';
+import 'package:iq_plus/features/admin/customers/widgets/customer_dropdown_widget.dart';
+import 'package:iq_plus/features/auth/model/customer_model.dart';
 import 'package:iq_plus/features/superadmin/cubit/document_cubit.dart';
 import 'package:iq_plus/features/superadmin/cubit/document_state.dart';
 import 'package:iq_plus/features/superadmin/models/document_model.dart';
@@ -37,11 +40,12 @@ class _ExcelEditorPageState extends State<ExcelEditorPage> {
   String? selectedReviewerId;
   String? selectedReviewerName;
   bool _isGridDirty = false; // 👈 Track content changes
+  final _currentUser = getIt<HiveService>().getUser();
 
   @override
   void initState() {
     super.initState();
-    context.read<CustomerListCubit>().fetchCustomers();
+    // context.read<CustomerListCubit>().fetchCustomers(); // Managed by widget
     context.read<ConsultantCubit>().fetchConsultants();
     
     if (widget.document != null) {
@@ -225,6 +229,12 @@ class _ExcelEditorPageState extends State<ExcelEditorPage> {
       return;
     }
 
+    if (selectedCustomerId == null) {
+      developer.log("⚠️ Validation Failed: No customer selected.");
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please select a customer")));
+      return;
+    }
+
     if (widget.document != null && changeDescriptionCtrl.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please enter description of the change")));
       return;
@@ -356,30 +366,25 @@ class _ExcelEditorPageState extends State<ExcelEditorPage> {
                         children: [
                           // 👥 Customer Dropdown
                           Expanded(
-                            child: BlocBuilder<CustomerListCubit, CustomerListState>(
-                              builder: (context, customerState) {
-                                if (customerState is CustomerListLoaded) {
-                                  return DropdownButtonFormField<String>(
-                                    initialValue: selectedCustomerId,
-                                    decoration: InputDecoration(
-                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                                      labelText: "Select Customer",
-                                      labelStyle: const TextStyle(color: AppColors.purple),
-                                      fillColor: Colors.white,
-                                      filled: true,
-                                    ),
-                                    hint: const Text("Assign to Customer"),
-                                    items: customerState.customers.map((c) {
-                                      return DropdownMenuItem(
-                                        value: c.customerId,
-                                        child: Text(c.companyName),
-                                      );
-                                    }).toList(),
-                                    onChanged: (val) => setState(() => selectedCustomerId = val),
-                                  );
-                                }
-                                return const LinearProgressIndicator();
+                            child: CustomerDropdownWidget(
+                              hint: "Select Customer *",
+                              selectedCustomer: selectedCustomerId != null 
+                                  ? CustomerModel(
+                                      customerId: selectedCustomerId!,
+                                      companyName: '', email: '', phoneNumber: '', password: '', 
+                                      certificateStandard: '', numberOfLocations: '', numberOfEmployees: '', 
+                                      companyFunction: '', legitDocumentUrl: '', isProfileApproved: true, 
+                                      fcmToken: '', roleId: '', createdAt: DateTime.now(), address: '', 
+                                      lowLevelName: '', lowLevelEmail: '', lowLevelMobile: '', 
+                                      mediumLevelName: '', mediumLevelEmail: '', mediumLevelMobile: '', 
+                                      topLevelName: '', topLevelEmail: '', topLevelMobile: ''
+                                    )
+                                  : null,
+                              consultantId: Utility.isConsultant(_currentUser?.roleId) ? _currentUser?.userId : null,
+                              onChanged: (customer) {
+                                setState(() {
+                                  selectedCustomerId = customer?.customerId;
+                                });
                               },
                             ),
                           ),
@@ -390,7 +395,7 @@ class _ExcelEditorPageState extends State<ExcelEditorPage> {
                               builder: (context, consultantState) {
                                 if (consultantState is ConsultantLoaded) {
                                   return DropdownButtonFormField<String>(
-                                    initialValue: selectedReviewerId,
+                                    value: selectedReviewerId, // 🚀 Pre-select assigned consultant
                                     decoration: InputDecoration(
                                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),

@@ -20,9 +20,6 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
       decoration: const BoxDecoration(
         gradient: AppColors.mainGradient,
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
-        boxShadow: [
-          BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 4)),
-        ],
       ),
       child: AppBar(
         backgroundColor: Colors.transparent,

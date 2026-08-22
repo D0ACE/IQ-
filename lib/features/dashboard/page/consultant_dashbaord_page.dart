@@ -215,6 +215,15 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage> {
                 GoRouter.of(context).push(AppRoutes.employeeListing);
               },
             ),
+            //Todo Video
+           /* _drawerItem(
+              icon: Icons.video_library_outlined,
+              title: 'Training Videos',
+              onTap: () {
+                GoRouter.of(context).pop();
+                GoRouter.of(context).push(AppRoutes.videoList);
+              },
+            ),*/
 
             _drawerItem(
               icon: Icons.supervised_user_circle_outlined,
@@ -444,18 +453,12 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage> {
           icon: Icons.assignment_ind_outlined,
           onTap: () => GoRouter.of(context).push(AppRoutes.employeeListing),
         ),
-
-        // _clickableCard(
-        //   title: 'Next Audit',
-        //   icon: Icons.fact_check,
-        //   onTap: () {},
-        // ),
-        //
-        // _clickableCard(
-        //   title: 'Next Training',
-        //   icon: Icons.school,
-        //   onTap: () {},
-        // ),
+//Todo Video
+      /*  _clickableCard(
+          title: 'Training Videos',
+          icon: Icons.video_library,
+          onTap: () => GoRouter.of(context).push(AppRoutes.videoList),
+        ),*/
       ],
     );
   }

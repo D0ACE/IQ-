@@ -90,10 +90,17 @@ class _CustomerPolicyDetailPageState extends State<CustomerPolicyDetailPage> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.green.withValues(alpha: 0.1),
+                        color: (widget.document.status == 'active' ? Colors.green : Colors.orange).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: const Text("ACTIVE", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.green)),
+                      child: Text(
+                        widget.document.status.toUpperCase(), 
+                        style: TextStyle(
+                          fontSize: 10, 
+                          fontWeight: FontWeight.bold, 
+                          color: widget.document.status == 'active' ? Colors.green : Colors.orange
+                        )
+                      ),
                     ),
                   ],
                 ),

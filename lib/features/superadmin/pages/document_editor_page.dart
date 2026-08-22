@@ -10,8 +10,11 @@ import 'package:iq_plus/common/themes/app_colors.dart';
 import 'package:iq_plus/common/widgets/common_app_bar.dart';
 import 'package:iq_plus/features/admin/consultants/cubit/consultant_cubit.dart';
 import 'package:iq_plus/features/admin/consultants/cubit/consultant_state.dart';
-import 'package:iq_plus/features/admin/customers/cubit/customer_list_cubit.dart';
-import 'package:iq_plus/features/admin/customers/cubit/customer_list_state.dart';
+import 'package:iq_plus/common/utility/utility.dart';
+import 'package:iq_plus/core/local_storage/hive_service.dart';
+import 'package:iq_plus/di/service_locator.dart';
+import 'package:iq_plus/features/admin/customers/widgets/customer_dropdown_widget.dart';
+import 'package:iq_plus/features/auth/model/customer_model.dart';
 import 'package:iq_plus/features/superadmin/cubit/document_cubit.dart';
 import 'package:http/http.dart' as http;
 import 'dart:developer' as developer;
@@ -44,6 +47,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
   String? selectedCustomerId;
   String? selectedReviewerId;
   String? selectedReviewerName;
+  final _currentUser = getIt<HiveService>().getUser();
 
   // 🔄 Change Tracking
   String? _initialTitle;
@@ -63,8 +67,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
     // Initialize with a safe default
     _controller = QuillController.basic();
     
-    // Fetch customers for dropdown
-    context.read<CustomerListCubit>().fetchCustomers();
+    // Fetch reviewers for dropdown
     context.read<ConsultantCubit>().fetchConsultants();
 
     if (widget.document != null) {
@@ -208,30 +211,25 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
                         children: [
                           // 👥 Customer Dropdown
                           Expanded(
-                            child: BlocBuilder<CustomerListCubit, CustomerListState>(
-                              builder: (context, customerState) {
-                                if (customerState is CustomerListLoaded) {
-                                  return DropdownButtonFormField<String>(
-                                    initialValue: selectedCustomerId,
-                                    decoration: InputDecoration(
-                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                                      labelText: "Select Customer",
-                                      labelStyle: const TextStyle(color: AppColors.purple),
-                                      fillColor: Colors.white,
-                                      filled: true,
-                                    ),
-                                    hint: const Text("Assign to Customer"),
-                                    items: customerState.customers.map((c) {
-                                      return DropdownMenuItem(
-                                        value: c.customerId,
-                                        child: Text(c.companyName),
-                                      );
-                                    }).toList(),
-                                    onChanged: (val) => setState(() => selectedCustomerId = val),
-                                  );
-                                }
-                                return const LinearProgressIndicator();
+                            child: CustomerDropdownWidget(
+                              hint: "Select Customer *",
+                              selectedCustomer: selectedCustomerId != null 
+                                  ? CustomerModel(
+                                      customerId: selectedCustomerId!,
+                                      companyName: '', email: '', phoneNumber: '', password: '', 
+                                      certificateStandard: '', numberOfLocations: '', numberOfEmployees: '', 
+                                      companyFunction: '', legitDocumentUrl: '', isProfileApproved: true, 
+                                      fcmToken: '', roleId: '', createdAt: DateTime.now(), address: '', 
+                                      lowLevelName: '', lowLevelEmail: '', lowLevelMobile: '', 
+                                      mediumLevelName: '', mediumLevelEmail: '', mediumLevelMobile: '', 
+                                      topLevelName: '', topLevelEmail: '', topLevelMobile: ''
+                                    )
+                                  : null,
+                              consultantId: Utility.isConsultant(_currentUser?.roleId) ? _currentUser?.userId : null,
+                              onChanged: (customer) {
+                                setState(() {
+                                  selectedCustomerId = customer?.customerId;
+                                });
                               },
                             ),
                           ),
@@ -242,7 +240,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
                               builder: (context, consultantState) {
                                 if (consultantState is ConsultantLoaded) {
                                   return DropdownButtonFormField<String>(
-                                    initialValue: selectedReviewerId,
+                                    value: selectedReviewerId, // 🚀 Pre-select assigned consultant
                                     decoration: InputDecoration(
                                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -387,6 +385,11 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
   void _saveDocument() {
     if (titleCtrl.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter a title')));
+      return;
+    }
+
+    if (selectedCustomerId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a customer')));
       return;
     }
 

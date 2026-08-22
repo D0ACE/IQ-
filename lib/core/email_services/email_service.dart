@@ -68,6 +68,7 @@ class BrevoEmailService {
     );
 
     if (response.statusCode != 201) {
+      debugPrint("Brevo Approval Error: ${response.body}");
       throw Exception("Approval email failed");
     }
   }

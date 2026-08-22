@@ -213,6 +213,15 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 context.push(AppRoutes.employeeListing);
               },
             ),
+            //Todo Video
+         /*  _drawerItem(
+              icon: Icons.video_library_outlined,
+              title: 'Training Videos',
+              onTap: () {
+                context.pop();
+                context.push(AppRoutes.videoList);
+              },
+            ),*/
             _drawerItem(
               icon: Icons.logout,
               title: 'Logout',
@@ -383,6 +392,12 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           icon: Icons.assignment_ind_outlined,
           onTap: () => context.push(AppRoutes.employeeListing),
         ),
+//Todo Video
+    /*   _clickableCard(
+          title: 'Training Videos',
+          icon: Icons.video_library,
+          onTap: () => context.push(AppRoutes.videoList),
+        ),*/
       ],
     );
   }

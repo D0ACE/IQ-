@@ -73,6 +73,8 @@ dependencies:
   supabase_flutter: ^2.16.0
   syncfusion_flutter_pdf: ^33.2.13
   pluto_grid: ^8.1.0
+  video_player: ^2.8.1
+  chewie: ^1.8.1
 
 dependency_overrides:
   archive: ^4.0.0

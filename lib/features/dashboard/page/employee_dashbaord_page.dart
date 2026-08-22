@@ -21,6 +21,25 @@ class EmployeeDashboardPage extends StatefulWidget {
 
 class _EmployeeDashboardPageState extends State<EmployeeDashboardPage> {
   final user = getIt<HiveService>().getUser();
+  String? companyName;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCompanyName();
+  }
+
+  Future<void> _loadCompanyName() async {
+    if (user?.customerId != null) {
+      final customer = await AuthRepository(FirebaseFirestore.instance)
+          .getCustomerById(user!.customerId!);
+      if (mounted) {
+        setState(() {
+          companyName = customer?.companyName;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -76,6 +95,7 @@ class _EmployeeDashboardPageState extends State<EmployeeDashboardPage> {
           borderRadius: BorderRadius.circular(20),
         ),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const CircleAvatar(
@@ -86,6 +106,8 @@ class _EmployeeDashboardPageState extends State<EmployeeDashboardPage> {
             const SizedBox(height: 16),
             Text(
               "Welcome, ${user?.userName ?? 'Employee'}",
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
@@ -95,8 +117,32 @@ class _EmployeeDashboardPageState extends State<EmployeeDashboardPage> {
             const SizedBox(height: 8),
             Text(
               user?.email ?? "",
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: const TextStyle(color: Colors.white70, fontSize: 16),
             ),
+            if (companyName != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: Row(
+                  children: [
+                    const Icon(Icons.business, color: Colors.white70, size: 16),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        companyName!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
           ],
         ),
       ),
@@ -110,9 +156,15 @@ class _EmployeeDashboardPageState extends State<EmployeeDashboardPage> {
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            DrawerHeader(
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(16, 40, 16, 16),
+              decoration: const BoxDecoration(
+                border: Border(bottom: BorderSide(color: Colors.white24)),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   const CircleAvatar(
                     radius: 30,
@@ -122,6 +174,8 @@ class _EmployeeDashboardPageState extends State<EmployeeDashboardPage> {
                   const SizedBox(height: 12),
                   Text(
                     user?.userName ?? 'Employee',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -130,8 +184,24 @@ class _EmployeeDashboardPageState extends State<EmployeeDashboardPage> {
                   ),
                   Text(
                     user?.email ?? '',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(color: Colors.white70, fontSize: 14),
                   ),
+                  if (companyName != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4.0),
+                      child: Text(
+                        companyName!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -143,6 +213,15 @@ class _EmployeeDashboardPageState extends State<EmployeeDashboardPage> {
                 context.push(AppRoutes.customerPolicyList);
               },
             ),
+            //Todo Video
+           /*_drawerItem(
+              icon: Icons.video_library_outlined,
+              title: 'My Training Videos',
+              onTap: () {
+                GoRouter.of(context).pop();
+                context.push(AppRoutes.employeeTraining);
+              },
+            ),*/
             _drawerItem(
               icon: Icons.lock_outline,
               title: 'Change Password',
@@ -189,6 +268,12 @@ class _EmployeeDashboardPageState extends State<EmployeeDashboardPage> {
           icon: Icons.policy,
           onTap: () => context.push(AppRoutes.customerPolicyList),
         ),
+        //Todo Video
+      /* _clickableCard(
+          title: 'My Training Videos',
+          icon: Icons.video_library,
+          onTap: () => context.push(AppRoutes.employeeTraining),
+        ),*/
         _clickableCard(
           title: 'Change Password',
           icon: Icons.lock_reset,

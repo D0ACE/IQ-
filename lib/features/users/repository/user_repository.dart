@@ -88,14 +88,15 @@ class UserRepository {
   }
 
   // 🔹 Fetch Employees (Role 4)
-  Future<List<EmployeeUserModel>> fetchEmployees({List<String>? customerIds}) async {
+  Future<List<EmployeeUserModel>> fetchEmployees({List<String>? customerIds, String? createdBy}) async {
     Query query = firestore.collectionGroup('employees');
 
     if (customerIds != null && customerIds.isNotEmpty) {
-      // If we have a list of customer IDs (e.g. for a Consultant), filter them
-      // Firestore whereIn limit is 10. If more than 10, we might need multiple queries.
-      // For now, let's assume it's under 10 or handle the logic simply.
       query = query.where('customerId', whereIn: customerIds);
+    }
+
+    if (createdBy != null && createdBy.isNotEmpty) {
+      query = query.where('createdBy', isEqualTo: createdBy);
     }
 
     final snapshot = await query.get();

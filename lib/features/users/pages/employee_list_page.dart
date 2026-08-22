@@ -33,23 +33,27 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
     final customerCubit = context.read<CustomerListCubit>();
     
     List<String>? customerIds;
+    String? createdBy;
+
     if (user != null && Utility.isConsultant(user.roleId)) {
-      // For consultants, we only want employees of their assigned customers
+      // 🚀 For consultants, show ONLY employees THEY created
+      createdBy = user.userId;
+      
+      // Also fetch their assigned customers to resolve company names in the UI
       await customerCubit.fetchApprovedCustomers(user.userId);
-      final state = customerCubit.state;
-      if (state is CustomerListLoaded) {
-        customerIds = state.customers.map((c) => c.customerId).toList();
-      }
     } else if (customer != null && Utility.isCustomer(customer.roleId)) {
-      // For customers, we only want their own employees
+      // For customers, show all employees of their company
       customerIds = [customer.customerId];
     } else {
-      // For Admins/SuperAdmins, ensure customer list is loaded for company names
+      // For Admins/SuperAdmins, show all employees and resolve company names
       await customerCubit.fetchApprovedCustomers(null);
     }
     
     if (mounted) {
-      context.read<UserCubit>().loadEmployees(customerIds: customerIds);
+      context.read<UserCubit>().loadEmployees(
+        customerIds: customerIds,
+        createdBy: createdBy,
+      );
     }
   }
 

@@ -10,6 +10,10 @@ import 'package:iq_plus/common/themes/app_colors.dart';
 import 'package:iq_plus/common/themes/app_ui_helper.dart';
 import 'package:iq_plus/common/themes/components/background.dart';
 import 'package:iq_plus/common/utility/app_validation.dart';
+import 'package:iq_plus/features/admin/consultants/cubit/consultant_cubit.dart';
+import 'package:iq_plus/features/admin/consultants/cubit/consultant_state.dart';
+import 'package:iq_plus/features/admin/customers/cubit/customer_list_cubit.dart';
+import 'package:iq_plus/features/admin/customers/cubit/customer_list_state.dart';
 import 'package:iq_plus/features/auth/cubit/customer/customer_cubit.dart';
 import 'package:iq_plus/features/auth/customer_onboarding/onboarding_mode.dart';
 import 'package:iq_plus/features/auth/model/customer_model.dart';
@@ -52,6 +56,7 @@ class _CustomerOnboardingPageState extends State<CustomerOnboardingPage> {
   final topMobileController = TextEditingController();
 
   String? selectedFileName;
+  String? selectedConsultantId;
 
   @override
   void initState() {
@@ -59,7 +64,10 @@ class _CustomerOnboardingPageState extends State<CustomerOnboardingPage> {
 
     if (widget.mode == OnboardingMode.approve && widget.customer != null) {
       _fillCustomerData(widget.customer!);
+      selectedConsultantId = widget.customer!.consultantId; // 🚀 Initialize
     }
+    
+    context.read<ConsultantCubit>().fetchConsultants();
   }
 
   void _fillCustomerData(CustomerModel customer) {
@@ -168,70 +176,116 @@ class _CustomerOnboardingPageState extends State<CustomerOnboardingPage> {
     }
   }
 
-  @override
-Widget build(BuildContext context) {
-  return Scaffold(
-    backgroundColor: Colors.transparent,
-    body: Background(
-      child: SingleChildScrollView(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 700),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 30,
-              ),
-              child: BlocConsumer<CustomerCubit, CustomerState>(
-                listener: (context, state) {
-                  if (state is CustomerSuccess) {
-                    context.read<CustomerCubit>().fetchPendingCustomers();
-                    showAccountCreatedDialog();
-                  }
+  void approveCustomer() async {
+    if (widget.customer == null) return;
 
-                  if (state is CustomerError) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(state.message)),
-                    );
-                  }
-                },
-                builder: (context, state) {
-                  return formWidget(state is CustomerLoading);
-                },
+    if (selectedConsultantId == null || selectedConsultantId!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please select consultant first.")),
+      );
+      return;
+    }
+
+    await context.read<CustomerListCubit>().approveCustomer(
+          customerId: widget.customer!.customerId,
+          companyName: widget.customer!.companyName,
+          customerEmail: widget.customer!.email,
+          consultantId: selectedConsultantId!,
+        );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: Background(
+        child: SingleChildScrollView(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 700),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 30,
+                ),
+                child: MultiBlocListener(
+                  listeners: [
+                    BlocListener<CustomerCubit, CustomerState>(
+                      listener: (context, state) {
+                        if (state is CustomerSuccess) {
+                          context.read<CustomerCubit>().fetchPendingCustomers();
+                          showAccountCreatedDialog();
+                        }
+                        if (state is CustomerError) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(state.message)),
+                          );
+                        }
+                      },
+                    ),
+                    BlocListener<CustomerListCubit, CustomerListState>(
+                      listener: (context, state) {
+                        if (state is CustomerListOperationSuccess) {
+                          // Refresh pending list for the previous screen
+                          context.read<CustomerCubit>().fetchPendingCustomers();
+                          showAccountCreatedDialog();
+                        }
+                        if (state is CustomerListError) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(state.message)),
+                          );
+                        }
+                      },
+                    ),
+                  ],
+                  child: BlocBuilder<CustomerCubit, CustomerState>(
+                    builder: (context, state) {
+                      final isCustLoading = state is CustomerLoading;
+                      return BlocBuilder<CustomerListCubit, CustomerListState>(
+                        builder: (context, listState) {
+                          final isListLoading = listState is CustomerListLoading;
+                          return formWidget(isCustLoading || isListLoading);
+                        },
+                      );
+                    },
+                  ),
+                ),
               ),
             ),
           ),
         ),
       ),
-    ),
-  );
-}
-void showAccountCreatedDialog() {
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (_) => AlertDialog(
-      title: const Text("Success"),
-      content: Text(
-        widget.mode == OnboardingMode.create
-            ? "Account created successfully. Await admin approval."
-            : "Customer approved successfully.",
-      ),
-      actions: [
-        TextButton(
-          onPressed: () {
-            GoRouter.of(context).pop();// close dialog
+    );
+  }
 
-            if (widget.mode == OnboardingMode.create) {
-              GoRouter.of(context).pop();// go back to login
-            }
-          },
-          child: const Text("OK"),
+  void showAccountCreatedDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        title: const Text("Success"),
+        content: Text(
+          widget.mode == OnboardingMode.create
+              ? "Account created successfully. Await admin approval."
+              : "Customer approved successfully.",
         ),
-      ],
-    ),
-  );
-}
+        actions: [
+          TextButton(
+            onPressed: () {
+              GoRouter.of(context).pop(); // close dialog
+
+              if (widget.mode == OnboardingMode.create) {
+                GoRouter.of(context).pop(); // go back to login
+              } else {
+                GoRouter.of(context).pop(); // go back from details/onboarding
+              }
+            },
+            child: const Text("OK"),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget formWidget(bool isLoading) {
     return Form(
@@ -242,7 +296,6 @@ void showAccountCreatedDialog() {
             keyboardType: TextInputType.name,
             hintText: "Company Name",
             textFieldController: companyNameController,
-            //validator: AppValidation.checkEmailValidation,
             onTap: () {},
             prefixIconWidget: const Padding(
               padding: EdgeInsets.all(defaultPadding),
@@ -255,16 +308,12 @@ void showAccountCreatedDialog() {
             contentPadding: const EdgeInsets.fromLTRB(10, 17, 10, 17),
             disableFocusBorder: true,
             isRequired: true,
-            decoration: InputDecoration(),
+            decoration: const InputDecoration(),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: defaultPadding),
             child: AppTextFieldWidget(
-              // labelText: 'Password',
               hintText: "Address",
-              inputFormatters: <TextInputFormatter>[
-                LengthLimitingTextInputFormatter(20),
-              ],
               textFieldController: addressController,
               onTap: () {},
               prefixIconWidget: const Padding(
@@ -278,17 +327,13 @@ void showAccountCreatedDialog() {
               contentPadding: const EdgeInsets.fromLTRB(10, 17, 10, 17),
               disableFocusBorder: true,
               isRequired: true,
-              decoration: InputDecoration(),
+              decoration: const InputDecoration(),
             ),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: defaultPadding),
             child: AppTextFieldWidget(
-              // labelText: 'Password',
               hintText: "Contact",
-              inputFormatters: <TextInputFormatter>[
-                LengthLimitingTextInputFormatter(12),
-              ],
               textFieldController: contactController,
               onTap: () {},
               prefixIconWidget: const Padding(
@@ -302,13 +347,12 @@ void showAccountCreatedDialog() {
               contentPadding: const EdgeInsets.fromLTRB(10, 17, 10, 17),
               disableFocusBorder: true,
               isRequired: true,
-              decoration: InputDecoration(),
+              decoration: const InputDecoration(),
             ),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: defaultPadding),
             child: AppTextFieldWidget(
-              // labelText: 'Password',
               hintText: "Email",
               validator: AppValidation.checkEmailValidation,
               textFieldController: emailController,
@@ -324,17 +368,13 @@ void showAccountCreatedDialog() {
               contentPadding: const EdgeInsets.fromLTRB(10, 17, 10, 17),
               disableFocusBorder: true,
               isRequired: true,
-              decoration: InputDecoration(),
+              decoration: const InputDecoration(),
             ),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: defaultPadding),
             child: AppTextFieldWidget(
-              // labelText: 'Password',
               hintText: "Standard Of Certificate",
-              inputFormatters: <TextInputFormatter>[
-                LengthLimitingTextInputFormatter(20),
-              ],
               textFieldController: standardOfCertificateController,
               onTap: () {},
               prefixIconWidget: const Padding(
@@ -348,19 +388,15 @@ void showAccountCreatedDialog() {
               contentPadding: const EdgeInsets.fromLTRB(10, 17, 10, 17),
               disableFocusBorder: true,
               isRequired: true,
-              decoration: InputDecoration(),
+              decoration: const InputDecoration(),
             ),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: defaultPadding),
             child: AppTextFieldWidget(
-              // labelText: 'Password',
               hintText: "Number of locations",
               validator: AppValidation.numberOfLocationValidator,
               keyboardType: TextInputType.number,
-              inputFormatters: <TextInputFormatter>[
-                LengthLimitingTextInputFormatter(20),
-              ],
               textFieldController: numberOfLocationsController,
               onTap: () {},
               prefixIconWidget: const Padding(
@@ -373,17 +409,13 @@ void showAccountCreatedDialog() {
               ),
               contentPadding: const EdgeInsets.fromLTRB(10, 17, 10, 17),
               disableFocusBorder: true,
-              decoration: InputDecoration(),
+              decoration: const InputDecoration(),
             ),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: defaultPadding),
             child: AppTextFieldWidget(
-              // labelText: 'Password',
               hintText: "Number of employees",
-              inputFormatters: <TextInputFormatter>[
-                LengthLimitingTextInputFormatter(20),
-              ],
               textFieldController: numberOfEmployeesController,
               onTap: () {},
               validator: AppValidation.numberOfEmployeesValidator,
@@ -398,7 +430,7 @@ void showAccountCreatedDialog() {
               ),
               contentPadding: const EdgeInsets.fromLTRB(10, 17, 10, 17),
               disableFocusBorder: true,
-              decoration: InputDecoration(),
+              decoration: const InputDecoration(),
             ),
           ),
           Padding(
@@ -422,11 +454,9 @@ void showAccountCreatedDialog() {
                   contentPadding: const EdgeInsets.fromLTRB(10, 17, 10, 17),
                   disableFocusBorder: true,
                   isRequired: true,
-                  decoration: InputDecoration(),
+                  decoration: const InputDecoration(),
                 ),
-
                 const SizedBox(height: 10),
-
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
@@ -438,7 +468,6 @@ void showAccountCreatedDialog() {
                     ),
                   ),
                 ),
-
                 if (selectedFileName != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 8),
@@ -450,15 +479,10 @@ void showAccountCreatedDialog() {
               ],
             ),
           ),
-
           Padding(
             padding: const EdgeInsets.symmetric(vertical: defaultPadding),
             child: AppTextFieldWidget(
-              // labelText: 'Password',
               hintText: "Function of the company",
-              inputFormatters: <TextInputFormatter>[
-                LengthLimitingTextInputFormatter(20),
-              ],
               textFieldController: fOCController,
               onTap: () {},
               prefixIconWidget: const Padding(
@@ -472,24 +496,21 @@ void showAccountCreatedDialog() {
               contentPadding: const EdgeInsets.fromLTRB(10, 17, 10, 17),
               disableFocusBorder: true,
               isRequired: true,
-              decoration: InputDecoration(),
+              decoration: const InputDecoration(),
             ),
           ),
-
           departmentSection(
             title: "Low Level Department Details",
             nameController: lowNameController,
             emailController: lowEmailController,
             mobileController: lowMobileController,
           ),
-
           departmentSection(
             title: "Medium Level Department Details",
             nameController: mediumNameController,
             emailController: mediumEmailController,
             mobileController: mediumMobileController,
           ),
-
           departmentSection(
             title: "Top Level Department Details",
             nameController: topNameController,
@@ -497,34 +518,80 @@ void showAccountCreatedDialog() {
             mobileController: topMobileController,
           ),
 
+          if (widget.mode == OnboardingMode.approve) ...[
+            const Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                "Assign Consultant *",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+            ),
+            const SizedBox(height: 10),
+            BlocBuilder<ConsultantCubit, ConsultantState>(
+              builder: (context, state) {
+                if (state is ConsultantLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (state is ConsultantLoaded) {
+                  return DropdownButtonFormField<String>(
+                    value: selectedConsultantId, // 🚀 Show currently selected
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 14,
+                      ),
+                    ),
+                    hint: const Text('Select Consultant'),
+                    items: state.consultants.map((consultant) {
+                      return DropdownMenuItem<String>(
+                        value: consultant.id,
+                        child: Text(consultant.userName),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        selectedConsultantId = value;
+                      });
+                    },
+                    validator: (v) =>
+                        v == null ? "Please select a consultant" : null,
+                  );
+                }
+
+                if (state is ConsultantError) {
+                  return Text(
+                    state.message,
+                    style: const TextStyle(color: Colors.red),
+                  );
+                }
+
+                return const SizedBox();
+              },
+            ),
+            const SizedBox(height: 20),
+          ],
+          
           GradientButton(
-  text: widget.mode == OnboardingMode.create
-      ? "Create Account"
-      : "Approve",
-
-  isLoading: isLoading, // 🔑 IMPORTANT
-  onPressed: isLoading
-      ? null
-      : () {
-          FocusScope.of(context).unfocus(); // close keyboard
-
-          if (widget.mode == OnboardingMode.create) {
-            submit();
-          } else {
-            approveCustomer();
-          }
-        },
-),
-
+            text: widget.mode == OnboardingMode.create ? "Create Account" : "Approve",
+            isLoading: isLoading,
+            onPressed: isLoading
+                ? null
+                : () {
+                    FocusScope.of(context).unfocus();
+                    if (widget.mode == OnboardingMode.create) {
+                      submit();
+                    } else {
+                      approveCustomer();
+                    }
+                  },
+          ),
         ],
       ),
     );
-  }
-
-  void approveCustomer() {
-    if (widget.customer == null) return;
-
-    context.read<CustomerCubit>().approveCustomer(widget.customer!.customerId);
   }
 
   Widget departmentSection({
@@ -550,7 +617,6 @@ void showAccountCreatedDialog() {
               style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
             ),
             const SizedBox(height: 12),
-
             AppTextFieldWidget(
               hintText: "Name",
               textFieldController: nameController,
@@ -561,9 +627,7 @@ void showAccountCreatedDialog() {
               ),
               decoration: const InputDecoration(),
             ),
-
             const SizedBox(height: 10),
-
             AppTextFieldWidget(
               hintText: "Email",
               keyboardType: TextInputType.emailAddress,
@@ -575,9 +639,7 @@ void showAccountCreatedDialog() {
               ),
               decoration: const InputDecoration(),
             ),
-
             const SizedBox(height: 10),
-
             AppTextFieldWidget(
               hintText: "Mobile Number",
               keyboardType: TextInputType.phone,

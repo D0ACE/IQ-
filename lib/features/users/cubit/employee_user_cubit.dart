@@ -16,6 +16,7 @@ class UserCubit extends Cubit<UserState> {
   
   // Track last fetch to refresh correctly
   List<String>? _lastCustomerIds;
+  String? _lastCreatedBy;
   bool _isEmployeeList = false;
 
   @override
@@ -76,12 +77,13 @@ class UserCubit extends Cubit<UserState> {
   }
 
   /// 🔹 LOAD EMPLOYEES
-  Future<void> loadEmployees({List<String>? customerIds}) async {
+  Future<void> loadEmployees({List<String>? customerIds, String? createdBy}) async {
     try {
       _isEmployeeList = true;
       _lastCustomerIds = customerIds;
+      _lastCreatedBy = createdBy;
       emit(UserLoading());
-      users = await repository.fetchEmployees(customerIds: customerIds);
+      users = await repository.fetchEmployees(customerIds: customerIds, createdBy: createdBy);
       emit(UserLoaded(users));
     } catch (e) {
       emit(UserError(e.toString()));
@@ -91,7 +93,7 @@ class UserCubit extends Cubit<UserState> {
   /// 🔹 REFRESH Logic
   Future<void> _refresh() async {
     if (_isEmployeeList) {
-      await loadEmployees(customerIds: _lastCustomerIds);
+      await loadEmployees(customerIds: _lastCustomerIds, createdBy: _lastCreatedBy);
     } else {
       await loadUsers();
     }

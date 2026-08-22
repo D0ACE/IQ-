@@ -50,11 +50,17 @@ class CustomerListCubit extends Cubit<CustomerListState> {
   }
 
   Future<void> approveCustomer({required String customerId,required String companyName,required String customerEmail,required String consultantId,}) async {
-    await repo.approveCustomer(customerId: customerId,
-        companyName: companyName,
-        customerEmail:customerEmail,
-        consultantId: consultantId);
-    fetchCustomers();
+    try {
+      emit(CustomerListLoading());
+      await repo.approveCustomer(customerId: customerId,
+          companyName: companyName,
+          customerEmail:customerEmail,
+          consultantId: consultantId);
+      emit(CustomerListOperationSuccess("Customer approved successfully"));
+      fetchCustomers();
+    } catch (e) {
+      emit(CustomerListError(e.toString()));
+    }
   }
 
   Future<void> updateCustomerNextVisitDate({

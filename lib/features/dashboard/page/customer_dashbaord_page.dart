@@ -134,9 +134,15 @@ class _DashboardPageState extends State<DashboardPage> {
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            DrawerHeader(
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(16, 40, 16, 16),
+              decoration: const BoxDecoration(
+                border: Border(bottom: BorderSide(color: Colors.white24)),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: const [
                   CircleAvatar(
                     radius: 30,
@@ -238,6 +244,15 @@ class _DashboardPageState extends State<DashboardPage> {
                 context.push(AppRoutes.employeeListing);
               },
             ),
+//Todo Video
+      /*      _drawerItem(
+              icon: Icons.video_library_outlined,
+              title: 'Training Videos',
+              onTap: () {
+                GoRouter.of(context).pop();
+                context.push(AppRoutes.videoList);
+              },
+            ),*/
 
             _drawerItem(
               icon: Icons.logout,
@@ -397,6 +412,7 @@ class _DashboardPageState extends State<DashboardPage> {
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       title,
@@ -411,6 +427,8 @@ class _DashboardPageState extends State<DashboardPage> {
                     const SizedBox(height: 6),
                     Text(
                       value,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -541,6 +559,14 @@ class _DashboardPageState extends State<DashboardPage> {
             context.push(AppRoutes.employeeListing);
           },
         ),
+//Todo Video
+  /*      _clickableCard(
+          title: 'Training Videos',
+          icon: Icons.video_library,
+          onTap: () {
+            context.push(AppRoutes.videoList);
+          },
+        ),*/
 
         _clickableCard(
           title: 'All Policies Version History',

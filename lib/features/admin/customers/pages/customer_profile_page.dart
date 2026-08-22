@@ -76,6 +76,11 @@ class _CustomerDetailViewState extends State<CustomerProfilePage> {
 
             verticalSpace20,
 
+            if (customer.consultantId != null)
+              _readOnly('Assigned Consultant ID', customer.consultantId!),
+
+            verticalSpace20,
+
             Align(
               alignment: Alignment.centerLeft,
               child: Text(

@@ -39,4 +39,11 @@ class AppRoutes {
   static const String addEmployee = '/addEmployee';
   static const String employeeListing = '/employeeListing';
   static const String employeeDashboard = '/employeeDashboard';
+  static const String videoList = '/videoList';
+  static const String videoUpload = '/videoUpload';
+  static const String videoQuiz = '/videoQuiz';
+  static const String videoPlayer = '/videoPlayer';
+  static const String videoDetails = '/videoDetails';
+  static const String employeeTraining = '/employeeTraining';
+  static const String trainingResults = '/trainingResults';
 }

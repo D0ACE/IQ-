@@ -141,6 +141,8 @@ class CustomerModel extends HiveObject {
   String? lowLevelEmail,
   String? lowLevelMobile,
   bool? isProfileApproved,
+  String? nextVisitDate,
+  String? consultantId,
 }) {
   return CustomerModel(
     customerId: customerId ?? this.customerId,
@@ -167,7 +169,8 @@ class CustomerModel extends HiveObject {
     lowLevelName: lowLevelName ?? this.lowLevelName,
     lowLevelEmail: lowLevelEmail ?? this.lowLevelEmail,
     lowLevelMobile: lowLevelMobile ?? this.lowLevelMobile,
-    nextVisitDate: nextVisitDate ?? nextVisitDate,
+    nextVisitDate: nextVisitDate ?? this.nextVisitDate,
+    consultantId: consultantId ?? this.consultantId,
   );
 }
   /// 🔁 Firestore → CustomerModel
@@ -232,23 +235,35 @@ factory CustomerModel.fromJson(
     address: json['address'] ?? '',
 
     // Low
-    lowLevelName: json['lowLevelDepartment']?['name'] ?? '',
-    lowLevelEmail: json['lowLevelDepartment']?['email'] ?? '',
-    lowLevelMobile: json['lowLevelDepartment']?['mobile'] ?? '',
+    lowLevelName: _getVal(json, ['lowLevelName', 'low_level_name'], 'lowLevelDepartment', 'name'),
+    lowLevelEmail: _getVal(json, ['lowLevelEmail', 'low_level_email'], 'lowLevelDepartment', 'email'),
+    lowLevelMobile: _getVal(json, ['lowLevelMobile', 'low_level_mobile'], 'lowLevelDepartment', 'mobile'),
 
     // Medium
-    mediumLevelName: json['mediumLevelDepartment']?['name'] ?? '',
-    mediumLevelEmail: json['mediumLevelDepartment']?['email'] ?? '',
-    mediumLevelMobile: json['mediumLevelDepartment']?['mobile'] ?? '',
+    mediumLevelName: _getVal(json, ['mediumLevelName', 'medium_level_name'], 'mediumLevelDepartment', 'name'),
+    mediumLevelEmail: _getVal(json, ['mediumLevelEmail', 'medium_level_email'], 'mediumLevelDepartment', 'email'),
+    mediumLevelMobile: _getVal(json, ['mediumLevelMobile', 'medium_level_mobile'], 'mediumLevelDepartment', 'mobile'),
 
     // Top
-    topLevelName: json['topLevelDepartment']?['name'] ?? '',
-    topLevelEmail: json['topLevelDepartment']?['email'] ?? '',
-    topLevelMobile: json['topLevelDepartment']?['mobile'] ?? '',
+    topLevelName: _getVal(json, ['topLevelName', 'top_level_name'], 'topLevelDepartment', 'name'),
+    topLevelEmail: _getVal(json, ['topLevelEmail', 'top_level_email'], 'topLevelDepartment', 'email'),
+    topLevelMobile: _getVal(json, ['topLevelMobile', 'top_level_mobile'], 'topLevelDepartment', 'mobile'),
 
-    consultantId: json['consultantId'],
-    nextVisitDate: json['nextVisitDate'],
+    consultantId: json['consultantId'] ?? json['consultant_id'],
+    nextVisitDate: json['nextVisitDate'] ?? json['next_visit_date'],
   );
+}
+
+static String _getVal(Map<String, dynamic> json, List<String> flatKeys, String nestedKey, String subKey) {
+  for (final key in flatKeys) {
+    if (json[key] != null && json[key].toString().isNotEmpty) {
+      return json[key].toString();
+    }
+  }
+  if (json[nestedKey] != null && json[nestedKey] is Map) {
+    return json[nestedKey][subKey]?.toString() ?? '';
+  }
+  return '';
 }
 
 // ✅ ADD THIS

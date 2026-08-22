@@ -15,6 +15,8 @@ import 'package:iq_plus/features/users/cubit/employee_user_cubit.dart';
 import 'package:iq_plus/features/users/repository/user_repository.dart';
 import 'package:iq_plus/features/superadmin/repository/document_repository.dart';
 import 'package:iq_plus/features/superadmin/cubit/document_cubit.dart';
+import 'package:iq_plus/features/videos/repository/video_repository.dart';
+import 'package:iq_plus/features/videos/cubit/video_cubit.dart';
 
 final getIt = GetIt.instance;
 
@@ -40,6 +42,9 @@ Future<void> setupServiceLocator() async {
   getIt.registerLazySingleton<DocumentRepository>(
         () => DocumentRepository(),
   );
+  getIt.registerLazySingleton<VideoRepository>(
+        () => VideoRepository(),
+  );
 
   // Cubit
   getIt.registerFactory<AuthCubit>(() => AuthCubit(getIt<AuthRepository>()));
@@ -64,6 +69,10 @@ Future<void> setupServiceLocator() async {
 
   getIt.registerFactory<DocumentCubit>(
         () => DocumentCubit(getIt()),
+  );
+
+  getIt.registerFactory<VideoCubit>(
+        () => VideoCubit(getIt()),
   );
 
   getIt.registerLazySingleton<HiveService>(() => HiveService());

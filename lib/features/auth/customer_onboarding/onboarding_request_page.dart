@@ -89,12 +89,15 @@ class _OnboardingRequestPageState extends State<OnboardingRequestPage> {
                         color: AppColors.whiteColor,
                       ),
                     ),
-                    onTap: () {
-  GoRouter.of(context).push(
-    '/customer-onboarding',
-    extra: customer,
-  );
-},
+                    onTap: () async {
+                      await GoRouter.of(context).push(
+                        '/customer-onboarding',
+                        extra: customer,
+                      );
+                      if (context.mounted) {
+                        context.read<CustomerCubit>().fetchPendingCustomers();
+                      }
+                    },
 
                   ),
                 );

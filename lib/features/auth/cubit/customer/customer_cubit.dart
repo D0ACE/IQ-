@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:iq_plus/features/auth/cubit/customer/state/customer_state.dart';
 import 'package:iq_plus/features/auth/model/customer_model.dart';
 import 'package:iq_plus/features/auth/repository/auth_repository.dart';
+import 'package:iq_plus/core/email_services/email_service.dart';
 
 class CustomerCubit extends Cubit<CustomerState> {
   final AuthRepository repo;
@@ -21,6 +22,12 @@ class CustomerCubit extends Cubit<CustomerState> {
           customerId: doc.id, // ✅ IMPORTANT
           isProfileApproved: false, // ensure new users are pending approval
         ).toJson(),
+      );
+
+      // 📧 Send email notification to customer
+      await BrevoEmailService.sendCustomerCreatedMail(
+        companyName: data.companyName,
+        email: data.email,
       );
 
       emit(CustomerSuccess());
