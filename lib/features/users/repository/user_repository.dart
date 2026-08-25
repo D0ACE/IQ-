@@ -156,4 +156,27 @@ class UserRepository {
       }
     }
   }
+
+  // 🔹 Global Statistics
+  Future<int> getTotalCustomerCount() async {
+    final snapshot = await firestore.collection('customers').count().get();
+    return snapshot.count ?? 0;
+  }
+
+  Future<int> getTotalConsultantCount() async {
+    final snapshot = await firestore.collection('users').where('roleId', isEqualTo: AppConst.consultantRole).count().get();
+    return snapshot.count ?? 0;
+  }
+
+  Future<int> getTotalAdminCount() async {
+    final snapshot = await firestore.collection('users').where('roleId', isEqualTo: AppConst.adminRole).count().get();
+    return snapshot.count ?? 0;
+  }
+
+  Future<int> getTotalActiveUserCount() async {
+    final users = await firestore.collection('users').where('blockStatus', isEqualTo: false).count().get();
+    final customers = await firestore.collection('customers').where('isProfileApproved', isEqualTo: true).count().get();
+    final employees = await firestore.collectionGroup('employees').where('blockStatus', isEqualTo: false).count().get();
+    return (users.count ?? 0) + (customers.count ?? 0) + (employees.count ?? 0);
+  }
 }

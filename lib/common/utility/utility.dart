@@ -108,6 +108,8 @@ class Utility {
 
   static String getUserRoleName(String roleId) {
     switch (roleId) {
+      case "0":
+        return 'Super Admin';
       case "1":
         return 'Admin';
       case "2":

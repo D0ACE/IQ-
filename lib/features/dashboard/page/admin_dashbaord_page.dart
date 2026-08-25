@@ -10,6 +10,7 @@ import 'package:iq_plus/common/utility/utility.dart';
 import 'package:iq_plus/common/widgets/common_app_bar.dart';
 import 'package:iq_plus/core/local_storage/hive_service.dart';
 import 'package:iq_plus/di/service_locator.dart';
+import 'package:iq_plus/features/users/repository/user_repository.dart';
 
 
 import 'package:iq_plus/ncr_form/ncr_provider.dart';
@@ -23,47 +24,250 @@ class AdminDashboardPage extends StatefulWidget {
   State<AdminDashboardPage> createState() => _AdminDashboardPageState();
 }
 
-class _AdminDashboardPageState extends State<AdminDashboardPage> {
+class _AdminDashboardPageState extends State<AdminDashboardPage> with TickerProviderStateMixin {
+  final user = getIt<HiveService>().getUser();
+
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    );
+
+    _fadeAnimation = CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeIn,
+    );
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.05),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeOutCubic,
+    ));
+
+    // 🚀 Start listening to NCR data for the graph
+    context.read<NcrProvider>().listenToNcrs();
+
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.scaffoldBg,
       drawer: _buildBeautifulDrawer(),
-      appBar: const CommonAppBar(
-  title: 'Admin Dashboard',
-),
-      body: Padding(
-        padding: const EdgeInsets.all(18.0),
-        child: Responsive(
-          mobile: SingleChildScrollView(
-            child: Column(
-              children: [
-                _buildStatsColumn(),
-                const SizedBox(height: 20),
-                _buildChartsColumn(context),
-                const SizedBox(height: 24),
-                _dashboardClickableList(),
-              ],
+      appBar: const CommonAppBar(title: 'Admin Command Center'),
+      body: Stack(
+        children: [
+          // Decorative background elements
+          Positioned(
+            top: -50,
+            right: -50,
+            child: _buildDecorativeCircle(200, AppColors.kPrimaryColor.withValues(alpha: 0.03)),
+          ),
+          Positioned(
+            bottom: 100,
+            left: -30,
+            child: _buildDecorativeCircle(150, AppColors.secondary.withValues(alpha: 0.03)),
+          ),
+          
+          FadeTransition(
+            opacity: _fadeAnimation,
+            child: SlideTransition(
+              position: _slideAnimation,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _welcomeHeader(),
+                    const SizedBox(height: 24),
+                    Responsive(
+                      mobile: Column(
+                        children: [
+                          _buildChartsColumn(context),
+                          const SizedBox(height: 24),
+                          _buildStatsColumn(),
+                          const SizedBox(height: 24),
+                          _sectionTitle('Quick Actions'),
+                          const SizedBox(height: 14),
+                          _dashboardClickableList(),
+                        ],
+                      ),
+                      desktop: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            flex: 3,
+                            child: Column(
+                              children: [
+                                _buildChartsColumn(context),
+                                const SizedBox(height: 24),
+                                _buildStatsColumn(),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 24),
+                          Expanded(
+                            flex: 2,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _sectionTitle('Quick Access'),
+                                const SizedBox(height: 14),
+                                _dashboardClickableList(),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
-          desktop: SingleChildScrollView(
-            child: Row(
-              children: [
-                Expanded(flex: 2, child: _buildStatsColumn()),
-                const SizedBox(width: 20),
-                Expanded(
-                  flex: 3,
-                  child: Column(
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDecorativeCircle(double size, Color color) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: color,
+      ),
+    );
+  }
+
+  Widget _sectionTitle(String title) {
+    return Text(
+      title,
+      style: const TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.w900,
+        color: AppColors.titleText,
+        letterSpacing: -0.5,
+      ),
+    );
+  }
+
+  Widget _welcomeHeader() {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: AppColors.kPrimaryColor,
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.kPrimaryColor.withValues(alpha: 0.15),
+            blurRadius: 30,
+            offset: const Offset(0, 15),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(30),
+        child: Stack(
+          children: [
+            Positioned(
+              right: -50,
+              top: -50,
+              child: Opacity(
+                opacity: 0.1,
+                child: Icon(Icons.admin_panel_settings_rounded, size: 250, color: Colors.white),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
                     children: [
-                      _buildChartsColumn(context),
-                      const SizedBox(height: 24),
-                      _dashboardClickableList(),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                        ),
+                        child: const Icon(Icons.shield_rounded, color: Colors.white, size: 28),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "WELCOME,",
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.5),
+                                fontSize: 10,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 2,
+                              ),
+                            ),
+                            Text(
+                              user?.userName ?? 'Administrator',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 24,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: -0.5,
+                                height: 1.1,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
-                ),
-              ],
+                  const SizedBox(height: 24),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.verified_user_rounded, color: Colors.amber, size: 14),
+                        const SizedBox(width: 8),
+                        const Text(
+                          "System administration is active",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -71,166 +275,234 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
 
   /// 🌈 Drawer
   Widget _buildBeautifulDrawer() {
+    final String adminName = user?.userName ?? "Admin";
+    final String email = user?.email ?? "admin@iqplus.com";
+    final bool isSuperAdmin = Utility.isSuperAdmin(user?.roleId ?? "");
+
     return Drawer(
+      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.only(
           topRight: Radius.circular(30),
           bottomRight: Radius.circular(30),
         ),
       ),
-      child: Container(
-        decoration: const BoxDecoration(gradient: AppColors.mainGradient),
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            DrawerHeader(
-              child: InkWell(
-                onTap: () {
-                  GoRouter.of(context).pop();
-
-                  /// close drawer
-                  context.push(AppRoutes.adminProfile);
-                },
-                child: Row(
-                  children: [
-                    const CircleAvatar(
-                      radius: 32,
-                      backgroundColor: Colors.white,
-                      child: Icon(
-                        Icons.person,
-                        color: AppColors.purple,
-                        size: 30,
+      child: Column(
+        children: [
+          // Futuristic Premium Header
+          Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: AppColors.kPrimaryColor,
+              borderRadius: const BorderRadius.only(topRight: Radius.circular(30)),
+            ),
+            child: ClipRRect(
+              borderRadius: const BorderRadius.only(topRight: Radius.circular(30)),
+              child: Stack(
+                children: [
+                  Positioned(
+                    right: -20,
+                    top: -20,
+                    child: Opacity(
+                      opacity: 0.15,
+                      child: Icon(Icons.admin_panel_settings_rounded, size: 150, color: Colors.white),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 60, 24, 24),
+                    child: InkWell(
+                      onTap: () {
+                        GoRouter.of(context).pop();
+                        context.push(AppRoutes.adminProfile);
+                      },
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                            ),
+                            child: const Icon(Icons.manage_accounts_rounded, color: Colors.white, size: 28),
+                          ),
+                          const SizedBox(height: 20),
+                          Text(
+                            adminName,
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                          Text(
+                            email,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.white.withValues(alpha: 0.6),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Text(
+                              "VIEW PROFILE",
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: Colors.white,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 1,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          getIt<HiveService>().getUser()?.userName ?? "Admin",
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        Text(
-                          getIt<HiveService>().getUser()?.email ?? "",
-                          style: const TextStyle(color: Colors.white70),
-                        ),
-                        const SizedBox(height: 4),
-                        const Text(
-                          "View Profile",
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.white70,
-                            decoration: TextDecoration.underline,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
-
-            _drawerItem(
-              icon: Icons.person_add,
-              title: 'Onboarding Request',
-              onTap: () {
-                context.pop();
-                context.push(AppRoutes.onboardingRequest);
-              },
-            ),
-
-            _drawerItem(
-              icon: Icons.people,
-              title: 'Customers',
-              onTap: () {
-                context.pop();
-                context.push(AppRoutes.customerList);
-              },
-            ),
-            _drawerItem(
-              icon: Icons.people,
-              title: 'Consultants',
-              onTap: () {
-                context.pop();
-                context.push(AppRoutes.employeeList);
-              },
-            ),
-            _drawerItem(
-              icon: Icons.description_outlined,
-              title: 'Policies & Procedures',
-              onTap: () {
-                context.pop();
-                context.push(AppRoutes.documentList);
-              },
-            ),
-            // ✅ Add Admin
-            if(Utility.isSuperAdmin(getIt<HiveService>().getUser()?.roleId??""))
-            _drawerItem(
-            icon: Icons.person_add_alt,
-            title: 'Add Admin',
-            onTap: () {
-              context.pop();
-              context.push(AppRoutes.createAdmin); // navigate to Add Admin page
-            },
           ),
 
-          // ✅ Admins (List)
-            if(Utility.isSuperAdmin(getIt<HiveService>().getUser()?.roleId??""))
-          _drawerItem(
-            icon: Icons.admin_panel_settings,
-            title: 'Admins',
-            onTap: () {
-              context.pop();
-              context.push(AppRoutes.adminList); // navigate to Admin List page
-            },
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+              children: [
+                _drawerSectionTitle('SYSTEM OVERSIGHT'),
+                _drawerItem(
+                  icon: Icons.person_add_rounded,
+                  title: 'Onboarding Request',
+                  onTap: () {
+                    GoRouter.of(context).pop();
+                    context.push(AppRoutes.onboardingRequest);
+                  },
+                ),
+                _drawerItem(
+                  icon: Icons.business_rounded,
+                  title: 'Customers',
+                  onTap: () {
+                    GoRouter.of(context).pop();
+                    context.push(AppRoutes.customerList);
+                  },
+                ),
+                _drawerItem(
+                  icon: Icons.badge_rounded,
+                  title: 'Consultants',
+                  onTap: () {
+                    GoRouter.of(context).pop();
+                    context.push(AppRoutes.employeeList);
+                  },
+                ),
+                _drawerItem(
+                  icon: Icons.policy_rounded,
+                  title: 'Policies & Procedures',
+                  onTap: () {
+                    GoRouter.of(context).pop();
+                    context.push(AppRoutes.documentList);
+                  },
+                ),
+
+                if (isSuperAdmin) ...[
+                  const SizedBox(height: 20),
+                  _drawerSectionTitle('ADMINISTRATION'),
+                  _drawerItem(
+                    icon: Icons.person_add_alt_1_rounded,
+                    title: 'Add Admin',
+                    onTap: () {
+                      GoRouter.of(context).pop();
+                      context.push(AppRoutes.createAdmin);
+                    },
+                  ),
+                  _drawerItem(
+                    icon: Icons.security_rounded,
+                    title: 'Admins',
+                    onTap: () {
+                      GoRouter.of(context).pop();
+                      context.push(AppRoutes.adminList);
+                    },
+                  ),
+                ],
+
+                const SizedBox(height: 20),
+                _drawerSectionTitle('OPERATIONS'),
+                _drawerItem(
+                  icon: Icons.history_edu_rounded,
+                  title: 'All Policies Version History',
+                  onTap: () {
+                    GoRouter.of(context).pop();
+                    context.push(AppRoutes.globalVersionHistory);
+                  },
+                ),
+                _drawerItem(
+                  icon: Icons.group_rounded,
+                  title: 'Employees',
+                  onTap: () {
+                    GoRouter.of(context).pop();
+                    context.push(AppRoutes.employeeListing);
+                  },
+                ),
+                //Todo Video
+                /*_drawerItem(
+                  icon: Icons.video_library_outlined,
+                  title: 'Training Videos',
+                  onTap: () {
+                    GoRouter.of(context).pop();
+                    context.push(AppRoutes.videoList);
+                  },
+                ),*/
+
+                const SizedBox(height: 20),
+                _drawerSectionTitle('COMMUNICATION'),
+                _drawerItem(
+                  icon: Icons.alternate_email_rounded,
+                  title: 'Contact Us',
+                  onTap: () {
+                    GoRouter.of(context).pop();
+                    context.push(AppRoutes.contactUs);
+                  },
+                ),
+              ],
+            ),
           ),
-            _drawerItem(
-              icon: Icons.contact_mail,
-              title: 'Contact Us',
-              onTap: () {
-                context.pop();
-                context.push(AppRoutes.contactUs);
-              },
+
+          // Futuristic Logout Footer
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              border: Border(top: BorderSide(color: Colors.grey.shade100)),
             ),
-            _drawerItem(
-              icon: Icons.history,
-              title: 'All Policies Version History',
-              onTap: () {
-                context.pop();
-                context.push(AppRoutes.globalVersionHistory);
-              },
-            ),
-            _drawerItem(
-              icon: Icons.assignment_ind_outlined,
-              title: 'Employees',
-              onTap: () {
-                context.pop();
-                context.push(AppRoutes.employeeListing);
-              },
-            ),
-            //Todo Video
-         /*  _drawerItem(
-              icon: Icons.video_library_outlined,
-              title: 'Training Videos',
-              onTap: () {
-                context.pop();
-                context.push(AppRoutes.videoList);
-              },
-            ),*/
-            _drawerItem(
-              icon: Icons.logout,
+            child: _drawerItem(
+              icon: Icons.logout_rounded,
               title: 'Logout',
+              color: Colors.redAccent,
               onTap: () {
                 getIt<HiveService>().clearAll();
-                context.go(AppRoutes.login); // clear stack and go to login
+                context.go(AppRoutes.login);
               },
             ),
-          ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _drawerSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 12, top: 12, bottom: 8),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w900,
+          color: Colors.grey.shade400,
+          letterSpacing: 1.5,
         ),
       ),
     );
@@ -240,58 +512,154 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     required IconData icon,
     required String title,
     required GestureTapCallback onTap,
+    Color? color,
   }) {
-    return ListTile(
-      leading: Icon(icon, color: Colors.white),
-      title: Text(
-        title,
-        style: const TextStyle(color: Colors.white, fontSize: 16),
+    final Color itemColor = color ?? Colors.grey.shade700;
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 2),
+      child: ListTile(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        leading: Icon(icon, color: itemColor, size: 22),
+        title: Text(
+          title,
+          style: TextStyle(
+            color: itemColor,
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        onTap: onTap,
+        dense: true,
       ),
-      onTap: onTap,
     );
   }
 
   /// 📊 Stats
   Widget _buildStatsColumn() {
+    final userRepository = getIt<UserRepository>();
+
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _statCard('Users', '1,245', AppColors.purple),
+        _sectionTitle('System Statistics'),
+        const SizedBox(height: 14),
+        FutureBuilder<int>(
+          future: userRepository.getTotalActiveUserCount(),
+          builder: (context, snapshot) {
+            return _statCard(
+              'Total Active Users',
+              snapshot.connectionState == ConnectionState.waiting ? '...' : '${snapshot.data ?? 0}',
+              AppColors.purple,
+              Icons.people_alt_rounded,
+              () {},
+            );
+          },
+        ),
         const SizedBox(height: 16),
-        _statCard('Revenue', '\$12,345', AppColors.paid),
+        FutureBuilder<int>(
+          future: userRepository.getTotalCustomerCount(),
+          builder: (context, snapshot) {
+            return _statCard(
+              'Total Customers',
+              snapshot.connectionState == ConnectionState.waiting ? '...' : '${snapshot.data ?? 0}',
+              AppColors.paid,
+              Icons.business_center_rounded,
+              () => context.push(AppRoutes.customerList),
+            );
+          },
+        ),
         const SizedBox(height: 16),
-        _statCard('Orders', '321', AppColors.blue),
+        FutureBuilder<int>(
+          future: userRepository.getTotalConsultantCount(),
+          builder: (context, snapshot) {
+            return _statCard(
+              'Total Consultants',
+              snapshot.connectionState == ConnectionState.waiting ? '...' : '${snapshot.data ?? 0}',
+              AppColors.blue,
+              Icons.badge_rounded,
+              () => context.push(AppRoutes.employeeList),
+            );
+          },
+        ),
       ],
     );
   }
 
-  Widget _statCard(String title, String value, Color color) {
-    return Card(
-      elevation: 10,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        width: double.infinity,
-        decoration: BoxDecoration(
-          color: AppColors.cardBg,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(fontSize: 16, color: AppColors.subText),
+  Widget _statCard(String title, String value, Color color, IconData icon, VoidCallback onTap) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.1),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(24),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Row(
+              children: [
+                Container(
+                  height: 60,
+                  width: 60,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [color.withValues(alpha: 0.2), color.withValues(alpha: 0.05)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: color,
+                    size: 30,
+                  ),
+                ),
+                const SizedBox(width: 20),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade500,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        value,
+                        style: TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.titleText,
+                          letterSpacing: -1,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward_rounded,
+                  size: 20,
+                  color: color.withValues(alpha: 0.3),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -310,29 +678,52 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'NCR Overview',
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            color: AppColors.titleText,
-          ),
-        ),
+        _sectionTitle('Compliance Overview'),
         const SizedBox(height: 14),
-        Card(
-          elevation: 10,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: SizedBox(
-              height: 280,
-              child: AnimatedBarChart(
-                values: barValues,
-                barColor: AppColors.barColor,
+        Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(30),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 30,
+                offset: const Offset(0, 15),
               ),
-            ),
+            ],
+          ),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    "Global NCR Trends",
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppColors.kPrimaryColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Text(
+                      "Real-time",
+                      style: TextStyle(color: AppColors.kPrimaryColor, fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 32),
+              SizedBox(
+                height: 250,
+                child: AnimatedBarChart(
+                  values: barValues,
+                  barColor: AppColors.kPrimaryColor,
+                ),
+              ),
+            ],
           ),
         ),
       ],
@@ -341,64 +732,46 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
 
   /// 🔗 Dashboard Navigation
   Widget _dashboardClickableList() {
-    return Column(
-      children: [
-        // 🔴 Existing NCR tile
-        _clickableCard(
-          title: 'NCR',
-          icon: Icons.report_problem,
-          onTap: () => context.push(AppRoutes.ncrPage),
-        ),
-
-        // 🟠 Static tiles (NO navigation for now)
-        _clickableCard(
-          title: 'Risk',
-          icon: Icons.warning_amber_rounded,
-          onTap: () {},
-        ),
-
-        _clickableCard(
-          title: 'Next Visit',
-          icon: Icons.event_available,
-          onTap: () {},
-        ),
-
-        _clickableCard(
-          title: 'Next Audit',
-          icon: Icons.fact_check,
-          onTap: () {},
-        ),
-
-        _clickableCard(
-          title: 'Next Training',
-          icon: Icons.school,
-          onTap: () {},
-        ),
-
-        _clickableCard(
-          title: 'Policies & Procedures',
-          icon: Icons.description,
-          onTap: () => context.push(AppRoutes.documentList),
-        ),
-
-        _clickableCard(
-          title: 'All Policies Version History',
-          icon: Icons.history,
-          onTap: () => context.push(AppRoutes.globalVersionHistory),
-        ),
-
-        _clickableCard(
-          title: 'Employees',
-          icon: Icons.assignment_ind_outlined,
-          onTap: () => context.push(AppRoutes.employeeListing),
-        ),
-//Todo Video
-    /*   _clickableCard(
-          title: 'Training Videos',
-          icon: Icons.video_library,
-          onTap: () => context.push(AppRoutes.videoList),
-        ),*/
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final bool isDesktop = constraints.maxWidth > 500;
+        return GridView.count(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisCount: isDesktop ? 2 : 1,
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          childAspectRatio: isDesktop ? 2.5 : 4.2,
+          children: [
+            _clickableCard(
+              title: 'NCR',
+              icon: Icons.report_problem_rounded,
+              onTap: () => context.push(AppRoutes.ncrPage),
+            ),
+            _clickableCard(
+              title: 'Policies & Procedures',
+              icon: Icons.description_rounded,
+              onTap: () => context.push(AppRoutes.documentList),
+            ),
+            _clickableCard(
+              title: 'Policy History',
+              icon: Icons.history_rounded,
+              onTap: () => context.push(AppRoutes.globalVersionHistory),
+            ),
+            _clickableCard(
+              title: 'Employees',
+              icon: Icons.group_rounded,
+              onTap: () => context.push(AppRoutes.employeeListing),
+            ),
+            //Todo Video
+            /*_clickableCard(
+              title: 'Training Videos',
+              icon: Icons.video_library_rounded,
+              onTap: () => context.push(AppRoutes.videoList),
+            ),*/
+          ],
+        );
+      },
     );
   }
 
@@ -407,35 +780,83 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     required IconData icon,
     required VoidCallback onTap,
   }) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(20),
-      onTap: onTap,
-      child: Card(
-        elevation: 8,
-        margin: const EdgeInsets.only(bottom: 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: 22,
-                backgroundColor: AppColors.kPrimaryLightColor,
-                child: Icon(icon, color: AppColors.kPrimaryColor),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.titleText,
+    Color themeColor = AppColors.kPrimaryColor;
+    if (title.contains('NCR')) themeColor = Colors.orange;
+    else if (title.contains('Policies')) themeColor = Colors.teal;
+    else if (title.contains('History')) themeColor = Colors.blueGrey;
+    else if (title.contains('Employees')) themeColor = Colors.pinkAccent;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.grey.shade50),
+        boxShadow: [
+          BoxShadow(
+            color: themeColor.withValues(alpha: 0.04),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            splashColor: themeColor.withValues(alpha: 0.05),
+            highlightColor: Colors.transparent,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Container(
+                    height: 44,
+                    width: 44,
+                    decoration: BoxDecoration(
+                      color: themeColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(icon, color: themeColor, size: 22),
                   ),
-                ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w900,
+                            color: AppColors.titleText,
+                            letterSpacing: -0.3,
+                          ),
+                        ),
+                        const SizedBox(height: 1),
+                        Text(
+                          "System Management",
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.grey.shade400,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 14,
+                    color: Colors.grey.shade200,
+                  ),
+                ],
               ),
-              const Icon(Icons.arrow_forward_ios, size: 16),
-            ],
+            ),
           ),
         ),
       ),
@@ -458,30 +879,101 @@ class AnimatedBarChart extends StatelessWidget {
   Widget build(BuildContext context) {
     return BarChart(
       BarChartData(
-        maxY: values.isEmpty ? 5 : values.reduce(max) + 2,
+        alignment: BarChartAlignment.spaceAround,
+        maxY: values.isEmpty ? 5 : (values.reduce(max) + 2).toDouble(),
+        barTouchData: BarTouchData(
+          enabled: true,
+          touchTooltipData: BarTouchTooltipData(
+            getTooltipColor: (_) => Colors.blueGrey.withValues(alpha: 0.8),
+            getTooltipItem: (group, groupIndex, rod, rodIndex) {
+              return BarTooltipItem(
+                rod.toY.round().toString(),
+                const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              );
+            },
+          ),
+        ),
+        titlesData: FlTitlesData(
+          show: true,
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 32,
+              getTitlesWidget: (value, meta) {
+                const labels = ['Open', 'Progress', 'Closed'];
+                if (value.toInt() >= 0 && value.toInt() < labels.length) {
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      labels[value.toInt()],
+                      style: TextStyle(
+                        color: Colors.grey.shade500,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  );
+                }
+                return const SizedBox();
+              },
+            ),
+          ),
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 28,
+              getTitlesWidget: (value, meta) {
+                return Text(
+                  value.toInt().toString(),
+                  style: TextStyle(
+                    color: Colors.grey.shade400,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                  ),
+                );
+              },
+            ),
+          ),
+          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        ),
+        gridData: FlGridData(
+          show: true,
+          drawVerticalLine: false,
+          getDrawingHorizontalLine: (value) => FlLine(
+            color: Colors.grey.shade100,
+            strokeWidth: 1,
+          ),
+        ),
+        borderData: FlBorderData(show: false),
         barGroups: values.asMap().entries.map((entry) {
           return BarChartGroupData(
             x: entry.key,
             barRods: [
               BarChartRodData(
                 toY: entry.value,
-                color: barColor,
-                width: 18,
-                borderRadius: BorderRadius.circular(8),
+                gradient: LinearGradient(
+                  colors: [barColor, barColor.withValues(alpha: 0.6)],
+                  begin: Alignment.bottomCenter,
+                  end: Alignment.topCenter,
+                ),
+                width: 22,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(6),
+                  topRight: Radius.circular(6),
+                ),
+                backDrawRodData: BackgroundBarChartRodData(
+                  show: true,
+                  toY: values.isEmpty ? 5 : (values.reduce(max) + 2).toDouble(),
+                  color: Colors.grey.shade50,
+                ),
               ),
             ],
           );
         }).toList(),
-        titlesData: FlTitlesData(
-          bottomTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              getTitlesWidget: (value, _) =>
-                  Text(['Open', 'In Progress', 'Closed'][value.toInt()]),
-            ),
-          ),
-          leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true)),
-        ),
       ),
     );
   }

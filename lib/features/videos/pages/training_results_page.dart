@@ -14,14 +14,17 @@ import 'dart:typed_data';
 import 'package:universal_html/html.dart' as html;
 
 class TrainingResultsPage extends StatefulWidget {
-  const TrainingResultsPage({super.key});
+  final String? userId;
+  final String? userName;
+  final String? customerId; // 🚀 Added customerId parameter
+  const TrainingResultsPage({super.key, this.userId, this.userName, this.customerId});
 
   @override
   State<TrainingResultsPage> createState() => _TrainingResultsPageState();
 }
 
 class _TrainingResultsPageState extends State<TrainingResultsPage> {
-  final _user = getIt<HiveService>().getUser();
+  final _currentUser = getIt<HiveService>().getUser();
 
   @override
   void initState() {
@@ -30,28 +33,45 @@ class _TrainingResultsPageState extends State<TrainingResultsPage> {
   }
 
   void _loadData() {
-    if (_user != null) {
+    final targetUserId = widget.userId ?? _currentUser?.userId;
+    // Use the passed customerId or fallback to current user's customerId
+    final customerId = widget.customerId ?? _currentUser?.customerId;
+
+    if (targetUserId != null && customerId != null) {
       context.read<VideoCubit>().loadVideos(
-        customerId: _user!.customerId,
-        userId: _user!.userId,
+        customerId: customerId,
+        userId: targetUserId,
       );
+    } else {
+      debugPrint("TrainingResultsPage: Missing targetUserId ($targetUserId) or customerId ($customerId)");
     }
   }
 
   Future<void> _exportToExcel(List<AwarenessVideoModel> videos, List<VideoEnrollmentModel> enrollments) async {
     final completedEnrollments = enrollments.where((e) => e.status == 'completed').toList();
     
+    if (completedEnrollments.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("No completed trainings to export")),
+      );
+      return;
+    }
+
     var excel = excel_pkg.Excel.createExcel();
-    var sheet = excel['Training Results'];
+    // Use 'Sheet1' which is the default sheet created by the library
+    var sheet = excel['Sheet1'];
     
-    // Header
-    sheet.appendRow([
-      excel_pkg.TextCellValue('Video Title'),
-      excel_pkg.TextCellValue('Enroll Date'),
-      excel_pkg.TextCellValue('Completion Date'),
-      excel_pkg.TextCellValue('Score'),
-      excel_pkg.TextCellValue('Status'),
-    ]);
+    // Header with Bold Style
+    final headerStyle = excel_pkg.CellStyle(bold: true);
+    final headers = ['Video Title', 'Enroll Date', 'Completion Date', 'Score', 'Status'];
+    
+    for (int i = 0; i < headers.length; i++) {
+      sheet.updateCell(
+        excel_pkg.CellIndex.indexByColumnRow(columnIndex: i, rowIndex: 0),
+        excel_pkg.TextCellValue(headers[i]),
+        cellStyle: headerStyle,
+      );
+    }
 
     for (var enrollment in completedEnrollments) {
       final video = videos.firstWhere((v) => v.videoId == enrollment.videoId, 
@@ -64,31 +84,37 @@ class _TrainingResultsPageState extends State<TrainingResultsPage> {
         excel_pkg.TextCellValue(video.title),
         excel_pkg.TextCellValue(DateFormat('dd MMM yyyy').format(enrollment.enrolledAt)),
         excel_pkg.TextCellValue(enrollment.completedAt != null ? DateFormat('dd MMM yyyy').format(enrollment.completedAt!) : 'N/A'),
-        excel_pkg.TextCellValue("${enrollment.score} / ${enrollment.totalQuestions}"),
+        excel_pkg.TextCellValue("${enrollment.score ?? 0} / ${enrollment.totalQuestions ?? 0}"),
         excel_pkg.TextCellValue(enrollment.status.toUpperCase()),
       ]);
     }
 
     final List<int>? fileBytes = excel.encode();
     if (fileBytes != null) {
-      final blob = html.Blob([fileBytes], 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      final targetUserName = widget.userName ?? _currentUser?.userName ?? 'Employee';
+      final blob = html.Blob([Uint8List.fromList(fileBytes)], 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       final url = html.Url.createObjectUrlFromBlob(blob);
       final anchor = html.AnchorElement(href: url)
-        ..setAttribute("download", "Training_Results_${_user?.userName ?? 'Employee'}.xlsx")
+        ..setAttribute("download", "Training_Results_$targetUserName.xlsx")
         ..click();
       html.Url.revokeObjectUrl(url);
       
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Exported to Excel successfully")),
       );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Failed to generate Excel file"), backgroundColor: Colors.red),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final title = widget.userName != null ? "${widget.userName}'s Training Results" : 'My Training Results';
     return Scaffold(
       backgroundColor: AppColors.scaffoldBg,
-      appBar: const CommonAppBar(title: 'My Training Results'),
+      appBar: CommonAppBar(title: title),
       body: BlocBuilder<VideoCubit, VideoState>(
         builder: (context, state) {
           if (state is VideoLoading) {

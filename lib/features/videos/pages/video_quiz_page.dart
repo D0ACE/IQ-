@@ -24,7 +24,7 @@ class VideoQuizPage extends StatefulWidget {
 class _VideoQuizPageState extends State<VideoQuizPage> {
   final Map<int, int?> _answers = {};
   bool _submitted = false;
-  bool _showReview = false;
+  bool showReview = false;
   bool _quizStarted = false; 
   int _score = 0;
 
@@ -61,7 +61,7 @@ class _VideoQuizPageState extends State<VideoQuizPage> {
       body: !_quizStarted 
           ? _buildVideoDetails()
           : _submitted 
-              ? (_showReview ? _buildReview() : _buildResult()) 
+              ? (showReview ? _buildReview() : _buildResult())
               : _buildQuiz(),
     );
   }
@@ -131,8 +131,8 @@ class _VideoQuizPageState extends State<VideoQuizPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text("Start Awareness Quiz", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(width: 12),
-                  const Icon(Icons.arrow_forward),
+                  SizedBox(width: 12),
+                  Icon(Icons.arrow_forward),
                 ],
               ),
             ),

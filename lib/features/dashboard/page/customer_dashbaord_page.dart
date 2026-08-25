@@ -25,28 +25,38 @@ class DashboardPage extends StatefulWidget {
   State<DashboardPage> createState() => _DashboardPageState();
 }
 
-class _DashboardPageState extends State<DashboardPage> {
+class _DashboardPageState extends State<DashboardPage> with TickerProviderStateMixin {
   ConsultantModel? assignedConsultant;
   bool isConsultantLoading = false;
   CustomerModel? customerModel;
   final user = getIt<HiveService>().getUser();
   final customer = getIt<HiveService>().getCustomer();
 
-  // @override
-  // void initState() {
-  //   final hiveService = getIt<HiveService>();
-  //   customerModel = hiveService.getCustomer();
-  //   if ((customerModel?.customerId ?? '').isNotEmpty) {
-  //     context.read<CustomerMMECubit>().loadMME(customerModel!.customerId);
-  //   }
-  //   _fetchAssignedConsultant(customerModel!.customerId);
-  //   super.initState();
-  // }
-
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
 
   @override
   void initState() {
     super.initState();
+
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    );
+
+    _fadeAnimation = CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeIn,
+    );
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.05),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeOutCubic,
+    ));
 
     final hiveService = getIt<HiveService>();
     customerModel = hiveService.getCustomer();
@@ -54,6 +64,17 @@ class _DashboardPageState extends State<DashboardPage> {
     if ((customerModel?.customerId ?? '').isNotEmpty) {
       context.read<CustomerMMECubit>().loadMME(customerModel!.customerId);
     }
+
+    // 🚀 Start listening to NCR data for the graph
+    context.read<NcrProvider>().listenToNcrs();
+
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
   }
 
   @override
@@ -61,212 +82,345 @@ class _DashboardPageState extends State<DashboardPage> {
     return Scaffold(
       backgroundColor: AppColors.scaffoldBg,
       drawer: _buildBeautifulDrawer(),
-      appBar: const CommonAppBar(
-        title: 'Governance Risk and Compliance Dashboard',
+      appBar: CommonAppBar(
+        title: '${customerModel?.companyName ?? 'Partner'} Dashboard',
       ),
-
-      body: Padding(
-        padding: const EdgeInsets.all(18.0),
-        child: Responsive(
-          mobile: SingleChildScrollView(
-            child: Column(
-              children: [
-                _buildStatsColumn(),
-                const SizedBox(height: 20),
-                _buildChartsColumn(context),
-                const SizedBox(height: 24),
-                _dashboardClickableList(),
-              ],
-            ),
+      body: Stack(
+        children: [
+          // Decorative background elements
+          Positioned(
+            top: -50,
+            right: -50,
+            child: _buildDecorativeCircle(200, AppColors.kPrimaryColor.withValues(alpha: 0.03)),
           ),
-          desktop: SingleChildScrollView(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: Column(
-                    children: [
-                      _buildChartsColumn(context),
-                      const SizedBox(height: 24),
-                      _buildStatsColumn(),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 20),
-                Expanded(
-                  flex: 3,
-                  child: Column(
-                    children: [
-                      const Text(
-                        'Other Details',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.titleText,
-                        ),
+          Positioned(
+            bottom: 100,
+            left: -30,
+            child: _buildDecorativeCircle(150, AppColors.secondary.withValues(alpha: 0.03)),
+          ),
+          
+          FadeTransition(
+            opacity: _fadeAnimation,
+            child: SlideTransition(
+              position: _slideAnimation,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _welcomeHeader(),
+                    const SizedBox(height: 24),
+                    Responsive(
+                      mobile: Column(
+                        children: [
+                          _buildChartsColumn(context),
+                          const SizedBox(height: 24),
+                          _buildStatsColumn(),
+                          const SizedBox(height: 24),
+                          _sectionTitle('Quick Actions'),
+                          const SizedBox(height: 14),
+                          _dashboardClickableList(),
+                        ],
                       ),
-                      const SizedBox(height: 14),
-                      _dashboardClickableList(),
-                    ],
-                  ),
+                      desktop: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            flex: 3,
+                            child: Column(
+                              children: [
+                                _buildChartsColumn(context),
+                                const SizedBox(height: 24),
+                                _buildStatsColumn(),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 24),
+                          Expanded(
+                            flex: 2,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _sectionTitle('Quick Access'),
+                                const SizedBox(height: 14),
+                                _dashboardClickableList(),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDecorativeCircle(double size, Color color) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: color,
+      ),
+    );
+  }
+
+  Widget _sectionTitle(String title) {
+    return Text(
+      title,
+      style: const TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.w900,
+        color: AppColors.titleText,
+        letterSpacing: -0.5,
+      ),
+    );
+  }
+
+  Widget _welcomeHeader() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppColors.kPrimaryColor,
+            AppColors.kPrimaryColor.withValues(alpha: 0.8),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.kPrimaryColor.withValues(alpha: 0.2),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Icon(Icons.waves_rounded, color: Colors.white, size: 28),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Hello, ${customerModel?.companyName ?? 'Partner'}",
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    Text(
+                      "Welcome back to your command center",
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.7),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
 
   /// 🌈 Drawer
   Widget _buildBeautifulDrawer() {
+    final String companyName = customerModel?.companyName ?? 'Your Company';
+    final String email = customer?.email ?? 'portal@iqplus.com';
+
     return Drawer(
+      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.only(
           topRight: Radius.circular(30),
           bottomRight: Radius.circular(30),
         ),
       ),
-      child: Container(
-        decoration: const BoxDecoration(gradient: AppColors.mainGradient),
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(16, 40, 16, 16),
-              decoration: const BoxDecoration(
-                border: Border(bottom: BorderSide(color: Colors.white24)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: const [
-                  CircleAvatar(
-                    radius: 30,
-                    backgroundColor: Colors.white,
-                    child: Icon(Icons.dashboard, color: AppColors.purple),
+      child: Column(
+        children: [
+          // Modern Header
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(24, 60, 24, 24),
+            decoration: BoxDecoration(
+              color: AppColors.kPrimaryColor,
+              borderRadius: const BorderRadius.only(topRight: Radius.circular(30)),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.kPrimaryColor.withValues(alpha: 0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    shape: BoxShape.circle,
                   ),
-                  SizedBox(height: 12),
-                  Text(
-                    'Dashboard',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
+                  child: const Icon(Icons.dashboard_rounded, color: Colors.white, size: 24),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  companyName,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                    letterSpacing: -0.5,
                   ),
-                ],
-              ),
+                ),
+                Text(
+                  email,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.white.withValues(alpha: 0.7),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
+          ),
 
-            _profileDropdown(context),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+              children: [
+                _drawerSectionTitle('ACCOUNT'),
+                _profileDropdown(context),
+                
+                const SizedBox(height: 16),
+                _drawerSectionTitle('OPERATIONS'),
+                _drawerItem(
+                  icon: Icons.devices_rounded,
+                  title: 'MME Tracker',
+                  onTap: () {
+                    if ((customerModel?.customerId ?? '').isNotEmpty) {
+                      GoRouter.of(context).pop();
+                      context.push(AppRoutes.customerMMEList, extra: customerModel!.customerId);
+                    }
+                  },
+                ),
+                _drawerItem(
+                  icon: Icons.description_rounded,
+                  title: 'Policies & Procedures',
+                  onTap: () {
+                    GoRouter.of(context).pop();
+                    context.push(AppRoutes.customerPolicyList);
+                  },
+                ),
+                _drawerItem(
+                  icon: Icons.history_edu_rounded,
+                  title: 'Policy History',
+                  onTap: () {
+                    GoRouter.of(context).pop();
+                    context.push(AppRoutes.globalVersionHistory);
+                  },
+                ),
+                _drawerItem(
+                  icon: Icons.group_add_rounded,
+                  title: 'Our Employees',
+                  onTap: () {
+                    GoRouter.of(context).pop();
+                    context.push(AppRoutes.employeeListing);
+                  },
+                ),
+                //Todo Video
+                /*_drawerItem(
+                  icon: Icons.video_library_outlined,
+                  title: 'Training Videos',
+                  onTap: () {
+                    GoRouter.of(context).pop();
+                    context.push(AppRoutes.videoList);
+                  },
+                ),*/
 
-            _drawerItem(
-              icon: Icons.devices,
-              title: 'MME',
-              onTap: () {
-                if ((customerModel?.customerId ?? '').isNotEmpty) {
-                  GoRouter.of(context).pop();
-                  context.push(
-                    AppRoutes.customerMMEList, // route path for edit page
-                    extra:
-                    customerModel!.customerId, // pass the customer object
-                  );
-                }
-              },
+                const SizedBox(height: 16),
+                _drawerSectionTitle('SUPPORT'),
+                _drawerItem(
+                  icon: Icons.alternate_email_rounded,
+                  title: 'Contact Us',
+                  onTap: () {
+                    GoRouter.of(context).pop();
+                    GoRouter.of(context).push(AppRoutes.contactUs);
+                  },
+                ),
+                _drawerItem(
+                  icon: Icons.forum_rounded,
+                  title: 'Support Chat',
+                  onTap: () {
+                    GoRouter.of(context).pop();
+                    context.push(AppRoutes.chat);
+                  },
+                ),
+              ],
             ),
+          ),
 
-            // _drawerItem(
-            //   icon: Icons.badge,
-            //   title: 'My Consultant',
-            //   onTap: () async {
-            //     final customer = getIt<HiveService>().getCustomer();
-            //     if (customer == null) return;
-
-            //     final consultant = await getAssignedConsultant(
-            //       customer.customerId,
-            //     );
-
-            //     if (consultant == null) {
-            //       ScaffoldMessenger.of(context).showSnackBar(
-            //         const SnackBar(content: Text('No consultant assigned')),
-            //       );
-            //       return;
-            //     }
-
-            //     context.push(AppRoutes.consultantProfile, extra: consultant);
-            //   },
-            // ),
-            _drawerItem(
-              icon: Icons.policy_outlined,
-              title: 'Policies & Procedures',
+          // Footer Logout
+          Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: _drawerItem(
+              icon: Icons.logout_rounded,
+              title: 'Sign Out',
+              color: Colors.redAccent,
               onTap: () {
+                getIt<HiveService>().clearAll();
                 GoRouter.of(context).pop();
-                context.push(AppRoutes.customerPolicyList);
+                context.go(AppRoutes.login);
               },
             ),
+          ),
+        ],
+      ),
+    );
+  }
 
-            _drawerItem(
-              icon: Icons.history,
-              title: 'All Policies Version History',
-              onTap: () {
-                GoRouter.of(context).pop();
-                context.push(AppRoutes.globalVersionHistory);
-              },
-            ),
-
-            _drawerItem(
-              icon: Icons.contact_mail,
-              title: 'Contact Us',
-              onTap: () {
-                GoRouter.of(context).pop(); // closes the drawer
-                GoRouter.of(context).push(AppRoutes.contactUs); // navigate
-              },
-            ),
-
-            _drawerItem(
-              icon: Icons.chat,
-              title: 'Chat with us',
-              onTap: () {
-                GoRouter.of(context).pop(); // close the drawer
-                context.push(AppRoutes.chat); // navigate using GoRouter
-              },
-            ),
-
-            _drawerItem(
-              icon: Icons.assignment_ind_outlined,
-              title: 'Our Employees',
-              onTap: () {
-                GoRouter.of(context).pop();
-                context.push(AppRoutes.employeeListing);
-              },
-            ),
-//Todo Video
-      /*      _drawerItem(
-              icon: Icons.video_library_outlined,
-              title: 'Training Videos',
-              onTap: () {
-                GoRouter.of(context).pop();
-                context.push(AppRoutes.videoList);
-              },
-            ),*/
-
-            _drawerItem(
-              icon: Icons.logout,
-              title: 'Logout',
-              onTap: () {
-                final hiveService = getIt<HiveService>();
-                hiveService.clearAll(); // clear local storage
-                GoRouter.of(context).pop(); // close the drawer
-                context.go(
-                  AppRoutes.login,
-                ); // navigate to login and replace the stack
-              },
-            ),
-          ],
+  Widget _drawerSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 12, top: 12, bottom: 8),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w900,
+          color: Colors.grey.shade400,
+          letterSpacing: 1.5,
         ),
       ),
     );
@@ -276,52 +430,46 @@ class _DashboardPageState extends State<DashboardPage> {
     final hiveService = getIt<HiveService>();
     final customer = hiveService.getCustomer();
 
-    return ExpansionTile(
-      leading: const Icon(Icons.person, color: Colors.white),
-      title: const Text(
-        'Profile',
-        style: TextStyle(color: Colors.white, fontSize: 16),
+    return Theme(
+      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+      child: ExpansionTile(
+        tilePadding: const EdgeInsets.symmetric(horizontal: 12),
+        leading: Icon(Icons.person_outline_rounded, color: Colors.grey.shade600, size: 22),
+        title: Text(
+          'My Profile',
+          style: TextStyle(color: Colors.grey.shade700, fontSize: 14, fontWeight: FontWeight.w600),
+        ),
+        children: [
+          _drawerSubItem(
+            title: "View Profile",
+            onTap: () async {
+              GoRouter.of(context).pop();
+              if (customer == null) return;
+              final result = await context.push(AppRoutes.customerProfile, extra: customer) as CustomerModel?;
+              if (result != null) setState(() => customerModel = result);
+            },
+          ),
+          _drawerSubItem(
+            title: "Edit Profile",
+            onTap: () async {
+              GoRouter.of(context).pop();
+              if (customer == null) return;
+              await context.push(AppRoutes.customerProfileEdit, extra: customer);
+            },
+          ),
+        ],
       ),
-      iconColor: Colors.white,
-      collapsedIconColor: Colors.white,
-      children: [
-        ListTile(
-          title: const Text(
-            "View Profile",
-            style: TextStyle(color: Colors.white),
-          ),
-          onTap: () async {
-            GoRouter.of(context).pop();
-            if (customer == null) {
-               ScaffoldMessenger.of(context).showSnackBar(
-                 const SnackBar(content: Text('Customer data not found.')),
-               );
-               return;
-            }
-            final result =
-            await context.push(AppRoutes.customerProfile, extra: customer)
-            as CustomerModel?;
+    );
+  }
 
-            if (result != null) setState(() => customerModel = result);
-          },
-        ),
-        ListTile(
-          title: const Text(
-            "Edit Profile",
-            style: TextStyle(color: Colors.white),
-          ),
-          onTap: () async {
-            GoRouter.of(context).pop();
-            if (customer == null) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Customer data not found.')),
-              );
-              return;
-            }
-            await context.push(AppRoutes.customerProfileEdit, extra: customer);
-          },
-        ),
-      ],
+  Widget _drawerSubItem({required String title, required VoidCallback onTap}) {
+    return ListTile(
+      contentPadding: const EdgeInsets.only(left: 48),
+      title: Text(
+        title,
+        style: TextStyle(color: Colors.grey.shade600, fontSize: 13, fontWeight: FontWeight.w500),
+      ),
+      onTap: onTap,
     );
   }
 
@@ -329,14 +477,25 @@ class _DashboardPageState extends State<DashboardPage> {
     required IconData icon,
     required String title,
     required GestureTapCallback onTap,
+    Color? color,
   }) {
-    return ListTile(
-      leading: Icon(icon, color: Colors.white),
-      title: Text(
-        title,
-        style: const TextStyle(color: Colors.white, fontSize: 16),
+    final Color itemColor = color ?? Colors.grey.shade700;
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 2),
+      child: ListTile(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        leading: Icon(icon, color: itemColor, size: 22),
+        title: Text(
+          title,
+          style: TextStyle(
+            color: itemColor,
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        onTap: onTap,
+        dense: true,
       ),
-      onTap: onTap,
     );
   }
 
@@ -346,21 +505,28 @@ class _DashboardPageState extends State<DashboardPage> {
         if (state is CustomerMMELoading) {
           return const Center(child: CircularProgressIndicator());
         } else if (state is CustomerMMELoaded) {
-          return _statCard(
-            'Monitoring and Measuring Equipment',
-            '${state.list.length}',
-            AppColors.purple,
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _sectionTitle('Equipment Monitoring'),
+              const SizedBox(height: 14),
+              _statCard(
+                'Monitoring and Measuring Equipment',
+                '${state.list.length}',
+                AppColors.purple,
                 () {
-              if ((customerModel?.customerId ?? '').isNotEmpty) {
-                context.push(
-                  AppRoutes.customerMMEList, // route path for edit page
-                  extra: customerModel!.customerId, // pass the customer object
-                );
-              }
-            },
+                  if ((customerModel?.customerId ?? '').isNotEmpty) {
+                    context.push(
+                      AppRoutes.customerMMEList,
+                      extra: customerModel!.customerId,
+                    );
+                  }
+                },
+              ),
+            ],
           );
         } else {
-          return SizedBox();
+          return const SizedBox();
         }
       },
     );
@@ -370,81 +536,79 @@ class _DashboardPageState extends State<DashboardPage> {
       String value,
       Color color,
       GestureTapCallback onTap,) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: color.withValues(alpha:0.2), width: 1.2),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x14000000),
-                blurRadius: 8,
-                offset: Offset(0, 4),
-              ),
-            ],
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.1),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
-          child: Row(
-            children: [
-              // Icon Section
-              Container(
-                height: 48,
-                width: 48,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha:0.15),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.precision_manufacturing,
-                  color: color,
-                  size: 26,
-                ),
-              ),
-
-              const SizedBox(width: 16),
-
-              // Text Section
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: AppColors.subText,
-                        fontWeight: FontWeight.w500,
-                      ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(24),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Row(
+              children: [
+                Container(
+                  height: 60,
+                  width: 60,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [color.withValues(alpha: 0.2), color.withValues(alpha: 0.05)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      value,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: color,
-                      ),
-                    ),
-                  ],
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: Icon(
+                    Icons.precision_manufacturing_rounded,
+                    color: color,
+                    size: 30,
+                  ),
                 ),
-              ),
-
-              const Icon(
-                Icons.arrow_forward_ios_rounded,
-                size: 16,
-                color: AppColors.subText,
-              ),
-            ],
+                const SizedBox(width: 20),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade500,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        value,
+                        style: TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.titleText,
+                          letterSpacing: -1,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward_rounded,
+                  size: 20,
+                  color: color.withValues(alpha: 0.3),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -464,118 +628,119 @@ class _DashboardPageState extends State<DashboardPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'NCR Overview',
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            color: AppColors.titleText,
-          ),
-        ),
+        _sectionTitle('Compliance Overview'),
         const SizedBox(height: 14),
-        Card(
-          elevation: 10,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: SizedBox(
-              height: 280,
-              child: AnimatedBarChart(
-                values: barValues,
-                barColor: AppColors.barColor,
+        Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(30),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 30,
+                offset: const Offset(0, 15),
               ),
-            ),
+            ],
+          ),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    "NCR Trends",
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppColors.kPrimaryColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Text(
+                      "Real-time",
+                      style: TextStyle(color: AppColors.kPrimaryColor, fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 32),
+              SizedBox(
+                height: 250,
+                child: AnimatedBarChart(
+                  values: barValues,
+                  barColor: AppColors.kPrimaryColor,
+                ),
+              ),
+            ],
           ),
         ),
       ],
     );
   }
 
-  /// 🔗 Dashboard Navigation
   Widget _dashboardClickableList() {
-    return Column(
-      children: [
-        // 🔴 Existing NCR tile
-        _clickableCard(
-          title: 'NCR',
-          icon: Icons.report_problem,
-
-          onTap: () {
-            context.push(AppRoutes.ncrPage); // navigate to NcrPage
-          },
-        ),
-
-        // _clickableCard(
-        //   title: 'Visit Summary',
-        //   icon: Icons.warning_amber_rounded,
-        //   onTap: () {
-        //     context.push(AppRoutes.visitorSummary);// navigate
-        //   },
-        // ),
-
-        // 🟠 Static tiles (NO navigation for now)
-        _clickableCard(
-          title: 'Risk',
-          icon: Icons.warning_amber_rounded,
-          onTap: () {
-            // later you can navigate
-          },
-        ),
-
-        _clickableCard(
-          title: 'Next Visit',
-          icon: Icons.event_available,
-          onTap: () {
-            showNextVisitDialog();
-          },
-        ),
-
-        _clickableCard(
-          title: 'Next Audit',
-          icon: Icons.fact_check,
-          onTap: () {},
-        ),
-
-        _clickableCard(
-          title: 'Next Training',
-          icon: Icons.school,
-          onTap: () {},
-        ),
-
-        _clickableCard(
-          title: 'Policies & Procedures',
-          icon: Icons.policy,
-          onTap: () {
-            context.push(AppRoutes.customerPolicyList);
-          },
-        ),
-
-        _clickableCard(
-          title: 'Our Employees',
-          icon: Icons.assignment_ind_outlined,
-          onTap: () {
-            context.push(AppRoutes.employeeListing);
-          },
-        ),
-//Todo Video
-  /*      _clickableCard(
-          title: 'Training Videos',
-          icon: Icons.video_library,
-          onTap: () {
-            context.push(AppRoutes.videoList);
-          },
-        ),*/
-
-        _clickableCard(
-          title: 'All Policies Version History',
-          icon: Icons.history,
-          onTap: () {
-            context.push(AppRoutes.globalVersionHistory);
-          },
-        ),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final bool isDesktop = constraints.maxWidth > 500;
+        return GridView.count(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisCount: isDesktop ? 2 : 1,
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          childAspectRatio: isDesktop ? 2.5 : 4.2,
+          children: [
+            _clickableCard(
+              title: 'NCR',
+              icon: Icons.report_problem_rounded,
+              onTap: () => context.push(AppRoutes.ncrPage),
+            ),
+            _clickableCard(
+              title: 'Risk',
+              icon: Icons.shield_rounded,
+              onTap: () {},
+            ),
+            _clickableCard(
+              title: 'Next Visit',
+              icon: Icons.event_available_rounded,
+              onTap: () => showNextVisitDialog(),
+            ),
+            _clickableCard(
+              title: 'Next Audit',
+              icon: Icons.fact_check_rounded,
+              onTap: () {},
+            ),
+            _clickableCard(
+              title: 'Next Training',
+              icon: Icons.school_rounded,
+              onTap: () {},
+            ),
+            _clickableCard(
+              title: 'Policies & Procedures',
+              icon: Icons.description_rounded,
+              onTap: () => context.push(AppRoutes.customerPolicyList),
+            ),
+            _clickableCard(
+              title: 'Our Employees',
+              icon: Icons.group_rounded,
+              onTap: () => context.push(AppRoutes.employeeListing),
+            ),
+            //Todo Video
+            /*_clickableCard(
+              title: 'Training Videos',
+              icon: Icons.video_library_rounded,
+              onTap: () => context.push(AppRoutes.videoList),
+            ),*/
+            _clickableCard(
+              title: 'All Policies Version History',
+              icon: Icons.history_rounded,
+              onTap: () => context.push(AppRoutes.globalVersionHistory),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -584,35 +749,98 @@ class _DashboardPageState extends State<DashboardPage> {
     required IconData icon,
     required VoidCallback onTap,
   }) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(20),
-      onTap: onTap,
-      child: Card(
-        elevation: 8,
-        margin: const EdgeInsets.only(bottom: 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: 22,
-                backgroundColor: AppColors.kPrimaryLightColor,
-                child: Icon(icon, color: AppColors.kPrimaryColor),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.titleText,
+    // Internal theme logic to keep the function signature identical
+    Color themeColor = AppColors.kPrimaryColor;
+    if (title.contains('NCR')) {
+      themeColor = Colors.orange;
+    } else if (title.contains('Risk')) {
+      themeColor = Colors.redAccent;
+    }
+    else if (title.contains('Visit')) {
+      themeColor = Colors.indigo;
+    }
+    else if (title.contains('Audit')) {themeColor = Colors.teal;}
+    else if (title.contains('Training')) {
+      themeColor = Colors.amber.shade700;
+    }
+    else if (title.contains('Employees')) {
+      themeColor = Colors.pinkAccent;
+    }
+    else if (title.contains('Policies')) {
+      themeColor = AppColors.purple;
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.grey.shade50),
+        boxShadow: [
+          BoxShadow(
+            color: themeColor.withValues(alpha: 0.04),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            splashColor: themeColor.withValues(alpha: 0.05),
+            highlightColor: Colors.transparent,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Container(
+                    height: 44,
+                    width: 44,
+                    decoration: BoxDecoration(
+                      color: themeColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(icon, color: themeColor, size: 22),
                   ),
-                ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w900,
+                            color: AppColors.titleText,
+                            letterSpacing: -0.3,
+                          ),
+                        ),
+                        const SizedBox(height: 1),
+                        Text(
+                          "Explore details",
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.grey.shade400,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 14,
+                    color: Colors.grey.shade200,
+                  ),
+                ],
               ),
-              const Icon(Icons.arrow_forward_ios, size: 16),
-            ],
+            ),
           ),
         ),
       ),
@@ -658,33 +886,101 @@ class AnimatedBarChart extends StatelessWidget {
   Widget build(BuildContext context) {
     return BarChart(
       BarChartData(
-        maxY: values.isEmpty ? 5 : values.reduce(max) + 2,
-        barGroups: values
-            .asMap()
-            .entries
-            .map((entry) {
+        alignment: BarChartAlignment.spaceAround,
+        maxY: values.isEmpty ? 5 : (values.reduce(max) + 2).toDouble(),
+        barTouchData: BarTouchData(
+          enabled: true,
+          touchTooltipData: BarTouchTooltipData(
+            getTooltipColor: (_) => Colors.blueGrey.withValues(alpha: 0.8),
+            getTooltipItem: (group, groupIndex, rod, rodIndex) {
+              return BarTooltipItem(
+                rod.toY.round().toString(),
+                const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              );
+            },
+          ),
+        ),
+        titlesData: FlTitlesData(
+          show: true,
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 32,
+              getTitlesWidget: (value, meta) {
+                const labels = ['Open', 'Progress', 'Closed'];
+                if (value.toInt() >= 0 && value.toInt() < labels.length) {
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      labels[value.toInt()],
+                      style: TextStyle(
+                        color: Colors.grey.shade500,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  );
+                }
+                return const SizedBox();
+              },
+            ),
+          ),
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 28,
+              getTitlesWidget: (value, meta) {
+                return Text(
+                  value.toInt().toString(),
+                  style: TextStyle(
+                    color: Colors.grey.shade400,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                  ),
+                );
+              },
+            ),
+          ),
+          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        ),
+        gridData: FlGridData(
+          show: true,
+          drawVerticalLine: false,
+          getDrawingHorizontalLine: (value) => FlLine(
+            color: Colors.grey.shade100,
+            strokeWidth: 1,
+          ),
+        ),
+        borderData: FlBorderData(show: false),
+        barGroups: values.asMap().entries.map((entry) {
           return BarChartGroupData(
             x: entry.key,
             barRods: [
               BarChartRodData(
                 toY: entry.value,
-                color: barColor,
-                width: 18,
-                borderRadius: BorderRadius.circular(8),
+                gradient: LinearGradient(
+                  colors: [barColor, barColor.withValues(alpha: 0.6)],
+                  begin: Alignment.bottomCenter,
+                  end: Alignment.topCenter,
+                ),
+                width: 22,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(6),
+                  topRight: Radius.circular(6),
+                ),
+                backDrawRodData: BackgroundBarChartRodData(
+                  show: true,
+                  toY: values.isEmpty ? 5 : (values.reduce(max) + 2).toDouble(),
+                  color: Colors.grey.shade50,
+                ),
               ),
             ],
           );
         }).toList(),
-        titlesData: FlTitlesData(
-          bottomTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              getTitlesWidget: (value, _) =>
-                  Text(['Open', 'In Progress', 'Closed'][value.toInt()]),
-            ),
-          ),
-          leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true)),
-        ),
       ),
     );
   }

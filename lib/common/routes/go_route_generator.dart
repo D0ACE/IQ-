@@ -449,10 +449,17 @@ class AppRouter {
       ),
       GoRoute(
         path: AppRoutes.trainingResults,
-        builder: (context, state) => BlocProvider(
-          create: (_) => VideoCubit(getIt<VideoRepository>()),
-          child: const TrainingResultsPage(),
-        ),
+        builder: (context, state) {
+          final Map<String, dynamic>? extra = state.extra as Map<String, dynamic>?;
+          return BlocProvider(
+            create: (_) => VideoCubit(getIt<VideoRepository>()),
+            child: TrainingResultsPage(
+              userId: extra?['userId'],
+              userName: extra?['userName'],
+              customerId: extra?['customerId'], // 🚀 Pass customerId from extra
+            ),
+          );
+        },
       ),
     ],
 

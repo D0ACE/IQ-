@@ -32,6 +32,13 @@ class _LoginFormState extends State<LoginForm> {
   final TextEditingController emailController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
+  final List<String> roles = [
+    'Super Admin',
+    'Admin',
+    'Consultant',
+    'Customer',
+  ];
+
   @override
   void dispose() {
     emailController.dispose();
@@ -97,44 +104,109 @@ class _LoginFormState extends State<LoginForm> {
   Widget _buildForm(BuildContext context) {
     return Form(
       key: _formKey,
-      child: Column(
+      child: AnimatedSize(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            child: Column(
+              key: ValueKey('header_${widget.selectedRole}'),
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  "Welcome back!",
+                  textAlign: TextAlign.left,
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.kPrimaryColor,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  "Sign in as ${roles[widget.selectedRole]} to continue",
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey.shade500,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 35),
+          
+          // Email field
+          _buildInputLabel("Email Address"),
+          const SizedBox(height: 8),
           AppTextFieldWidget(
             keyboardType: TextInputType.emailAddress,
-            hintText: "Your email",
+            hintText: "name@company.com",
             textFieldController: emailController,
             validator: AppValidation.checkEmailValidation,
-            prefixIconWidget: Padding(
-              padding: EdgeInsets.all(defaultPadding),
-              child: Icon(
-                Icons.person,
-                color: AppColors.kPrimaryColor,
-                size: 23,
+            prefixIconWidget: const Icon(
+              Icons.alternate_email_rounded,
+              color: AppColors.kPrimaryColor,
+              size: 20,
+            ),
+            contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: Colors.grey.shade50,
+              hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade200),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade200),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: AppColors.kPrimaryColor, width: 2),
               ),
             ),
-            contentPadding: const EdgeInsets.fromLTRB(10, 17, 10, 17),
-            decoration: const InputDecoration(),
           ),
 
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: defaultPadding),
-            child: AppTextFieldWidget(
-              hintText: "Your Password",
-              validator: AppValidation.currentPasswordValidator,
-              inputFormatters: [LengthLimitingTextInputFormatter(20)],
-              textFieldController: passwordController,
-              prefixIconWidget: Padding(
-                padding: EdgeInsets.all(defaultPadding),
-                child: Icon(
-                  Icons.lock,
-                  color: AppColors.kPrimaryColor,
-                  size: 23,
-                ),
+          const SizedBox(height: 20),
+
+          // Password field
+          _buildInputLabel("Password"),
+          const SizedBox(height: 8),
+          AppTextFieldWidget(
+            hintText: "••••••••",
+            validator: AppValidation.currentPasswordValidator,
+            inputFormatters: [LengthLimitingTextInputFormatter(20)],
+            textFieldController: passwordController,
+            prefixIconWidget: const Icon(
+              Icons.lock_outline_rounded,
+              color: AppColors.kPrimaryColor,
+              size: 20,
+            ),
+            contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
+            isPasswordTextField: true,
+            disableFocusBorder: true,
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: Colors.grey.shade50,
+              hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade200),
               ),
-              contentPadding: const EdgeInsets.fromLTRB(10, 17, 10, 17),
-              isPasswordTextField: true,
-              disableFocusBorder: true,
-              decoration: const InputDecoration(),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade200),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: AppColors.kPrimaryColor, width: 2),
+              ),
             ),
           ),
 
@@ -142,43 +214,101 @@ class _LoginFormState extends State<LoginForm> {
             alignment: Alignment.centerRight,
             child: TextButton(
               onPressed: () {},
-              child: Text(
-                "Forgot Your Password?",
-                style: TextStyle(color: AppColors.kPrimaryColor),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.grey.shade600,
+                padding: EdgeInsets.zero,
+                minimumSize: const Size(0, 30),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: const Text(
+                "Forgot Password?",
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
               ),
             ),
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 25),
 
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 15),
-            child: BlocBuilder<AuthCubit, AuthState>(
-              builder: (context, state) {
-                return GradientButton(
-                  text: state is AuthLoading ? "Please wait..." : "Login",
+          BlocBuilder<AuthCubit, AuthState>(
+            builder: (context, state) {
+              return SizedBox(
+                height: 55,
+                child: GradientButton(
+                  text: state is AuthLoading ? "Verifying..." : "Sign In",
                   onPressed: state is AuthLoading
                       ? () {}
                       : () => onTapContinue(context),
-                  radiusSize: 50,
-                );
-              },
-            ),
+                  radiusSize: 12,
+                ),
+              );
+            },
           ),
 
-          const SizedBox(height: defaultPadding),
+          const SizedBox(height: 25),
 
-          if (widget.selectedRole == 3) // ✅ CUSTOMER ONLY
-            AlreadyHaveAnAccountCheck(
-              login: true,
-              press: () {
-                GoRouter.of(context).push(
-                  AppRoutes.customerOnboarding,
-                  extra: OnboardingMode.create, // pass mode via extra
-                );
-              },
-            ),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            transitionBuilder: (Widget child, Animation<double> animation) {
+              return FadeTransition(
+                opacity: animation,
+                child: SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(0, 0.1),
+                    end: Offset.zero,
+                  ).animate(animation),
+                  child: child,
+                ),
+              );
+            },
+            child: widget.selectedRole == 3 // ✅ CUSTOMER ONLY
+                ? Column(
+                    key: const ValueKey('customer_extra'),
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(child: Divider(color: Colors.grey.shade200)),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Text(
+                              "NEW HERE?",
+                              style: TextStyle(
+                                color: Colors.grey.shade400,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1,
+                              ),
+                            ),
+                          ),
+                          Expanded(child: Divider(color: Colors.grey.shade200)),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      AlreadyHaveAnAccountCheck(
+                        login: true,
+                        press: () {
+                          GoRouter.of(context).push(
+                            AppRoutes.customerOnboarding,
+                            extra: OnboardingMode.create,
+                          );
+                        },
+                      ),
+                    ],
+                  )
+                : const SizedBox.shrink(key: ValueKey('empty_extra')),
+          ),
         ],
+      ),
+    ),
+  );
+}
+
+  Widget _buildInputLabel(String label) {
+    return Text(
+      label,
+      style: const TextStyle(
+        fontSize: 13,
+        fontWeight: FontWeight.bold,
+        color: AppColors.titleText,
       ),
     );
   }

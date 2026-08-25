@@ -220,10 +220,10 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
                           ),
 
                           /// ACTIONS
-                          if (!Utility.isCustomer(getIt<HiveService>().getCustomer()?.roleId ?? getIt<HiveService>().getUser()?.roleId))
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              if (!Utility.isCustomer(getIt<HiveService>().getCustomer()?.roleId ?? getIt<HiveService>().getUser()?.roleId))
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                   decoration: BoxDecoration(
@@ -239,7 +239,31 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
                                     ),
                                   ),
                                 ),
-                                const SizedBox(height: 12),
+                              
+                              if (Utility.isCustomer(getIt<HiveService>().getCustomer()?.roleId ?? getIt<HiveService>().getUser()?.roleId))
+                                ElevatedButton.icon(
+                                  onPressed: () {
+                                    context.push(AppRoutes.trainingResults, extra: {
+                                      'userId': employee.userId,
+                                      'userName': employee.userName,
+                                      'customerId': employee.customerId, // 🚀 Pass customerId
+                                    });
+                                  },
+                                  icon: const Icon(Icons.bar_chart, size: 16),
+                                  label: const Text("View Training Results", style: TextStyle(fontSize: 12)),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.kPrimaryColor,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                    minimumSize: Size.zero,
+                                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                ),
+
+                              if (!Utility.isCustomer(getIt<HiveService>().getCustomer()?.roleId ?? getIt<HiveService>().getUser()?.roleId))
                                 Row(
                                   children: [
                                     IconButton(
@@ -260,8 +284,8 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
                                     ),
                                   ],
                                 ),
-                              ],
-                            ),
+                            ],
+                          ),
                         ],
                       ),
                     ),

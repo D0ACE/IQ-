@@ -32,8 +32,8 @@ class _EmployeeTrainingPageState extends State<EmployeeTrainingPage> {
   void _loadData() {
     if (_user != null) {
       context.read<VideoCubit>().loadVideos(
-        customerId: _user!.customerId,
-        userId: _user!.userId, 
+        customerId: _user.customerId,
+        userId: _user.userId,
       );
     }
   }
@@ -109,7 +109,7 @@ class _EmployeeTrainingPageState extends State<EmployeeTrainingPage> {
                   onPressed: () => context.push(AppRoutes.trainingResults),
                   icon: const Icon(Icons.assignment_turned_in, color: Colors.white, size: 18),
                   label: const Text(
-                    "My Results",
+                    "View Training Results",
                     style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                   ),
                 );
@@ -180,7 +180,7 @@ class _EmployeeTrainingPageState extends State<EmployeeTrainingPage> {
                               ? ElevatedButton.icon(
                                   onPressed: () => _showResultDialog(video, enrollment!),
                                   icon: const Icon(Icons.assignment_turned_in),
-                                  label: const Text("View Your Result"),
+                                  label: const Text("View Training Results"),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.blueAccent,
                                     foregroundColor: Colors.white,
@@ -203,7 +203,7 @@ class _EmployeeTrainingPageState extends State<EmployeeTrainingPage> {
                                         await context.read<VideoCubit>().enrollInVideo(
                                           videoId: video.videoId,
                                           employeeId: _user!.userId,
-                                          customerId: _user!.customerId!,
+                                          customerId: _user.customerId!,
                                         );
                                         if(mounted) {
                                            _playVideo(video.videoUrl, video.title, video);
