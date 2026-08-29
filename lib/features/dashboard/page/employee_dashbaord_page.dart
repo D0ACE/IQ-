@@ -214,7 +214,7 @@ class _EmployeeDashboardPageState extends State<EmployeeDashboardPage> {
               },
             ),
             //Todo Video
-           /*_drawerItem(
+            /*_drawerItem(
               icon: Icons.video_library_outlined,
               title: 'My Training Videos',
               onTap: () {
@@ -269,7 +269,7 @@ class _EmployeeDashboardPageState extends State<EmployeeDashboardPage> {
           onTap: () => context.push(AppRoutes.customerPolicyList),
         ),
         //Todo Video
-      /* _clickableCard(
+        /* _clickableCard(
           title: 'My Training Videos',
           icon: Icons.video_library,
           onTap: () => context.push(AppRoutes.employeeTraining),

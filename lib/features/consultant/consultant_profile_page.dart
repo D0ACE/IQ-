@@ -7,15 +7,14 @@ import 'package:iq_plus/common/themes/app_theme_data.dart';
 import 'package:iq_plus/core/local_storage/hive_service.dart';
 import 'package:iq_plus/di/service_locator.dart';
 import 'package:iq_plus/features/auth/model/user_model.dart';
+import 'package:go_router/go_router.dart';
 
 class ConsultantProfilePage extends StatefulWidget {
-   final String consultantId;
-  const ConsultantProfilePage({ super.key,
-    required this.consultantId,});
+  final String consultantId;
+  const ConsultantProfilePage({super.key, required this.consultantId});
 
   @override
-  State<ConsultantProfilePage> createState() =>
-      _ConsultantProfilePageState();
+  State<ConsultantProfilePage> createState() => _ConsultantProfilePageState();
 }
 
 class _ConsultantProfilePageState extends State<ConsultantProfilePage> {
@@ -56,127 +55,241 @@ class _ConsultantProfilePageState extends State<ConsultantProfilePage> {
 
     return Scaffold(
       backgroundColor: AppColors.scaffoldBg,
-      body: Column(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.blackColor),
+          onPressed: () => GoRouter.of(context).pop(),
+        ),
+        title: const Text(
+          'Consultant Profile',
+          style: TextStyle(color: AppColors.blackColor, fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+      ),
+      body: Stack(
         children: [
-          _buildHeader(),
-          Expanded(child: _buildProfileCard()),
+          // Decorative background elements
+          Positioned(
+            top: -50,
+            right: -50,
+            child: _buildDecorativeCircle(200, AppColors.kPrimaryColor.withOpacity(0.03)),
+          ),
+          Positioned(
+            bottom: 100,
+            left: -30,
+            child: _buildDecorativeCircle(150, AppColors.secondary.withOpacity(0.03)),
+          ),
+          
+          SingleChildScrollView(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildHeader(),
+                const SizedBox(height: 24),
+                _sectionTitle('Account Details'),
+                const SizedBox(height: 16),
+                _buildProfileCard(),
+                const SizedBox(height: 30),
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
 
-  /// 🔝 Gradient Header
+  Widget _buildDecorativeCircle(double size, Color color) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: color,
+      ),
+    );
+  }
+
+  Widget _sectionTitle(String title) {
+    return Text(
+      title,
+      style: const TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.w900,
+        color: AppColors.titleText,
+        letterSpacing: -0.5,
+      ),
+    );
+  }
+
   Widget _buildHeader() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 50, 20, 30),
-      decoration: const BoxDecoration(
-        gradient: AppColors.mainGradient,
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(28),
-          bottomRight: Radius.circular(28),
-        ),
-      ),
-      child: Column(
-        children: [
-          const CircleAvatar(
-            radius: 42,
-            backgroundColor: Colors.white,
-            child: Icon(
-              Icons.person,
-              size: 45,
-              color: AppColors.purple,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            _nameCtrl.text,
-            style: AppThemeData.black18TextStyle.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            _emailCtrl.text,
-            style: AppThemeData.grey14TextStyle.copyWith(
-              color: Colors.white70,
-            ),
+      decoration: BoxDecoration(
+        color: AppColors.kPrimaryColor,
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.kPrimaryColor.withOpacity(0.15),
+            blurRadius: 30,
+            offset: const Offset(0, 15),
           ),
         ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(30),
+        child: Stack(
+          children: [
+            Positioned(
+              right: -30,
+              top: -30,
+              child: Opacity(
+                opacity: 0.1,
+                child: const Icon(Icons.badge_rounded, size: 180, color: Colors.white),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(32),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white.withOpacity(0.2), width: 2),
+                    ),
+                    child: CircleAvatar(
+                      radius: 35,
+                      backgroundColor: Colors.white.withOpacity(0.15),
+                      child: const Icon(Icons.person_rounded, color: Colors.white, size: 40),
+                    ),
+                  ),
+                  const SizedBox(width: 20),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "SYSTEM PROFILE",
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.5),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 2,
+                          ),
+                        ),
+                        Text(
+                          _nameCtrl.text,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Text(
+                            "Licensed Consultant",
+                            style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  /// 🧾 Profile Card
   Widget _buildProfileCard() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Card(
-        elevation: 10,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 30,
+            offset: const Offset(0, 15),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          children: [
+            _buildDetailItem(Icons.person_outline_rounded, "Full Name", _nameCtrl.text),
+            const Divider(height: 32, color: Colors.black12),
+            _buildDetailItem(Icons.email_outlined, "Email Address", _emailCtrl.text),
+            const Divider(height: 32, color: Colors.black12),
+            _buildDetailItem(Icons.phone_iphone_rounded, "Contact Number", _phoneCtrl.text),
+            const Divider(height: 32, color: Colors.black12),
+            _buildDetailItem(Icons.badge_outlined, "Designation Role", _roleCtrl.text),
+            const Divider(height: 32, color: Colors.black12),
+            _buildDetailItem(
+              Icons.verified_user_outlined, 
+              "Account Status", 
+              _statusCtrl.text.toUpperCase(),
+              color: user!.activeUser ? Colors.green.shade700 : Colors.red.shade700,
+            ),
+          ],
         ),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
+      ),
+    );
+  }
+
+  Widget _buildDetailItem(IconData icon, String label, String value, {Color? color}) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: (color ?? AppColors.kPrimaryColor).withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(icon, color: color ?? AppColors.kPrimaryColor, size: 20),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                "Profile Details",
-                style: AppThemeData.black18TextStyle.copyWith(
-                  fontWeight: FontWeight.bold,
+                label.toUpperCase(),
+                style: TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.grey.shade400,
+                  letterSpacing: 1,
                 ),
               ),
-              const SizedBox(height: 20),
-
-              AppTextFieldWidget(
-                labelText: "Full Name",
-                textFieldController: _nameCtrl,
-                readOnly: true,
-              ),
-              const SizedBox(height: 14),
-
-              AppTextFieldWidget(
-                labelText: "Email Address",
-                textFieldController: _emailCtrl,
-                readOnly: true,
-              ),
-              const SizedBox(height: 14),
-
-              AppTextFieldWidget(
-                labelText: "Phone Number",
-                textFieldController: _phoneCtrl,
-                readOnly: true,
-                keyboardType: TextInputType.number,
-inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-
-              ),
-              const SizedBox(height: 14),
-
-              AppTextFieldWidget(
-                labelText: "Role",
-                textFieldController: _roleCtrl,
-                readOnly: true,
-              ),
-              const SizedBox(height: 14),
-
-              AppTextFieldWidget(
-                labelText: "Status",
-                textFieldController: _statusCtrl,
-                readOnly: true,
-              ),
-
-              const SizedBox(height: 30),
-
-              GradientButton(
-                text: "Edit Profile (Coming Soon)",
-                onPressed: () {},
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: color ?? AppColors.titleText,
+                ),
               ),
             ],
           ),
         ),
-      ),
+      ],
     );
   }
 }
