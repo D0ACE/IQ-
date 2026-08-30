@@ -372,8 +372,14 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.customerPolicyDetail,
         builder: (context, state) {
-          final doc = state.extra as DocumentModel;
-          return CustomerPolicyDetailPage(document: doc);
+          if (state.extra is DocumentModel) {
+            return CustomerPolicyDetailPage(
+              document: state.extra as DocumentModel,
+            );
+          } else {
+            final String docId = state.extra as String;
+            return CustomerPolicyDetailPage(docId: docId);
+          }
         },
       ),
       GoRoute(

@@ -361,14 +361,14 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
                   },
                 ),
                 //Todo Video
-                /*_drawerItem(
+                _drawerItem(
                   icon: Icons.video_library_outlined,
                   title: 'Training Videos',
                   onTap: () {
                     GoRouter.of(context).pop();
                     context.push(AppRoutes.videoList);
                   },
-                ),*/
+                ),
 
                 const SizedBox(height: 16),
                 _drawerSectionTitle('SUPPORT'),
@@ -728,11 +728,11 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
               onTap: () => context.push(AppRoutes.employeeListing),
             ),
             //Todo Video
-            /*_clickableCard(
+            _clickableCard(
               title: 'Training Videos',
               icon: Icons.video_library_rounded,
               onTap: () => context.push(AppRoutes.videoList),
-            ),*/
+            ),
             _clickableCard(
               title: 'All Policies Version History',
               icon: Icons.history_rounded,

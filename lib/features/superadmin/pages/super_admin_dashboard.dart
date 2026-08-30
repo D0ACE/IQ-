@@ -463,14 +463,14 @@ class _SuperadminDashboardPageState extends State<SuperadminDashboardPage> with 
                   },
                 ),
                 //Todo Video
-                /*_drawerItem(
+                _drawerItem(
                   icon: Icons.video_library_outlined,
                   title: 'Training Videos',
                   onTap: () {
                     GoRouter.of(context).pop();
                     context.push(AppRoutes.videoList);
                   },
-                ),*/
+                ),
 
                 const SizedBox(height: 20),
                 _drawerSectionTitle('SYSTEM'),
@@ -794,11 +794,11 @@ class _SuperadminDashboardPageState extends State<SuperadminDashboardPage> with 
               onTap: () => GoRouter.of(context).push(AppRoutes.employeeListing),
             ),
             //Todo Video
-            /*_clickableCard(
+            _clickableCard(
               title: 'Training Videos',
               icon: Icons.video_library_rounded,
               onTap: () => GoRouter.of(context).push(AppRoutes.videoList),
-            ),*/
+            ),
           ],
         );
       },

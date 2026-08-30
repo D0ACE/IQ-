@@ -107,10 +107,10 @@ class _EmployeeTrainingPageState extends State<EmployeeTrainingPage> {
               if (hasCompletedTraining) {
                 return TextButton.icon(
                   onPressed: () => context.push(AppRoutes.trainingResults),
-                  icon: const Icon(Icons.assignment_turned_in, color: Colors.white, size: 18),
+                  icon: const Icon(Icons.assignment_turned_in, color: AppColors.kPrimaryColor, size: 18),
                   label: const Text(
                     "View Training Results",
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    style: TextStyle(color: AppColors.kPrimaryColor, fontWeight: FontWeight.bold),
                   ),
                 );
               }

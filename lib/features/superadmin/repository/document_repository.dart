@@ -425,6 +425,18 @@ class DocumentRepository {
     return snapshot.docs.map((doc) => VersionHistoryModel.fromFirestore(doc)).toList();
   }
 
+  Future<DocumentModel?> getDocumentById(String docId) async {
+    try {
+      final doc = await _firestore.collection('documents').doc(docId).get();
+      if (doc.exists) {
+        return DocumentModel.fromFirestore(doc);
+      }
+    } catch (e) {
+      developer.log("Error fetching document by ID: $e");
+    }
+    return null;
+  }
+
   Future<List<VersionHistoryModel>> getGlobalVersionHistory({
     String? userId,
     bool isConsultant = false,

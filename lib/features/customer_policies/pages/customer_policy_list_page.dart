@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -26,7 +27,7 @@ class _CustomerPolicyListPageState extends State<CustomerPolicyListPage> {
     final hive = getIt<HiveService>();
     final customer = hive.getCustomer();
     final user = hive.getUser();
-    
+
     // 🚀 Determine customerId from either Customer or Employee session
     final String? effectiveCustomerId = customer?.customerId ?? user?.customerId;
 
@@ -38,100 +39,198 @@ class _CustomerPolicyListPageState extends State<CustomerPolicyListPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBg,
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: const CommonAppBar(title: 'My Policies & Procedures'),
-      body: BlocBuilder<DocumentCubit, DocumentState>(
-        builder: (context, state) {
-          if (state is DocumentLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (state is DocumentError) {
-            return Center(child: Text(state.message));
-          }
-          if (state is DocumentLoaded) {
-            final docs = state.documents;
-            if (docs.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.policy_outlined, size: 64, color: Colors.grey.shade400),
-                    const SizedBox(height: 16),
-                    Text('No policies assigned yet', style: TextStyle(color: Colors.grey.shade600, fontSize: 16)),
-                  ],
+      body: Stack(
+        children: [
+          // 🎨 Optimized Dot Pattern Background (Non-interactive)
+          Positioned.fill(
+            child: IgnorePointer(
+              child: CustomPaint(
+                painter: _DotPatternPainter(
+                  dotColor: AppColors.kPrimaryColor.withOpacity(0.05),
                 ),
-              );
-            }
-            return ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: docs.length,
-              itemBuilder: (context, index) {
-                final doc = docs[index];
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 16),
-                  elevation: 4,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
+              ),
+            ),
+          ),
+
+          BlocBuilder<DocumentCubit, DocumentState>(
+            builder: (context, state) {
+              if (state is DocumentLoading) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (state is DocumentError) {
+                return Center(child: Text(state.message));
+              }
+              if (state is DocumentLoaded) {
+                final docs = state.documents;
+                if (docs.isEmpty) {
+                  return Center(
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          leading: CircleAvatar(
-                            backgroundColor: AppColors.kPrimaryLightColor,
-                            child: Icon(_getFileIcon(doc.fileType), color: AppColors.purple, size: 20),
-                          ),
-                          title: Text(doc.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                          subtitle: Text("Version: ${doc.currentVersion}", style: const TextStyle(fontSize: 13, color: AppColors.purple, fontWeight: FontWeight.w600)),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                tooltip: 'Version History',
-                                icon: const Icon(Icons.history, color: Colors.blueGrey, size: 20),
-                                onPressed: () => _showVersionHistoryDialog(context, doc.docId, doc.title),
-                              ),
-                              const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
-                            ],
-                          ),
-                          onTap: () {
-                            context.push(AppRoutes.customerPolicyDetail, extra: doc);
-                          },
-                        ),
-                        const Divider(),
-                        Row(
-                          children: [
-                            Expanded(child: _auditItem("Prepared By", doc.createdBy)),
-                            Expanded(child: _auditItem("Prepared Date", DateFormat('dd MMM yyyy').format(doc.createdAt))),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Expanded(child: _auditItem("Reviewed By", doc.reviewedBy ?? "N/A")),
-                            Expanded(child: _auditItem("Reviewed Date", doc.reviewedDate != null ? DateFormat('dd MMM yyyy').format(doc.reviewedDate!) : "N/A")),
-                          ],
-                        ),
+                        Icon(Icons.policy_outlined, size: 64, color: Colors.grey.shade400),
+                        const SizedBox(height: 16),
+                        Text('No policies assigned yet', style: TextStyle(color: Colors.grey.shade600, fontSize: 16)),
                       ],
                     ),
-                  ),
+                  );
+                }
+                return ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                  physics: const BouncingScrollPhysics(),
+                  itemCount: docs.length,
+                  itemBuilder: (context, index) {
+                    final doc = docs[index];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 24),
+                      child: _neoModernPolicyCard(doc),
+                    );
+                  },
                 );
-              },
-            );
-          }
-          return const SizedBox();
-        },
+              }
+              return const SizedBox();
+            },
+          ),
+        ],
       ),
     );
   }
 
-  Widget _auditItem(String label, String value) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _neoModernPolicyCard(dynamic doc) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF6366F1).withOpacity(0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(28),
+          onTap: () => context.push(AppRoutes.customerPolicyDetail, extra: doc.docId),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF6366F1).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Icon(_getFileIcon(doc.fileType), color: const Color(0xFF6366F1), size: 28),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            doc.title,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w900,
+                              fontSize: 18,
+                              color: AppColors.titleText,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: AppColors.kPrimaryLightColor,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  "${doc.currentVersion}",
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    color: AppColors.kPrimaryColor,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                "Prepared on ${DateFormat('dd MMM').format(doc.createdAt)}",
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.subText.withOpacity(0.6),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.history_rounded, color: AppColors.subText),
+                      onPressed: () => _showVersionHistoryDialog(context, doc.docId, doc.title),
+                    ),
+                  ],
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20),
+                  child: Divider(color: Colors.black12, height: 1),
+                ),
+                Row(
+                  children: [
+                    Expanded(child: _auditItemModern("Prepared By", doc.createdBy, Icons.edit_note_rounded)),
+                    Expanded(child: _auditItemModern("Reviewed By", doc.reviewedBy ?? "N/A", Icons.rate_review_rounded)),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _auditItemModern(String label, String value, IconData icon) {
+    return Row(
       children: [
-        Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey)),
-        Text(value, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, overflow: TextOverflow.ellipsis)),
+        Icon(icon, size: 16, color: AppColors.subText.withOpacity(0.4)),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label.toUpperCase(),
+                style: TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.subText.withOpacity(0.5),
+                  letterSpacing: 1.0,
+                ),
+              ),
+              Text(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.titleText,
+                ),
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }
@@ -140,11 +239,25 @@ class _CustomerPolicyListPageState extends State<CustomerPolicyListPage> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Version History'),
-            Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+            const Text(
+              'Version History',
+              style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.titleText),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 13,
+                color: AppColors.subText.withOpacity(0.7),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ],
         ),
         content: SizedBox(
@@ -153,65 +266,132 @@ class _CustomerPolicyListPageState extends State<CustomerPolicyListPage> {
             future: DocumentRepository().getVersionHistory(docId),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
+                return const SizedBox(
+                  height: 100,
+                  child: Center(child: CircularProgressIndicator()),
+                );
               }
               if (snapshot.hasError) {
                 return Center(child: Text("Error: ${snapshot.error}"));
               }
               final history = snapshot.data ?? [];
               if (history.isEmpty) {
-                return const Center(child: Text("No history found"));
+                return const SizedBox(
+                  height: 100,
+                  child: Center(child: Text("No history found")),
+                );
               }
 
               return ListView.separated(
                 shrinkWrap: true,
+                physics: const BouncingScrollPhysics(),
                 itemCount: history.length,
-                separatorBuilder: (ctx, index) => const Divider(),
+                separatorBuilder: (ctx, index) => const SizedBox(height: 16),
                 itemBuilder: (ctx, index) {
                   final v = history[index];
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Text(v.versionNo, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.purple)),
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: (v.status == 'active' ? Colors.green : Colors.orange).withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(4),
+                  final isActive = v.status == 'active';
+                  return Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.purple.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    v.versionNo,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w900,
+                                      color: AppColors.purple,
+                                      fontSize: 12,
+                                    ),
+                                  ),
                                 ),
-                                child: Text(
-                                  v.status.toUpperCase(),
-                                  style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: v.status == 'active' ? Colors.green : Colors.orange),
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: (isActive ? Colors.green : Colors.orange).withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    v.status.toUpperCase(),
+                                    style: TextStyle(
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w900,
+                                      color: isActive ? Colors.green : Colors.orange,
+                                    ),
+                                  ),
                                 ),
+                              ],
+                            ),
+                            Text(
+                              DateFormat('dd MMM yyyy').format(v.performedDate),
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: AppColors.subText.withOpacity(0.6),
+                                fontWeight: FontWeight.w600,
                               ),
-                            ],
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          v.changeDescription,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.titleText,
                           ),
-                          Text(DateFormat('dd MMM yyyy, hh:mm a').format(v.performedDate), style: const TextStyle(fontSize: 11, color: Colors.grey)),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text("Description of the change: ${v.changeDescription}", style: const TextStyle(fontSize: 13)),
-                      const SizedBox(height: 4),
-                      Text("Performed By: ${v.performedBy}", style: const TextStyle(fontSize: 11, fontStyle: FontStyle.italic)),
-                      if (v.status == 'draft' && v.assignedReviewerName != null) 
-                        Padding(
-                          padding: const EdgeInsets.only(top: 2),
-                          child: Text("Pending Review by: ${v.assignedReviewerName} on ${DateFormat('dd MMM yyyy').format(v.performedDate)}", 
-                               style: const TextStyle(fontSize: 11, color: Colors.blueGrey, fontWeight: FontWeight.bold)),
                         ),
-                      if (v.status == 'active' && v.approvedBy != null)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 2),
-                          child: Text("Approved by: ${v.approvedBy} on ${v.approvedDate != null ? DateFormat('dd MMM yyyy').format(v.approvedDate!) : 'N/A'}", 
-                               style: const TextStyle(fontSize: 11, color: Colors.green, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 8),
+                        Text(
+                          "by ${v.performedBy}",
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontStyle: FontStyle.italic,
+                            color: AppColors.subText.withOpacity(0.7),
+                          ),
                         ),
-                    ],
+                        if (isActive && v.approvedBy != null)
+                          Container(
+                            margin: const EdgeInsets.only(top: 10),
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: Colors.green.withOpacity(0.05),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.verified_rounded, color: Colors.green, size: 14),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    "Approved by ${v.approvedBy}",
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.green,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
                   );
                 },
               );
@@ -219,7 +399,13 @@ class _CustomerPolicyListPageState extends State<CustomerPolicyListPage> {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text(
+              'Close',
+              style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.purple),
+            ),
+          ),
         ],
       ),
     );
@@ -233,4 +419,29 @@ class _CustomerPolicyListPageState extends State<CustomerPolicyListPage> {
     if (t.contains('quill')) return Icons.edit_note;
     return Icons.insert_drive_file;
   }
+}
+
+class _DotPatternPainter extends CustomPainter {
+  final Color dotColor;
+  _DotPatternPainter({required this.dotColor});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const double spacing = 30.0;
+    final paint = Paint()
+      ..color = dotColor
+      ..strokeWidth = 3.0
+      ..strokeCap = StrokeCap.round;
+
+    final List<Offset> points = [];
+    for (double x = 0; x < size.width; x += spacing) {
+      for (double y = 0; y < size.height; y += spacing) {
+        points.add(Offset(x, y));
+      }
+    }
+    canvas.drawPoints(PointMode.points, points, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
