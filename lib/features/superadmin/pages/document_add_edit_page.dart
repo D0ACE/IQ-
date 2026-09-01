@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -17,7 +17,6 @@ import 'package:iq_plus/features/auth/model/customer_model.dart';
 import 'package:iq_plus/features/superadmin/cubit/document_cubit.dart';
 import 'package:iq_plus/features/superadmin/cubit/document_state.dart';
 import 'package:iq_plus/features/superadmin/models/document_model.dart';
-import 'package:path/path.dart' as p;
 
 class DocumentAddEditPage extends StatefulWidget {
   final DocumentModel? document;
@@ -31,7 +30,8 @@ class _DocumentAddEditPageState extends State<DocumentAddEditPage> {
   final _formKey = GlobalKey<FormState>();
   final titleCtrl = TextEditingController();
   final changeDescriptionCtrl = TextEditingController();
-  File? selectedFile;
+  Uint8List? selectedFileBytes;
+  String? selectedFileName;
   String? existingFileName;
   String? selectedCustomerId;
   String? selectedReviewerId;
@@ -63,10 +63,15 @@ class _DocumentAddEditPageState extends State<DocumentAddEditPage> {
   }
 
   Future<void> _pickFile() async {
-    final result = await FilePicker.platform.pickFiles();
-    if (result != null && result.files.single.path != null) {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf', 'docx', 'doc', 'xlsx', 'xls'],
+      withData: true, // Required for Web to get bytes
+    );
+    if (result != null && result.files.single.bytes != null) {
       setState(() {
-        selectedFile = File(result.files.single.path!);
+        selectedFileBytes = result.files.single.bytes;
+        selectedFileName = result.files.single.name;
       });
     }
   }
@@ -86,7 +91,7 @@ class _DocumentAddEditPageState extends State<DocumentAddEditPage> {
       builder: (context, state) {
         return Scaffold(
           backgroundColor: AppColors.scaffoldBg,
-          appBar: CommonAppBar(title: isEdit ? 'Edit Policy' : 'Add Policy'),
+          appBar: CommonAppBar(title: isEdit ? 'Edit Policy' : 'Upload Policy'),
           body: Form(
             key: _formKey,
             child: SingleChildScrollView(
@@ -144,7 +149,7 @@ class _DocumentAddEditPageState extends State<DocumentAddEditPage> {
                     builder: (context, consultantState) {
                       if (consultantState is ConsultantLoaded) {
                         return DropdownButtonFormField<String>(
-                          value: selectedReviewerId, // 🚀 Pre-select assigned consultant
+                          initialValue: selectedReviewerId, // 🚀 Pre-select assigned consultant
                           decoration: InputDecoration(
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
@@ -187,9 +192,7 @@ class _DocumentAddEditPageState extends State<DocumentAddEditPage> {
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
-                              selectedFile != null
-                                  ? p.basename(selectedFile!.path)
-                                  : (existingFileName ?? "No file selected"),
+                              selectedFileName ?? (existingFileName ?? "No file selected"),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
@@ -233,7 +236,7 @@ class _DocumentAddEditPageState extends State<DocumentAddEditPage> {
                       ),
                       child: state is DocumentLoading
                           ? const CircularProgressIndicator(color: Colors.white)
-                          : Text(isEdit ? "Update Policy" : "Save Policy"),
+                          : Text(isEdit ? "Update Policy" : "Upload Policy"),
                     ),
                   ),
                 ],
@@ -253,7 +256,7 @@ class _DocumentAddEditPageState extends State<DocumentAddEditPage> {
       return;
     }
 
-    if (!isEdit && selectedFile == null) {
+    if (!isEdit && selectedFileBytes == null) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please select a file")));
       return;
     }
@@ -262,7 +265,8 @@ class _DocumentAddEditPageState extends State<DocumentAddEditPage> {
       context.read<DocumentCubit>().updateDocument(
             docId: widget.document!.docId,
             title: titleCtrl.text.trim(),
-            newFile: selectedFile,
+            newFileBytes: selectedFileBytes,
+            newFileName: selectedFileName,
             currentFilePath: widget.document!.filePath,
             customerId: selectedCustomerId,
             assignedReviewerId: selectedReviewerId,
@@ -272,7 +276,8 @@ class _DocumentAddEditPageState extends State<DocumentAddEditPage> {
     } else {
       context.read<DocumentCubit>().addDocument(
             title: titleCtrl.text.trim(),
-            file: selectedFile!,
+            bytes: selectedFileBytes!,
+            fileName: selectedFileName!,
             customerId: selectedCustomerId,
             assignedReviewerId: selectedReviewerId,
             assignedReviewerName: selectedReviewerName,

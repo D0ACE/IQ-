@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -14,250 +15,353 @@ class UserListPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FC),
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
+        foregroundColor: AppColors.titleText,
+        centerTitle: false,
         title: const Text(
-          'Consultants',
-          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18),
+          'User Management',
+          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20, letterSpacing: -0.5),
         ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: ElevatedButton(
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (_) => BlocProvider.value(
-                    value: context.read<UserCubit>(),
-                    child: const AddUserDialog(),
-                  ),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).primaryColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          showDialog(
+            context: context,
+            builder: (_) => BlocProvider.value(
+              value: context.read<UserCubit>(),
+              child: const AddUserDialog(),
+            ),
+          );
+        },
+        backgroundColor: AppColors.kPrimaryColor,
+        icon: const Icon(Icons.person_add_rounded, color: Colors.white),
+        label: const Text("Add User", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+      ),
+      body: Stack(
+        children: [
+          // 🎨 Background Pattern
+          Positioned.fill(
+            child: IgnorePointer(
+              child: CustomPaint(
+                painter: _DotPatternPainter(
+                  dotColor: AppColors.kPrimaryColor.withOpacity(0.03),
                 ),
-              ),
-              child: const Text(
-                "Add User",
-                style: TextStyle(color: AppColors.whiteTextColor),
               ),
             ),
           ),
+
+          BlocBuilder<UserCubit, UserState>(
+            builder: (context, state) {
+              if (state is UserLoading) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              if (state is UserError) {
+                return Center(
+                  child: Text(
+                    state.message,
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                );
+              }
+
+              final users = context.read<UserCubit>().users;
+
+              if (users.isNotEmpty) {
+                return ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
+                  physics: const BouncingScrollPhysics(),
+                  itemCount: users.length,
+                  itemBuilder: (context, index) {
+                    final user = users[index];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: _neoModernUserCard(context, user),
+                    );
+                  },
+                );
+              } else if (state is UserLoaded && users.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.group_off_rounded, size: 64, color: Colors.grey.shade300),
+                      const SizedBox(height: 16),
+                      const Text(
+                        "No users found",
+                        style: TextStyle(color: Colors.grey, fontSize: 16, fontWeight: FontWeight.w500),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              return const SizedBox();
+            },
+          ),
         ],
       ),
-      body: BlocBuilder<UserCubit, UserState>(
-        builder: (context, state) {
-          if (state is UserLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
+    );
+  }
 
-          if (state is UserError) {
-            return Center(
-              child: Text(
-                state.message,
-                style: const TextStyle(color: Colors.red),
-              ),
-            );
-          }
+  Widget _neoModernUserCard(BuildContext context, dynamic user) {
+    final String roleId = user.roleId;
+    String roleName = "Consultant";
+    Color roleColor = AppColors.kPrimaryColor;
 
-          if (context.read<UserCubit>().users.isNotEmpty) {
-            return Padding(
-              padding: const EdgeInsets.all(16),
-              child: ListView.separated(
-                itemCount: context.read<UserCubit>().users.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 10),
-                itemBuilder: (context, index) {
-                  final user = context.read<UserCubit>().users[index];
+    if (roleId == '0') {
+      roleName = 'Super Admin';
+      roleColor = Colors.redAccent;
+    } else if (roleId == '1') {
+      roleName = 'Admin';
+      roleColor = Colors.indigo;
+    } else if (roleId == '2') {
+      roleName = 'Consultant';
+      roleColor = AppColors.kPrimaryColor;
+    }
 
-                  return Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: AppColors.kPrimaryLightColor,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.grey.shade200),
-                    ),
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 22,
-                          backgroundColor: Colors.transparent,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: AppColors.kPrimaryColor,
-                                width: 1.5,
-                              ),
-                            ),
-                            alignment: Alignment.center,
-                            child: Text(
-                              user.userName.substring(0, 1).toUpperCase(),
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.kPrimaryColor,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-
-                        /// USER INFO
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                user.userName,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 15,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                user.email,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.black54,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                user.phoneNumber,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.black54,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                "Role: ${Utility.getUserRoleName(user.roleId)}",
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.black54,
-                                ),
-                              ),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.kPrimaryColor.withOpacity(0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () {
+              showDialog(
+                context: context,
+                builder: (_) => BlocProvider.value(
+                  value: context.read<UserCubit>(),
+                  child: AddUserDialog(user: user),
+                ),
+              );
+            },
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                children: [
+                  // Avatar with Badge
+                  Stack(
+                    children: [
+                      Container(
+                        height: 60,
+                        width: 60,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              AppColors.kPrimaryColor.withOpacity(0.1),
+                              AppColors.kPrimaryColor.withOpacity(0.05),
                             ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          user.userName.substring(0, 1).toUpperCase(),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w900,
+                            color: AppColors.kPrimaryColor,
+                            fontSize: 22,
                           ),
                         ),
+                      ),
+                      Positioned(
+                        right: -2,
+                        bottom: -2,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Container(
+                            height: 12,
+                            width: 12,
+                            decoration: BoxDecoration(
+                              color: user.blockStatus ? Colors.red : Colors.green,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 2),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(width: 20),
 
-                        /// ACTIONS + DATE
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
+                  // Info
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
                           children: [
-                            if (user.joiningDate != null)
-                              Text(
-                                DateFormat(
-                                  'dd MMM yyyy',
-                                ).format(user.joiningDate!),
+                            Expanded(
+                              child: Text(
+                                user.userName,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey,
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 17,
+                                  color: AppColors.titleText,
+                                  letterSpacing: -0.5,
                                 ),
                               ),
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                /// EDIT
-                                IconButton(
-                                  tooltip: "Edit User",
-                                  icon: Icon(
-                                    Icons.edit_outlined,
-                                    color: Theme.of(context).primaryColor,
-                                    size: 20,
-                                  ),
-                                  onPressed: () {
-                                    showDialog(
-                                      context: context,
-                                      builder: (_) => BlocProvider.value(
-                                        value: context.read<UserCubit>(),
-                                        child: AddUserDialog(
-                                          user: user,
-                                        ), // 👈 pass user
-                                      ),
-                                    );
-                                  },
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: roleColor.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                roleName.toUpperCase(),
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w900,
+                                  color: roleColor,
+                                  letterSpacing: 0.5,
                                 ),
-
-                                /// DELETE
-                                IconButton(
-                                  tooltip: "Delete User",
-                                  icon: const Icon(
-                                    Icons.delete_outline,
-                                    color: Colors.redAccent,
-                                    size: 20,
-                                  ),
-                                  onPressed: () {
-                                    _showDeleteDialog(context, user.userId);
-                                  },
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            Icon(Icons.alternate_email_rounded, size: 14, color: Colors.grey.shade400),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                user.email,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.grey.shade600,
+                                  fontWeight: FontWeight.w500,
                                 ),
-                              ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Icon(Icons.phone_iphone_rounded, size: 14, color: Colors.grey.shade400),
+                            const SizedBox(width: 6),
+                            Text(
+                              user.phoneNumber,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.grey.shade600,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ],
                         ),
                       ],
                     ),
-                  );
-                },
-              ),
-            );
-          } else if (state is UserLoaded &&
-              context.read<UserCubit>().users.isEmpty) {
-            return const Center(
-              child: Text(
-                "No users found",
-                style: TextStyle(color: Colors.grey),
-              ),
-            );
-          }
+                  ),
 
-          return const SizedBox();
-        },
+                  const SizedBox(width: 12),
+                  // Delete Button
+                  IconButton(
+                    onPressed: () => _showDeleteDialog(context, user),
+                    icon: Icon(Icons.delete_outline_rounded, color: Colors.red.shade300, size: 22),
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.red.shade50,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
 
-  /// 🔴 DELETE CONFIRMATION
-  void _showDeleteDialog(BuildContext context, String userId) {
+  void _showDeleteDialog(BuildContext context, dynamic user) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: const Text("Delete User"),
-        content: const Text(
-          "Are you sure you want to delete this user?\nThis action cannot be undone.",
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        title: const Text(
+          "Delete User",
+          style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.titleText),
+        ),
+        content: Text(
+          "Are you sure you want to remove ${user.userName} from the system?\nThis action cannot be undone.",
+          style: TextStyle(color: Colors.grey.shade600, height: 1.5),
         ),
         actions: [
           TextButton(
-            onPressed: () => GoRouter.of(context).pop(),
-            child: const Text(
-              "Cancel",
-              style: TextStyle(
-                color: AppColors.kPrimaryColor,
-                fontWeight: FontWeight.bold,
-              ),
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              "Keep User",
+              style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.bold),
             ),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
-            onPressed: () {
-              GoRouter.of(context).pop();
-              context.read<UserCubit>().deleteUser(userId); // repo handles the search
-            },
-            child: const Text(
-              "Delete",
-              style: TextStyle(color: AppColors.whiteTextColor),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
+            onPressed: () {
+              Navigator.pop(ctx);
+              context.read<UserCubit>().deleteUser(user.userId);
+            },
+            child: const Text("Delete Account", style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
     );
   }
+}
 
+class _DotPatternPainter extends CustomPainter {
+  final Color dotColor;
+  _DotPatternPainter({required this.dotColor});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const double spacing = 30.0;
+    final paint = Paint()
+      ..color = dotColor
+      ..strokeWidth = 3.0
+      ..strokeCap = StrokeCap.round;
+
+    final List<Offset> points = [];
+    for (double x = 0; x < size.width; x += spacing) {
+      for (double y = 0; y < size.height; y += spacing) {
+        points.add(Offset(x, y));
+      }
+    }
+    canvas.drawPoints(PointMode.points, points, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

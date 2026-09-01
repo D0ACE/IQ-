@@ -12,7 +12,6 @@ import 'package:iq_plus/core/local_storage/hive_service.dart';
 import 'package:iq_plus/di/service_locator.dart';
 import 'package:iq_plus/features/users/repository/user_repository.dart';
 
-
 import 'package:iq_plus/ncr_form/ncr_provider.dart';
 
 import 'package:provider/provider.dart';
@@ -24,7 +23,8 @@ class AdminDashboardPage extends StatefulWidget {
   State<AdminDashboardPage> createState() => _AdminDashboardPageState();
 }
 
-class _AdminDashboardPageState extends State<AdminDashboardPage> with TickerProviderStateMixin {
+class _AdminDashboardPageState extends State<AdminDashboardPage>
+    with TickerProviderStateMixin {
   final user = getIt<HiveService>().getUser();
 
   late AnimationController _animationController;
@@ -44,13 +44,13 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with TickerProv
       curve: Curves.easeIn,
     );
 
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.05),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOutCubic,
-    ));
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.05), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
 
     // 🚀 Start listening to NCR data for the graph
     context.read<NcrProvider>().listenToNcrs();
@@ -76,14 +76,20 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with TickerProv
           Positioned(
             top: -50,
             right: -50,
-            child: _buildDecorativeCircle(200, AppColors.kPrimaryColor.withValues(alpha: 0.03)),
+            child: _buildDecorativeCircle(
+              200,
+              AppColors.kPrimaryColor.withValues(alpha: 0.03),
+            ),
           ),
           Positioned(
             bottom: 100,
             left: -30,
-            child: _buildDecorativeCircle(150, AppColors.secondary.withValues(alpha: 0.03)),
+            child: _buildDecorativeCircle(
+              150,
+              AppColors.secondary.withValues(alpha: 0.03),
+            ),
           ),
-          
+
           FadeTransition(
             opacity: _fadeAnimation,
             child: SlideTransition(
@@ -149,10 +155,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with TickerProv
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: color,
-      ),
+      decoration: BoxDecoration(shape: BoxShape.circle, color: color),
     );
   }
 
@@ -191,7 +194,11 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with TickerProv
               top: -50,
               child: Opacity(
                 opacity: 0.1,
-                child: Icon(Icons.admin_panel_settings_rounded, size: 250, color: Colors.white),
+                child: Icon(
+                  Icons.admin_panel_settings_rounded,
+                  size: 250,
+                  color: Colors.white,
+                ),
               ),
             ),
             Padding(
@@ -206,9 +213,15 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with TickerProv
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.1),
+                          ),
                         ),
-                        child: const Icon(Icons.shield_rounded, color: Colors.white, size: 28),
+                        child: const Icon(
+                          Icons.shield_rounded,
+                          color: Colors.white,
+                          size: 28,
+                        ),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
@@ -243,7 +256,10 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with TickerProv
                   ),
                   const SizedBox(height: 24),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.black.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
@@ -251,7 +267,11 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with TickerProv
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.verified_user_rounded, color: Colors.amber, size: 14),
+                        const Icon(
+                          Icons.verified_user_rounded,
+                          color: Colors.amber,
+                          size: 14,
+                        ),
                         const SizedBox(width: 8),
                         const Text(
                           "System administration is active",
@@ -277,7 +297,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with TickerProv
   Widget _buildBeautifulDrawer() {
     final String adminName = user?.userName ?? "Admin";
     final String email = user?.email ?? "admin@iqplus.com";
-    final bool isSuperAdmin = Utility.isSuperAdmin(user?.roleId ?? "");
+    Utility.isSuperAdmin(user?.roleId ?? "");
 
     return Drawer(
       backgroundColor: Colors.white,
@@ -294,10 +314,14 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with TickerProv
             width: double.infinity,
             decoration: BoxDecoration(
               color: AppColors.kPrimaryColor,
-              borderRadius: const BorderRadius.only(topRight: Radius.circular(30)),
+              borderRadius: const BorderRadius.only(
+                topRight: Radius.circular(30),
+              ),
             ),
             child: ClipRRect(
-              borderRadius: const BorderRadius.only(topRight: Radius.circular(30)),
+              borderRadius: const BorderRadius.only(
+                topRight: Radius.circular(30),
+              ),
               child: Stack(
                 children: [
                   Positioned(
@@ -305,7 +329,11 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with TickerProv
                     top: -20,
                     child: Opacity(
                       opacity: 0.15,
-                      child: Icon(Icons.admin_panel_settings_rounded, size: 150, color: Colors.white),
+                      child: Icon(
+                        Icons.admin_panel_settings_rounded,
+                        size: 150,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                   Padding(
@@ -323,9 +351,15 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with TickerProv
                             decoration: BoxDecoration(
                               color: Colors.white.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.1),
+                              ),
                             ),
-                            child: const Icon(Icons.manage_accounts_rounded, color: Colors.white, size: 28),
+                            child: const Icon(
+                              Icons.manage_accounts_rounded,
+                              color: Colors.white,
+                              size: 28,
+                            ),
                           ),
                           const SizedBox(height: 20),
                           Text(
@@ -347,7 +381,10 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with TickerProv
                           ),
                           const SizedBox(height: 12),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.white.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(8),
@@ -394,7 +431,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with TickerProv
                 ),
                 _drawerItem(
                   icon: Icons.badge_rounded,
-                  title: 'Consultants',
+                  title: 'Users',
                   onTap: () {
                     GoRouter.of(context).pop();
                     context.push(AppRoutes.employeeList);
@@ -408,27 +445,6 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with TickerProv
                     context.push(AppRoutes.documentList);
                   },
                 ),
-
-                if (isSuperAdmin) ...[
-                  const SizedBox(height: 20),
-                  _drawerSectionTitle('ADMINISTRATION'),
-                  _drawerItem(
-                    icon: Icons.person_add_alt_1_rounded,
-                    title: 'Add Admin',
-                    onTap: () {
-                      GoRouter.of(context).pop();
-                      context.push(AppRoutes.createAdmin);
-                    },
-                  ),
-                  _drawerItem(
-                    icon: Icons.security_rounded,
-                    title: 'Admins',
-                    onTap: () {
-                      GoRouter.of(context).pop();
-                      context.push(AppRoutes.adminList);
-                    },
-                  ),
-                ],
 
                 const SizedBox(height: 20),
                 _drawerSectionTitle('OPERATIONS'),
@@ -548,7 +564,9 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with TickerProv
           builder: (context, snapshot) {
             return _statCard(
               'Total Active Users',
-              snapshot.connectionState == ConnectionState.waiting ? '...' : '${snapshot.data ?? 0}',
+              snapshot.connectionState == ConnectionState.waiting
+                  ? '...'
+                  : '${snapshot.data ?? 0}',
               AppColors.purple,
               Icons.people_alt_rounded,
               () {},
@@ -561,7 +579,9 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with TickerProv
           builder: (context, snapshot) {
             return _statCard(
               'Total Customers',
-              snapshot.connectionState == ConnectionState.waiting ? '...' : '${snapshot.data ?? 0}',
+              snapshot.connectionState == ConnectionState.waiting
+                  ? '...'
+                  : '${snapshot.data ?? 0}',
               AppColors.paid,
               Icons.business_center_rounded,
               () => context.push(AppRoutes.customerList),
@@ -573,8 +593,10 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with TickerProv
           future: userRepository.getTotalConsultantCount(),
           builder: (context, snapshot) {
             return _statCard(
-              'Total Consultants',
-              snapshot.connectionState == ConnectionState.waiting ? '...' : '${snapshot.data ?? 0}',
+              'Total Users',
+              snapshot.connectionState == ConnectionState.waiting
+                  ? '...'
+                  : '${snapshot.data ?? 0}',
               AppColors.blue,
               Icons.badge_rounded,
               () => context.push(AppRoutes.employeeList),
@@ -585,7 +607,13 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with TickerProv
     );
   }
 
-  Widget _statCard(String title, String value, Color color, IconData icon, VoidCallback onTap) {
+  Widget _statCard(
+    String title,
+    String value,
+    Color color,
+    IconData icon,
+    VoidCallback onTap,
+  ) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -612,17 +640,16 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with TickerProv
                   width: 60,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [color.withValues(alpha: 0.2), color.withValues(alpha: 0.05)],
+                      colors: [
+                        color.withValues(alpha: 0.2),
+                        color.withValues(alpha: 0.05),
+                      ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                     borderRadius: BorderRadius.circular(18),
                   ),
-                  child: Icon(
-                    icon,
-                    color: color,
-                    size: 30,
-                  ),
+                  child: Icon(icon, color: color, size: 30),
                 ),
                 const SizedBox(width: 20),
                 Expanded(
@@ -703,14 +730,21 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with TickerProv
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.kPrimaryColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: const Text(
                       "Real-time",
-                      style: TextStyle(color: AppColors.kPrimaryColor, fontSize: 12, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        color: AppColors.kPrimaryColor,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],
@@ -749,6 +783,16 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with TickerProv
               onTap: () => context.push(AppRoutes.ncrPage),
             ),
             _clickableCard(
+              title: 'Customer Management',
+              icon: Icons.business_rounded,
+              onTap: () => context.push(AppRoutes.customerList),
+            ),
+            _clickableCard(
+              title: 'User Management',
+              icon: Icons.badge_rounded,
+              onTap: () => context.push(AppRoutes.employeeList),
+            ),
+            _clickableCard(
               title: 'Policies & Procedures',
               icon: Icons.description_rounded,
               onTap: () => context.push(AppRoutes.documentList),
@@ -781,10 +825,17 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> with TickerProv
     required VoidCallback onTap,
   }) {
     Color themeColor = AppColors.kPrimaryColor;
-    if (title.contains('NCR')) themeColor = Colors.orange;
-    else if (title.contains('Policies')) themeColor = Colors.teal;
-    else if (title.contains('History')) themeColor = Colors.blueGrey;
-    else if (title.contains('Employees')) themeColor = Colors.pinkAccent;
+    if (title.contains('NCR')) {
+      themeColor = Colors.orange;
+    } else if (title.contains('Customer')) {
+      themeColor = Colors.indigo;
+    } else if (title.contains('Policies')) {
+      themeColor = Colors.teal;
+    } else if (title.contains('History')) {
+      themeColor = Colors.blueGrey;
+    } else if (title.contains('Employees')) {
+      themeColor = Colors.pinkAccent;
+    }
 
     return Container(
       decoration: BoxDecoration(
@@ -937,16 +988,18 @@ class AnimatedBarChart extends StatelessWidget {
               },
             ),
           ),
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          rightTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
         ),
         gridData: FlGridData(
           show: true,
           drawVerticalLine: false,
-          getDrawingHorizontalLine: (value) => FlLine(
-            color: Colors.grey.shade100,
-            strokeWidth: 1,
-          ),
+          getDrawingHorizontalLine: (value) =>
+              FlLine(color: Colors.grey.shade100, strokeWidth: 1),
         ),
         borderData: FlBorderData(show: false),
         barGroups: values.asMap().entries.map((entry) {

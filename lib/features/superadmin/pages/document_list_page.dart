@@ -123,8 +123,8 @@ class _DocumentListPageState extends State<DocumentListPage> {
                             if (isSystemAdmin || isCreator)
                               IconButton(
                                 tooltip: (isRichDoc || isDocx) ? 'Edit / Read Content' : 'Edit (Rich Text)',
-                                icon: Icon(
-                                  isDocx ? Icons.chrome_reader_mode : Icons.edit_note, 
+                                icon: const Icon(
+                                  Icons.edit_note, 
                                   color: Colors.blue
                                 ),
                                 onPressed: () {
@@ -256,12 +256,12 @@ class _DocumentListPageState extends State<DocumentListPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text("Create New Policy", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const Text("Manage Policies & Procedures", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 24),
             ListTile(
               leading: const CircleAvatar(backgroundColor: Colors.blue, child: Icon(Icons.edit_note, color: Colors.white)),
-              title: const Text("Rich Text Document"),
-              subtitle: const Text("Create a policy with text, images and formatting"),
+              title: const Text("Create Policy"),
+              subtitle: const Text("Write your own policy from scratch"),
               onTap: () {
                 Navigator.pop(ctx);
                 context.push(AppRoutes.documentEditor);
@@ -269,12 +269,12 @@ class _DocumentListPageState extends State<DocumentListPage> {
             ),
             const Divider(),
             ListTile(
-              leading: const CircleAvatar(backgroundColor: Colors.green, child: Icon(Icons.table_chart, color: Colors.white)),
-              title: const Text("Excel Spreadsheet"),
-              subtitle: const Text("Create a policy in a row and column grid format"),
+              leading: const CircleAvatar(backgroundColor: Colors.orange, child: Icon(Icons.upload_file, color: Colors.white)),
+              title: const Text("Upload Policy"),
+              subtitle: const Text("Upload existing PDF, Docx, or Excel files"),
               onTap: () {
                 Navigator.pop(ctx);
-                context.push(AppRoutes.excelEditor);
+                context.push(AppRoutes.documentAddEdit);
               },
             ),
           ],
@@ -282,6 +282,7 @@ class _DocumentListPageState extends State<DocumentListPage> {
       ),
     );
   }
+
 
   void _showStatusDialog(BuildContext context, String docId, String currentStatus) {
     if (currentStatus == 'active') return; // Should not reach here based on UI logic

@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:iq_plus/common/utility/utility.dart';
 import 'package:iq_plus/common/widgets/common_app_bar.dart';
 import 'package:iq_plus/features/admin/customers/cubit/customer_list_cubit.dart';
 import 'package:iq_plus/features/admin/customers/cubit/customer_list_state.dart';
@@ -20,10 +19,12 @@ class SuperadminDashboardPage extends StatefulWidget {
   const SuperadminDashboardPage({super.key});
 
   @override
-  State<SuperadminDashboardPage> createState() => _SuperadminDashboardPageState();
+  State<SuperadminDashboardPage> createState() =>
+      _SuperadminDashboardPageState();
 }
 
-class _SuperadminDashboardPageState extends State<SuperadminDashboardPage> with TickerProviderStateMixin {
+class _SuperadminDashboardPageState extends State<SuperadminDashboardPage>
+    with TickerProviderStateMixin {
   final user = getIt<HiveService>().getUser();
 
   late AnimationController _animationController;
@@ -43,13 +44,13 @@ class _SuperadminDashboardPageState extends State<SuperadminDashboardPage> with 
       curve: Curves.easeIn,
     );
 
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.05),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOutCubic,
-    ));
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.05), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
 
     // 🚀 Start listening to NCR data for the graph
     context.read<NcrProvider>().listenToNcrs();
@@ -75,14 +76,20 @@ class _SuperadminDashboardPageState extends State<SuperadminDashboardPage> with 
           Positioned(
             top: -50,
             right: -50,
-            child: _buildDecorativeCircle(200, AppColors.kPrimaryColor.withValues(alpha: 0.03)),
+            child: _buildDecorativeCircle(
+              200,
+              AppColors.kPrimaryColor.withValues(alpha: 0.03),
+            ),
           ),
           Positioned(
             bottom: 100,
             left: -30,
-            child: _buildDecorativeCircle(150, AppColors.secondary.withValues(alpha: 0.03)),
+            child: _buildDecorativeCircle(
+              150,
+              AppColors.secondary.withValues(alpha: 0.03),
+            ),
           ),
-          
+
           FadeTransition(
             opacity: _fadeAnimation,
             child: SlideTransition(
@@ -148,10 +155,7 @@ class _SuperadminDashboardPageState extends State<SuperadminDashboardPage> with 
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: color,
-      ),
+      decoration: BoxDecoration(shape: BoxShape.circle, color: color),
     );
   }
 
@@ -190,7 +194,11 @@ class _SuperadminDashboardPageState extends State<SuperadminDashboardPage> with 
               top: -50,
               child: Opacity(
                 opacity: 0.1,
-                child: Icon(Icons.settings_suggest_rounded, size: 250, color: Colors.white),
+                child: Icon(
+                  Icons.settings_suggest_rounded,
+                  size: 250,
+                  color: Colors.white,
+                ),
               ),
             ),
             Padding(
@@ -205,9 +213,15 @@ class _SuperadminDashboardPageState extends State<SuperadminDashboardPage> with 
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.1),
+                          ),
                         ),
-                        child: const Icon(Icons.security_rounded, color: Colors.white, size: 28),
+                        child: const Icon(
+                          Icons.security_rounded,
+                          color: Colors.white,
+                          size: 28,
+                        ),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
@@ -242,7 +256,10 @@ class _SuperadminDashboardPageState extends State<SuperadminDashboardPage> with 
                   ),
                   const SizedBox(height: 24),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.black.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
@@ -250,7 +267,11 @@ class _SuperadminDashboardPageState extends State<SuperadminDashboardPage> with 
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.hub_rounded, color: Colors.amber, size: 14),
+                        const Icon(
+                          Icons.hub_rounded,
+                          color: Colors.amber,
+                          size: 14,
+                        ),
                         const SizedBox(width: 8),
                         const Text(
                           "Global root access verified",
@@ -292,10 +313,14 @@ class _SuperadminDashboardPageState extends State<SuperadminDashboardPage> with 
             width: double.infinity,
             decoration: BoxDecoration(
               color: AppColors.kPrimaryColor,
-              borderRadius: const BorderRadius.only(topRight: Radius.circular(30)),
+              borderRadius: const BorderRadius.only(
+                topRight: Radius.circular(30),
+              ),
             ),
             child: ClipRRect(
-              borderRadius: const BorderRadius.only(topRight: Radius.circular(30)),
+              borderRadius: const BorderRadius.only(
+                topRight: Radius.circular(30),
+              ),
               child: Stack(
                 children: [
                   Positioned(
@@ -303,7 +328,11 @@ class _SuperadminDashboardPageState extends State<SuperadminDashboardPage> with 
                     top: -20,
                     child: Opacity(
                       opacity: 0.15,
-                      child: Icon(Icons.lock_person_rounded, size: 150, color: Colors.white),
+                      child: Icon(
+                        Icons.lock_person_rounded,
+                        size: 150,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                   Padding(
@@ -321,9 +350,15 @@ class _SuperadminDashboardPageState extends State<SuperadminDashboardPage> with 
                             decoration: BoxDecoration(
                               color: Colors.white.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.1),
+                              ),
                             ),
-                            child: const Icon(Icons.admin_panel_settings_rounded, color: Colors.white, size: 28),
+                            child: const Icon(
+                              Icons.admin_panel_settings_rounded,
+                              color: Colors.white,
+                              size: 28,
+                            ),
                           ),
                           const SizedBox(height: 20),
                           Text(
@@ -345,7 +380,10 @@ class _SuperadminDashboardPageState extends State<SuperadminDashboardPage> with 
                           ),
                           const SizedBox(height: 12),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.white.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(8),
@@ -374,34 +412,63 @@ class _SuperadminDashboardPageState extends State<SuperadminDashboardPage> with 
               padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
               children: [
                 _drawerSectionTitle('GLOBAL MANAGEMENT'),
+                _drawerItem(
+                  icon: Icons.person_add_rounded,
+                  title: 'Onboarding Request',
+                  onTap: () {
+                    GoRouter.of(context).pop();
+                    context.push(AppRoutes.onboardingRequest);
+                  },
+                ),
                 // 🔹 Customers Section as ExpansionTile
                 BlocBuilder<CustomerListCubit, CustomerListState>(
                   builder: (context, state) {
                     if (state is CustomerListLoading) {
                       return const Center(child: CircularProgressIndicator());
                     } else if (state is CustomerListLoaded) {
-                      final allCustomers = state.customers.where((customer) => customer.isProfileApproved).toList();
+                      final allCustomers = state.customers
+                          .where((customer) => customer.isProfileApproved)
+                          .toList();
                       if (allCustomers.isEmpty) return const SizedBox();
 
                       return Theme(
-                        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                        data: Theme.of(
+                          context,
+                        ).copyWith(dividerColor: Colors.transparent),
                         child: ExpansionTile(
-                          tilePadding: const EdgeInsets.symmetric(horizontal: 12),
-                          leading: Icon(Icons.business_rounded, color: Colors.grey.shade600, size: 22),
+                          tilePadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                          ),
+                          leading: Icon(
+                            Icons.business_rounded,
+                            color: Colors.grey.shade600,
+                            size: 22,
+                          ),
                           title: Text(
                             'Customers',
-                            style: TextStyle(color: Colors.grey.shade700, fontSize: 14, fontWeight: FontWeight.w600),
+                            style: TextStyle(
+                              color: Colors.grey.shade700,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                           children: allCustomers.map((customer) {
                             return ListTile(
                               contentPadding: const EdgeInsets.only(left: 48),
                               title: Text(
                                 customer.companyName,
-                                style: TextStyle(color: Colors.grey.shade600, fontSize: 13, fontWeight: FontWeight.w500),
+                                style: TextStyle(
+                                  color: Colors.grey.shade600,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
                               onTap: () {
                                 GoRouter.of(context).pop();
-                                context.push(AppRoutes.customerProfile, extra: customer);
+                                context.push(
+                                  AppRoutes.customerProfile,
+                                  extra: customer,
+                                );
                               },
                             );
                           }).toList(),
@@ -413,26 +480,10 @@ class _SuperadminDashboardPageState extends State<SuperadminDashboardPage> with 
                 ),
                 _drawerItem(
                   icon: Icons.badge_rounded,
-                  title: 'Consultants',
+                  title: 'Users',
                   onTap: () {
                     GoRouter.of(context).pop();
                     context.push(AppRoutes.employeeList);
-                  },
-                ),
-                _drawerItem(
-                  icon: Icons.person_add_alt_1_rounded,
-                  title: 'Add Admin',
-                  onTap: () {
-                    GoRouter.of(context).pop();
-                    context.push(AppRoutes.createAdmin);
-                  },
-                ),
-                _drawerItem(
-                  icon: Icons.admin_panel_settings_rounded,
-                  title: 'Admins',
-                  onTap: () {
-                    GoRouter.of(context).pop();
-                    context.push(AppRoutes.adminList);
                   },
                 ),
 
@@ -563,7 +614,9 @@ class _SuperadminDashboardPageState extends State<SuperadminDashboardPage> with 
           builder: (context, snapshot) {
             return _statCard(
               'Total Customers',
-              snapshot.connectionState == ConnectionState.waiting ? '...' : '${snapshot.data ?? 0}',
+              snapshot.connectionState == ConnectionState.waiting
+                  ? '...'
+                  : '${snapshot.data ?? 0}',
               AppColors.purple,
               Icons.business_center_rounded,
               () => context.push(AppRoutes.customerList),
@@ -576,7 +629,9 @@ class _SuperadminDashboardPageState extends State<SuperadminDashboardPage> with 
           builder: (context, snapshot) {
             return _statCard(
               'Verified Consultants',
-              snapshot.connectionState == ConnectionState.waiting ? '...' : '${snapshot.data ?? 0}',
+              snapshot.connectionState == ConnectionState.waiting
+                  ? '...'
+                  : '${snapshot.data ?? 0}',
               AppColors.blue,
               Icons.badge_rounded,
               () => context.push(AppRoutes.employeeList),
@@ -589,7 +644,9 @@ class _SuperadminDashboardPageState extends State<SuperadminDashboardPage> with 
           builder: (context, snapshot) {
             return _statCard(
               'System Administrators',
-              snapshot.connectionState == ConnectionState.waiting ? '...' : '${snapshot.data ?? 0}',
+              snapshot.connectionState == ConnectionState.waiting
+                  ? '...'
+                  : '${snapshot.data ?? 0}',
               AppColors.paid,
               Icons.admin_panel_settings_rounded,
               () => context.push(AppRoutes.adminList),
@@ -600,7 +657,13 @@ class _SuperadminDashboardPageState extends State<SuperadminDashboardPage> with 
     );
   }
 
-  Widget _statCard(String title, String value, Color color, IconData icon, VoidCallback onTap) {
+  Widget _statCard(
+    String title,
+    String value,
+    Color color,
+    IconData icon,
+    VoidCallback onTap,
+  ) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -627,17 +690,16 @@ class _SuperadminDashboardPageState extends State<SuperadminDashboardPage> with 
                   width: 60,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [color.withValues(alpha: 0.2), color.withValues(alpha: 0.05)],
+                      colors: [
+                        color.withValues(alpha: 0.2),
+                        color.withValues(alpha: 0.05),
+                      ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                     borderRadius: BorderRadius.circular(18),
                   ),
-                  child: Icon(
-                    icon,
-                    color: color,
-                    size: 30,
-                  ),
+                  child: Icon(icon, color: color, size: 30),
                 ),
                 const SizedBox(width: 20),
                 Expanded(
@@ -718,14 +780,21 @@ class _SuperadminDashboardPageState extends State<SuperadminDashboardPage> with 
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.kPrimaryColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: const Text(
                       "Global Analytics",
-                      style: TextStyle(color: AppColors.kPrimaryColor, fontSize: 12, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        color: AppColors.kPrimaryColor,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],
@@ -759,6 +828,11 @@ class _SuperadminDashboardPageState extends State<SuperadminDashboardPage> with 
           childAspectRatio: isDesktop ? 2.5 : 4.2,
           children: [
             _clickableCard(
+              title: 'Onboarding Request',
+              icon: Icons.person_add_rounded,
+              onTap: () => context.push(AppRoutes.onboardingRequest),
+            ),
+            _clickableCard(
               title: 'NCR',
               icon: Icons.report_problem_rounded,
               onTap: () => GoRouter.of(context).push(AppRoutes.ncrPage),
@@ -769,7 +843,7 @@ class _SuperadminDashboardPageState extends State<SuperadminDashboardPage> with 
               onTap: () => GoRouter.of(context).push(AppRoutes.customerList),
             ),
             _clickableCard(
-              title: 'Consultant Management',
+              title: 'User Management',
               icon: Icons.badge_rounded,
               onTap: () => GoRouter.of(context).push(AppRoutes.employeeList),
             ),
@@ -786,7 +860,8 @@ class _SuperadminDashboardPageState extends State<SuperadminDashboardPage> with 
             _clickableCard(
               title: 'Policy History',
               icon: Icons.history_rounded,
-              onTap: () => GoRouter.of(context).push(AppRoutes.globalVersionHistory),
+              onTap: () =>
+                  GoRouter.of(context).push(AppRoutes.globalVersionHistory),
             ),
             _clickableCard(
               title: 'Employees',
@@ -811,12 +886,21 @@ class _SuperadminDashboardPageState extends State<SuperadminDashboardPage> with 
     required VoidCallback onTap,
   }) {
     Color themeColor = AppColors.kPrimaryColor;
-    if (title.contains('NCR')) themeColor = Colors.orange;
-    else if (title.contains('Customer')) themeColor = Colors.indigo;
-    else if (title.contains('Consultant')) themeColor = Colors.teal;
-    else if (title.contains('Visit')) themeColor = Colors.blueGrey;
-    else if (title.contains('Policies')) themeColor = Colors.deepPurple;
-    else if (title.contains('Employees')) themeColor = Colors.pinkAccent;
+    if (title.contains('NCR')) {
+      themeColor = Colors.orange;
+    } else if (title.contains('Onboarding')) {
+      themeColor = Colors.amber;
+    } else if (title.contains('Customer')) {
+      themeColor = Colors.indigo;
+    } else if (title.contains('Consultant')) {
+      themeColor = Colors.teal;
+    } else if (title.contains('Visit')) {
+      themeColor = Colors.blueGrey;
+    } else if (title.contains('Policies')) {
+      themeColor = Colors.deepPurple;
+    } else if (title.contains('Employees')) {
+      themeColor = Colors.pinkAccent;
+    }
 
     return Container(
       decoration: BoxDecoration(
@@ -969,16 +1053,18 @@ class AnimatedBarChart extends StatelessWidget {
               },
             ),
           ),
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          rightTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
         ),
         gridData: FlGridData(
           show: true,
           drawVerticalLine: false,
-          getDrawingHorizontalLine: (value) => FlLine(
-            color: Colors.grey.shade100,
-            strokeWidth: 1,
-          ),
+          getDrawingHorizontalLine: (value) =>
+              FlLine(color: Colors.grey.shade100, strokeWidth: 1),
         ),
         borderData: FlBorderData(show: false),
         barGroups: values.asMap().entries.map((entry) {

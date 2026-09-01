@@ -20,6 +20,7 @@ import 'package:excel_plus/excel_plus.dart' as excel_pkg;
 import 'package:http/http.dart' as http;
 import 'dart:developer' as developer;
 import 'package:file_picker/file_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ExcelEditorPage extends StatefulWidget {
   final DocumentModel? document;
@@ -41,6 +42,10 @@ class _ExcelEditorPageState extends State<ExcelEditorPage> {
   String? selectedReviewerName;
   bool _isGridDirty = false; // 👈 Track content changes
   final _currentUser = getIt<HiveService>().getUser();
+
+  // 🔄 Re-upload support
+  Uint8List? selectedFileBytes;
+  String? selectedFileName;
 
   @override
   void initState() {
@@ -102,6 +107,7 @@ class _ExcelEditorPageState extends State<ExcelEditorPage> {
             field: 'col$i',
             type: PlutoColumnType.text(),
             width: 150,
+            readOnly: widget.document != null, // 🚀 Read-only for uploaded files
           ));
         }
 
@@ -160,52 +166,14 @@ class _ExcelEditorPageState extends State<ExcelEditorPage> {
       final table = excel.tables[sheetName];
 
       if (table != null) {
-        final int maxCols = table.maxColumns;
-        developer.log("📏 Table found. Columns: $maxCols, Rows: ${table.rows.length}");
-        
-        List<PlutoColumn> newColumns = [];
-        List<PlutoRow> newRows = [];
+        setState(() {
+          selectedFileBytes = bytes;
+          selectedFileName = file.name;
+          _isLoading = false;
+        });
 
-        // 1. Build Columns
-        for (int i = 0; i < maxCols; i++) {
-          newColumns.add(PlutoColumn(
-            title: 'Col ${i + 1}',
-            field: 'col$i',
-            type: PlutoColumnType.text(),
-            width: 150,
-          ));
-        }
-
-        // 2. Build Rows
-        for (var excelRow in table.rows) {
-          Map<String, PlutoCell> cells = {};
-          for (int i = 0; i < maxCols; i++) {
-            final val = i < excelRow.length ? excelRow[i]?.value?.toString() ?? "" : "";
-            cells['col$i'] = PlutoCell(value: val);
-          }
-          newRows.add(PlutoRow(cells: cells));
-        }
-
-        if (stateManager != null) {
-          developer.log("🔄 Updating existing Grid StateManager...");
-          stateManager!.setShowLoading(true);
-          stateManager!.removeColumns(stateManager!.columns);
-          stateManager!.removeAllRows();
-          stateManager!.insertColumns(0, newColumns);
-          stateManager!.insertRows(0, newRows);
-          stateManager!.setShowLoading(false);
-        } else {
-          developer.log("✨ Initializing local columns/rows for first load...");
-          setState(() {
-            columns = newColumns;
-            rows = newRows;
-          });
-        }
-        
-        developer.log("✅ Import Completed.");
-
-        if(mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Excel imported successfully")));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("New Excel selected. Click Save to upload.")));
         }
       } else {
         developer.log("⚠️ Error: No table found in the decoded Excel file.");
@@ -247,44 +215,51 @@ class _ExcelEditorPageState extends State<ExcelEditorPage> {
 
     setState(() => _isLoading = true);
     try {
-      developer.log("📊 Encoding Grid Data to XLSX...");
-      final excel = excel_pkg.Excel.createExcel();
-      final sheet = excel['Sheet1'];
+      Uint8List? finalBytes;
 
-      // Process rows from PlutoGrid
-      for (int rowIndex = 0; rowIndex < stateManager!.rows.length; rowIndex++) {
-        final plutoRow = stateManager!.rows[rowIndex];
-        for (int colIndex = 0; colIndex < stateManager!.columns.length; colIndex++) {
-          final field = stateManager!.columns[colIndex].field;
-          final value = plutoRow.cells[field]?.value?.toString() ?? "";
-          
-          sheet.updateCell(
-            excel_pkg.CellIndex.indexByColumnRow(columnIndex: colIndex, rowIndex: rowIndex),
-            excel_pkg.TextCellValue(value),
-          );
+      if (selectedFileBytes != null) {
+        // 🚀 Use re-uploaded file bytes
+        finalBytes = selectedFileBytes;
+      } else if (stateManager != null) {
+        // 🚀 Encode grid data to XLSX
+        developer.log("📊 Encoding Grid Data to XLSX...");
+        final excel = excel_pkg.Excel.createExcel();
+        final sheet = excel['Sheet1'];
+
+        for (int rowIndex = 0; rowIndex < stateManager!.rows.length; rowIndex++) {
+          final plutoRow = stateManager!.rows[rowIndex];
+          for (int colIndex = 0; colIndex < stateManager!.columns.length; colIndex++) {
+            final field = stateManager!.columns[colIndex].field;
+            final value = plutoRow.cells[field]?.value?.toString() ?? "";
+            
+            sheet.updateCell(
+              excel_pkg.CellIndex.indexByColumnRow(columnIndex: colIndex, rowIndex: rowIndex),
+              excel_pkg.TextCellValue(value),
+            );
+          }
+        }
+
+        final List<int>? fileBytes = excel.encode();
+        if (fileBytes != null) {
+          finalBytes = Uint8List.fromList(fileBytes);
         }
       }
 
-      final List<int>? fileBytes = excel.encode();
-      if (fileBytes == null) {
-        developer.log("❌ Error: Excel encoding returned null bytes.");
-        throw Exception("Failed to encode excel");
+      if (finalBytes == null && widget.document == null) {
+        throw Exception("No content to save");
       }
-      
-      final Uint8List uint8Bytes = Uint8List.fromList(fileBytes);
-      developer.log("📂 XLSX Encoded successfully. Size: ${uint8Bytes.length} bytes");
 
       developer.log("☁️ Dispatching save command to DocumentCubit...");
       await context.read<DocumentCubit>().saveExcelDocument(
         docId: widget.document?.docId,
         title: titleCtrl.text.trim(),
-        bytes: uint8Bytes,
+        bytes: finalBytes ?? Uint8List(0), // Repository handles null/empty if docId exists
         customerId: selectedCustomerId,
         currentFilePath: widget.document?.filePath,
         assignedReviewerId: selectedReviewerId,
         assignedReviewerName: selectedReviewerName,
         changeDescription: changeDescriptionCtrl.text.trim(),
-        isContentChanged: _isGridDirty, // 👈 Pass the dirty flag
+        isContentChanged: selectedFileBytes != null || _isGridDirty,
       );
 
       developer.log("✅ Save Process Completed Successfully.");
@@ -327,28 +302,10 @@ class _ExcelEditorPageState extends State<ExcelEditorPage> {
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
                     children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: AppTextFieldWidget(
-                              hintText: "Policy Title",
-                              textFieldController: titleCtrl,
-                              isRequired: true,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          ElevatedButton.icon(
-                            onPressed: _handleImport,
-                            icon: const Icon(Icons.file_upload),
-                            label: const Text("Import File"),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blueGrey,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            ),
-                          ),
-                        ],
+                      AppTextFieldWidget(
+                        hintText: "Policy Title",
+                        textFieldController: titleCtrl,
+                        isRequired: true,
                       ),
                       const SizedBox(height: 12),
 
@@ -395,7 +352,7 @@ class _ExcelEditorPageState extends State<ExcelEditorPage> {
                               builder: (context, consultantState) {
                                 if (consultantState is ConsultantLoaded) {
                                   return DropdownButtonFormField<String>(
-                                    value: selectedReviewerId, // 🚀 Pre-select assigned consultant
+                                    initialValue: selectedReviewerId, // 🚀 Pre-select assigned consultant
                                     decoration: InputDecoration(
                                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -439,21 +396,57 @@ class _ExcelEditorPageState extends State<ExcelEditorPage> {
                       border: Border.all(color: Colors.grey.shade300),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: PlutoGrid(
-                      columns: columns,
-                      rows: rows,
-                      onChanged: (event) => _isGridDirty = true, // 👈 Mark as dirty on edit
-                      onLoaded: (event) {
-                        stateManager = event.stateManager;
-                        stateManager!.setSelectingMode(PlutoGridSelectingMode.cell);
-                      },
-                      configuration: const PlutoGridConfiguration(
-                        style: PlutoGridStyleConfig(
-                          gridBorderColor: Colors.transparent,
-                          columnTextStyle: TextStyle(fontWeight: FontWeight.bold),
+                    child: widget.document != null 
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(24),
+                                decoration: BoxDecoration(
+                                  color: AppColors.kPrimaryLightColor.withValues(alpha: 0.5),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.table_view_rounded, size: 64, color: AppColors.kPrimaryColor),
+                              ),
+                              const SizedBox(height: 24),
+                              Text(
+                                selectedFileName ?? widget.document!.fileName,
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                              ),
+                              const SizedBox(height: 8),
+                              const Text(
+                                "Uploaded Excel Policy",
+                                style: TextStyle(color: AppColors.greyTextColor),
+                              ),
+                              const SizedBox(height: 24),
+                              OutlinedButton.icon(
+                                onPressed: () => launchUrl(Uri.parse(widget.document!.fileUrl)),
+                                icon: const Icon(Icons.download_rounded),
+                                label: const Text("Download & View File"),
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : PlutoGrid(
+                          columns: columns,
+                          rows: rows,
+                          onChanged: (event) => _isGridDirty = true,
+                          onLoaded: (event) {
+                            stateManager = event.stateManager;
+                            stateManager!.setSelectingMode(PlutoGridSelectingMode.cell);
+                          },
+                          configuration: const PlutoGridConfiguration(
+                            style: PlutoGridStyleConfig(
+                              gridBorderColor: Colors.transparent,
+                              columnTextStyle: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
                   ),
                 ),
                 
@@ -462,29 +455,10 @@ class _ExcelEditorPageState extends State<ExcelEditorPage> {
                   color: Colors.white,
                   child: Row(
                     children: [
-                      _actionBtn(Icons.add_box, "Row", () {
-                        stateManager?.insertRows(stateManager!.currentRowIdx ?? 0 + 1, [stateManager!.getNewRow()]);
-                        _isGridDirty = true; // 👈 Mark as dirty
-                      }, Colors.blue),
-                      const SizedBox(width: 8),
-                      _actionBtn(Icons.view_column, "Col", () {
-                         final String field = 'col${stateManager!.columns.length}';
-                         stateManager?.insertColumns(stateManager!.columns.length, [
-                           PlutoColumn(
-                             title: 'Col ${stateManager!.columns.length + 1}',
-                             field: field,
-                             type: PlutoColumnType.text(),
-                             width: 150,
-                           )
-                         ]);
-                         // Update all existing rows to have the new cell field
-                         for (var row in stateManager!.rows) {
-                           row.cells[field] = PlutoCell(value: '');
-                         }
-                         stateManager?.notifyListeners();
-                         _isGridDirty = true; // 👈 Mark as dirty
-                      }, Colors.orange),
-                      const SizedBox(width: 8),
+                      if (widget.document != null) ...[
+                        _actionBtn(Icons.upload_file, "Re-upload", _handleImport, Colors.blue),
+                        const SizedBox(width: 8),
+                      ],
                       _actionBtn(Icons.save, "SAVE", _handleSave, AppColors.purple),
                     ],
                   ),

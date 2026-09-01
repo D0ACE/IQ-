@@ -41,7 +41,8 @@ class DocumentCubit extends Cubit<DocumentState> {
 
   Future<void> addDocument({
     required String title,
-    required File file,
+    required Uint8List bytes,
+    required String fileName,
     String? customerId,
     String? assignedReviewerId,
     String? assignedReviewerName,
@@ -51,7 +52,8 @@ class DocumentCubit extends Cubit<DocumentState> {
       developer.log("Adding policy to Supabase/Firestore: $title for customer: $customerId");
       await _repository.addDocument(
         title: title,
-        file: file,
+        bytes: bytes,
+        fileName: fileName,
         customerId: customerId,
         assignedReviewerId: assignedReviewerId,
         assignedReviewerName: assignedReviewerName,
@@ -127,7 +129,8 @@ class DocumentCubit extends Cubit<DocumentState> {
   Future<void> updateDocument({
     required String docId,
     required String title,
-    File? newFile,
+    Uint8List? newFileBytes,
+    String? newFileName,
     String? currentFilePath,
     String? customerId,
     String? assignedReviewerId,
@@ -140,7 +143,8 @@ class DocumentCubit extends Cubit<DocumentState> {
       await _repository.updateDocument(
         docId: docId,
         title: title,
-        newFile: newFile,
+        newFileBytes: newFileBytes,
+        newFileName: newFileName,
         currentFilePath: currentFilePath,
         customerId: customerId,
         assignedReviewerId: assignedReviewerId,

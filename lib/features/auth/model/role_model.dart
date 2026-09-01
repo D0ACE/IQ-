@@ -19,10 +19,18 @@ class RoleModel {
   }
 
   factory RoleModel.fromFirestore(Map<String, dynamic> json) {
+    final String rId = json['roleId'] ?? '';
+    String rName = json['roleName'] ?? '';
+
+    // 🚀 Map "User" (Role 2) to "Consultant" for display
+    if (rId == '2' || rName.toLowerCase() == 'user') {
+      rName = 'Consultant';
+    }
+
     return RoleModel(
-      id: json['roleId'] ?? '',
+      id: rId,
       customerId: '',
-      name: json['roleName'] ?? '',
+      name: rName,
     );
   }
 }

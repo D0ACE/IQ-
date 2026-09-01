@@ -125,22 +125,22 @@ class DocumentRepository {
 
   Future<void> addDocument({
     required String title,
-    required File file,
+    required Uint8List bytes,
+    required String fileName,
     String? customerId,
     String? assignedReviewerId,
     String? assignedReviewerName,
     String? assignedReviewerEmail,
   }) async {
-    final fileName = p.basename(file.path);
-    final extension = p.extension(file.path);
+    final extension = p.extension(fileName);
     final user = getIt<HiveService>().getUser();
     final userEmail = user?.email ?? 'unknown';
     final userId = user?.userId ?? 'unknown';
     
     final String supabasePath = 'policies/${DateTime.now().millisecondsSinceEpoch}_$fileName';
-    await _supabase.storage.from(SupabaseConfig.bucketName).upload(
+    await _supabase.storage.from(SupabaseConfig.bucketName).uploadBinary(
       supabasePath,
-      file,
+      bytes,
       fileOptions: const FileOptions(cacheControl: '3600', upsert: false),
     );
     
@@ -304,7 +304,8 @@ class DocumentRepository {
   Future<void> updateDocument({
     required String docId,
     required String title,
-    File? newFile,
+    Uint8List? newFileBytes,
+    String? newFileName,
     String? currentFilePath,
     String? customerId,
     String? assignedReviewerId,
@@ -326,7 +327,7 @@ class DocumentRepository {
       'updated_at': FieldValue.serverTimestamp(),
     };
 
-    if (newFile != null) {
+    if (newFileBytes != null && newFileName != null) {
       if (currentFilePath != null && currentFilePath.isNotEmpty) {
         try {
           await _supabase.storage.from(SupabaseConfig.bucketName).remove([currentFilePath]);
@@ -335,16 +336,15 @@ class DocumentRepository {
         }
       }
 
-      final fileName = p.basename(newFile.path);
-      final extension = p.extension(newFile.path);
-      final String supabasePath = 'policies/${DateTime.now().millisecondsSinceEpoch}_$fileName';
+      final extension = p.extension(newFileName);
+      final String supabasePath = 'policies/${DateTime.now().millisecondsSinceEpoch}_$newFileName';
       
-      await _supabase.storage.from(SupabaseConfig.bucketName).upload(supabasePath, newFile);
+      await _supabase.storage.from(SupabaseConfig.bucketName).uploadBinary(supabasePath, newFileBytes);
       
       final String fileUrl = _supabase.storage.from(SupabaseConfig.bucketName).getPublicUrl(supabasePath);
 
       updateData['file_url'] = fileUrl;
-      updateData['file_name'] = fileName;
+      updateData['file_name'] = newFileName;
       updateData['file_path'] = supabasePath;
       updateData['file_type'] = extension;
     }
@@ -442,51 +442,56 @@ class DocumentRepository {
     bool isConsultant = false,
     String? customerId,
   }) async {
-    // 🚀 Collection Group query to fetch history from ALL documents at once
-    Query query = _firestore.collectionGroup('version_history');
+    try {
+      // 🚀 Collection Group query to fetch history from ALL documents at once
+      Query query = _firestore.collectionGroup('version_history');
 
-    if (isConsultant && userId != null) {
-      final docs = await getDocuments(userId: userId, isConsultant: true);
-      final docIds = docs.map((d) => d.docId).toList();
-      if (docIds.isEmpty) return [];
-      query = query.where('docId', whereIn: docIds);
-    } else if (customerId != null) {
-      final docs = await getDocuments(customerId: customerId);
-      final docIds = docs.map((d) => d.docId).toList();
-      if (docIds.isEmpty) return [];
-      query = query.where('docId', whereIn: docIds);
-    }
-
-    final snapshot = await query.orderBy('performedDate', descending: true).get();
-    
-    List<VersionHistoryModel> history = [];
-    
-    // Map to cache document titles to avoid repeated DB hits
-    Map<String, String> titleCache = {};
-
-    for (var doc in snapshot.docs) {
-      final data = doc.data() as Map<String, dynamic>;
-      String? title = data['docTitle'];
-      final String dId = data['docId'] ?? '';
-
-      // If title is missing in history entry, fetch from parent document
-      if ((title == null || title.isEmpty) && dId.isNotEmpty) {
-        if (titleCache.containsKey(dId)) {
-          title = titleCache[dId];
-        } else {
-          try {
-            final parentDoc = await _firestore.collection('documents').doc(dId).get();
-            title = parentDoc.data()?['title'] ?? 'Unknown Policy';
-            titleCache[dId] = title!;
-          } catch (e) {
-            title = 'Unknown Policy';
-          }
-        }
+      if (isConsultant && userId != null) {
+        final docs = await getDocuments(userId: userId, isConsultant: true);
+        final docIds = docs.map((d) => d.docId).toList();
+        if (docIds.isEmpty) return [];
+        query = query.where('docId', whereIn: docIds);
+      } else if (customerId != null) {
+        final docs = await getDocuments(customerId: customerId);
+        final docIds = docs.map((d) => d.docId).toList();
+        if (docIds.isEmpty) return [];
+        query = query.where('docId', whereIn: docIds);
       }
 
-      history.add(VersionHistoryModel.fromFirestore(doc, docTitle: title));
+      final snapshot = await query.orderBy('performedDate', descending: true).get();
+      
+      List<VersionHistoryModel> history = [];
+      
+      // Map to cache document titles to avoid repeated DB hits
+      Map<String, String> titleCache = {};
+
+      for (var doc in snapshot.docs) {
+        final data = doc.data() as Map<String, dynamic>;
+        String? title = data['docTitle'];
+        final String dId = data['docId'] ?? '';
+
+        // If title is missing in history entry, fetch from parent document
+        if ((title == null || title.isEmpty) && dId.isNotEmpty) {
+          if (titleCache.containsKey(dId)) {
+            title = titleCache[dId];
+          } else {
+            try {
+              final parentDoc = await _firestore.collection('documents').doc(dId).get();
+              title = parentDoc.data()?['title'] ?? 'Unknown Policy';
+              titleCache[dId] = title!;
+            } catch (e) {
+              title = 'Unknown Policy';
+            }
+          }
+        }
+
+        history.add(VersionHistoryModel.fromFirestore(doc, docTitle: title));
+      }
+
+      return history;
+    } catch (e) {
+      developer.log("Error fetching global version history: $e");
+      return [];
     }
-    
-    return history;
   }
 }

@@ -25,7 +25,8 @@ class ConsultantDashboardPage extends StatefulWidget {
       _ConsultantDashboardPageState();
 }
 
-class _ConsultantDashboardPageState extends State<ConsultantDashboardPage> with TickerProviderStateMixin {
+class _ConsultantDashboardPageState extends State<ConsultantDashboardPage>
+    with TickerProviderStateMixin {
   final user = getIt<HiveService>().getUser();
 
   late AnimationController _animationController;
@@ -45,13 +46,13 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage> with 
       curve: Curves.easeIn,
     );
 
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.05),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOutCubic,
-    ));
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.05), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
 
     context.read<VisitorSummaryCubit>().loadVisitorSummaries();
     // 🚀 Start listening to NCR data for the graph
@@ -78,14 +79,20 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage> with 
           Positioned(
             top: -50,
             right: -50,
-            child: _buildDecorativeCircle(200, AppColors.kPrimaryColor.withValues(alpha: 0.03)),
+            child: _buildDecorativeCircle(
+              200,
+              AppColors.kPrimaryColor.withValues(alpha: 0.03),
+            ),
           ),
           Positioned(
             bottom: 100,
             left: -30,
-            child: _buildDecorativeCircle(150, AppColors.secondary.withValues(alpha: 0.03)),
+            child: _buildDecorativeCircle(
+              150,
+              AppColors.secondary.withValues(alpha: 0.03),
+            ),
           ),
-          
+
           FadeTransition(
             opacity: _fadeAnimation,
             child: SlideTransition(
@@ -151,10 +158,7 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage> with 
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: color,
-      ),
+      decoration: BoxDecoration(shape: BoxShape.circle, color: color),
     );
   }
 
@@ -193,7 +197,11 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage> with 
               top: -50,
               child: Opacity(
                 opacity: 0.1,
-                child: Icon(Icons.analytics_rounded, size: 250, color: Colors.white),
+                child: Icon(
+                  Icons.analytics_rounded,
+                  size: 250,
+                  color: Colors.white,
+                ),
               ),
             ),
             Padding(
@@ -208,9 +216,15 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage> with 
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.1),
+                          ),
                         ),
-                        child: const Icon(Icons.auto_graph_rounded, color: Colors.white, size: 28),
+                        child: const Icon(
+                          Icons.auto_graph_rounded,
+                          color: Colors.white,
+                          size: 28,
+                        ),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
@@ -245,7 +259,10 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage> with 
                   ),
                   const SizedBox(height: 24),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.black.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
@@ -253,7 +270,11 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage> with 
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.bolt_rounded, color: Colors.amber, size: 14),
+                        const Icon(
+                          Icons.bolt_rounded,
+                          color: Colors.amber,
+                          size: 14,
+                        ),
                         const SizedBox(width: 8),
                         const Text(
                           "Consultancy operations are active",
@@ -275,8 +296,6 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage> with 
     );
   }
 
-
-
   /// 🌈 Drawer
   Widget _buildBeautifulDrawer() {
     final String consultantName = user?.userName ?? "Consultant";
@@ -297,10 +316,14 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage> with 
             width: double.infinity,
             decoration: BoxDecoration(
               color: AppColors.kPrimaryColor,
-              borderRadius: const BorderRadius.only(topRight: Radius.circular(30)),
+              borderRadius: const BorderRadius.only(
+                topRight: Radius.circular(30),
+              ),
             ),
             child: ClipRRect(
-              borderRadius: const BorderRadius.only(topRight: Radius.circular(30)),
+              borderRadius: const BorderRadius.only(
+                topRight: Radius.circular(30),
+              ),
               child: Stack(
                 children: [
                   Positioned(
@@ -308,7 +331,11 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage> with 
                     top: -20,
                     child: Opacity(
                       opacity: 0.15,
-                      child: Icon(Icons.manage_accounts_rounded, size: 150, color: Colors.white),
+                      child: Icon(
+                        Icons.manage_accounts_rounded,
+                        size: 150,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                   Padding(
@@ -318,7 +345,10 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage> with 
                         final consultantId = user?.userId;
                         if (consultantId != null && consultantId.isNotEmpty) {
                           GoRouter.of(context).pop();
-                          GoRouter.of(context).push(AppRoutes.consultantProfile, extra: consultantId);
+                          GoRouter.of(context).push(
+                            AppRoutes.consultantProfile,
+                            extra: consultantId,
+                          );
                         }
                       },
                       child: Column(
@@ -329,9 +359,15 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage> with 
                             decoration: BoxDecoration(
                               color: Colors.white.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.1),
+                              ),
                             ),
-                            child: const Icon(Icons.admin_panel_settings_rounded, color: Colors.white, size: 28),
+                            child: const Icon(
+                              Icons.admin_panel_settings_rounded,
+                              color: Colors.white,
+                              size: 28,
+                            ),
                           ),
                           const SizedBox(height: 20),
                           Text(
@@ -353,7 +389,10 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage> with 
                           ),
                           const SizedBox(height: 12),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.white.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(8),
@@ -431,7 +470,9 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage> with 
                   onTap: () {
                     if ((user?.userId ?? '').isNotEmpty) {
                       GoRouter.of(context).pop();
-                      GoRouter.of(context).push(AppRoutes.assignCustomers, extra: user?.userId);
+                      GoRouter.of(
+                        context,
+                      ).push(AppRoutes.assignCustomers, extra: user?.userId);
                     }
                   },
                 ),
@@ -531,15 +572,25 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage> with 
         _sectionTitle('Quick Statistics'),
         const SizedBox(height: 14),
         BlocBuilder<CustomerListCubit, CustomerListState>(
-            builder: (c, state) {
-              if (state is CustomerListLoading) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              int count=(state is CustomerListLoaded) ?state.customers.length:0;
-              return _statCard('Assigned Customers', '$count', AppColors.purple, Icons.business_center_rounded, () {
-                GoRouter.of(context).push(AppRoutes.assignCustomers, extra: user?.userId);
-              });
-          }
+          builder: (c, state) {
+            if (state is CustomerListLoading) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            int count = (state is CustomerListLoaded)
+                ? state.customers.length
+                : 0;
+            return _statCard(
+              'Assigned Customers',
+              '$count',
+              AppColors.purple,
+              Icons.business_center_rounded,
+              () {
+                GoRouter.of(
+                  context,
+                ).push(AppRoutes.assignCustomers, extra: user?.userId);
+              },
+            );
+          },
         ),
         const SizedBox(height: 16),
         FutureBuilder<int>(
@@ -549,29 +600,48 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage> with 
               return const Center(child: CircularProgressIndicator());
             }
             final count = snapshot.data ?? 0;
-            return _statCard('Total NCR Managed', '$count', AppColors.paid, Icons.report_problem_rounded, () {
-              GoRouter.of(context).push(AppRoutes.ncrPage);
-            });
+            return _statCard(
+              'Total NCR Managed',
+              '$count',
+              AppColors.paid,
+              Icons.report_problem_rounded,
+              () {
+                GoRouter.of(context).push(AppRoutes.ncrPage);
+              },
+            );
           },
         ),
         const SizedBox(height: 16),
         BlocBuilder<VisitorSummaryCubit, VisitorSummaryState>(
-            builder: (c, state) {
-              if (state is VisitorSummaryLoading) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              int count=(state is VisitorSummaryLoaded) ?state.list.length:0;
-              return _statCard('Visitor Summaries', '$count', AppColors.blue, Icons.event_available_rounded, () {
-                GoRouter.of(context).push(AppRoutes.visitorSummaryList, extra: user?.userId);
-              });
+          builder: (c, state) {
+            if (state is VisitorSummaryLoading) {
+              return const Center(child: CircularProgressIndicator());
             }
+            int count = (state is VisitorSummaryLoaded) ? state.list.length : 0;
+            return _statCard(
+              'Visitor Summaries',
+              '$count',
+              AppColors.blue,
+              Icons.event_available_rounded,
+              () {
+                GoRouter.of(
+                  context,
+                ).push(AppRoutes.visitorSummaryList, extra: user?.userId);
+              },
+            );
+          },
         ),
       ],
     );
   }
 
-
-  Widget _statCard(String title, String value, Color color, IconData icon, VoidCallback onTap) {
+  Widget _statCard(
+    String title,
+    String value,
+    Color color,
+    IconData icon,
+    VoidCallback onTap,
+  ) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -598,17 +668,16 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage> with 
                   width: 60,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [color.withValues(alpha: 0.2), color.withValues(alpha: 0.05)],
+                      colors: [
+                        color.withValues(alpha: 0.2),
+                        color.withValues(alpha: 0.05),
+                      ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                     borderRadius: BorderRadius.circular(18),
                   ),
-                  child: Icon(
-                    icon,
-                    color: color,
-                    size: 30,
-                  ),
+                  child: Icon(icon, color: color, size: 30),
                 ),
                 const SizedBox(width: 20),
                 Expanded(
@@ -689,14 +758,21 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage> with 
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.kPrimaryColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: const Text(
                       "Global Analytics",
-                      style: TextStyle(color: AppColors.kPrimaryColor, fontSize: 12, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        color: AppColors.kPrimaryColor,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],
@@ -737,7 +813,8 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage> with 
             _clickableCard(
               title: 'Visitor Summary',
               icon: Icons.event_available_rounded,
-              onTap: () => GoRouter.of(context).push(AppRoutes.visitorSummaryList),
+              onTap: () =>
+                  GoRouter.of(context).push(AppRoutes.visitorSummaryList),
             ),
             _clickableCard(
               title: 'Policies & Procedures',
@@ -747,7 +824,8 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage> with 
             _clickableCard(
               title: 'Policy History',
               icon: Icons.history_rounded,
-              onTap: () => GoRouter.of(context).push(AppRoutes.globalVersionHistory),
+              onTap: () =>
+                  GoRouter.of(context).push(AppRoutes.globalVersionHistory),
             ),
             _clickableCard(
               title: 'Employees',
@@ -757,7 +835,9 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage> with 
             _clickableCard(
               title: 'Assign Customers',
               icon: Icons.person_add_alt_1_rounded,
-              onTap: () => GoRouter.of(context).push(AppRoutes.assignCustomers, extra: user?.userId),
+              onTap: () => GoRouter.of(
+                context,
+              ).push(AppRoutes.assignCustomers, extra: user?.userId),
             ),
             //Todo Video
             _clickableCard(
@@ -777,12 +857,19 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage> with 
     required VoidCallback onTap,
   }) {
     Color themeColor = AppColors.kPrimaryColor;
-    if (title.contains('NCR')) themeColor = Colors.orange;
-    else if (title.contains('Visitor')) themeColor = Colors.indigo;
-    else if (title.contains('Policies')) themeColor = Colors.teal;
-    else if (title.contains('History')) themeColor = Colors.blueGrey;
-    else if (title.contains('Employees')) themeColor = Colors.pinkAccent;
-    else if (title.contains('Assign')) themeColor = Colors.deepPurple;
+    if (title.contains('NCR')) {
+      themeColor = Colors.orange;
+    } else if (title.contains('Visitor')) {
+      themeColor = Colors.indigo;
+    } else if (title.contains('Policies')) {
+      themeColor = Colors.teal;
+    } else if (title.contains('History')) {
+      themeColor = Colors.blueGrey;
+    } else if (title.contains('Employees')) {
+      themeColor = Colors.pinkAccent;
+    } else if (title.contains('Assign')) {
+      themeColor = Colors.deepPurple;
+    }
 
     return Container(
       decoration: BoxDecoration(
@@ -935,16 +1022,18 @@ class AnimatedBarChart extends StatelessWidget {
               },
             ),
           ),
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          rightTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
         ),
         gridData: FlGridData(
           show: true,
           drawVerticalLine: false,
-          getDrawingHorizontalLine: (value) => FlLine(
-            color: Colors.grey.shade100,
-            strokeWidth: 1,
-          ),
+          getDrawingHorizontalLine: (value) =>
+              FlLine(color: Colors.grey.shade100, strokeWidth: 1),
         ),
         borderData: FlBorderData(show: false),
         barGroups: values.asMap().entries.map((entry) {

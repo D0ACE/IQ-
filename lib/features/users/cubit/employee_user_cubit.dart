@@ -5,6 +5,8 @@ import 'package:iq_plus/features/users/cubit/employee_user_state.dart';
 import 'package:iq_plus/features/users/models/employe_user.dart';
 import 'package:iq_plus/features/users/repository/user_repository.dart';
 import 'package:iq_plus/core/email_services/email_service.dart';
+import 'package:iq_plus/core/local_storage/hive_service.dart';
+import 'package:iq_plus/di/service_locator.dart';
 
 class UserCubit extends Cubit<UserState> {
   final UserRepository repository;
@@ -63,13 +65,16 @@ class UserCubit extends Cubit<UserState> {
     }
   }
 
-  /// 🔹 LOAD USERS (Consultants)
+  /// 🔹 LOAD USERS (Admins/Consultants based on viewer role)
   Future<void> loadUsers() async {
     try {
       _isEmployeeList = false;
       _lastCustomerIds = null;
       emit(UserLoading());
-      users = await repository.fetchUsers();
+      
+      final currentUser = getIt<HiveService>().getUser();
+      users = await repository.fetchUsers(viewerRoleId: currentUser?.roleId);
+      
       emit(UserLoaded(users));
     } catch (e) {
       emit(UserError(e.toString()));

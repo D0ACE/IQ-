@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:iq_plus/common/utility/utility.dart';
 import 'package:iq_plus/core/local_storage/hive_service.dart';
@@ -15,13 +16,20 @@ class UserRepository {
   // 🔹 Fetch roles
   Future<List<RoleModel>> fetchRoles() async {
     final UserModel? userLoginDetails = getIt<HiveService>().getUser();
-    if(Utility.isSuperAdmin(userLoginDetails?.roleId)){
-      final snapshot = await firestore.collection('roles') .where('roleId', whereNotIn: ['0']).get();
+    
+    // 🚀 Only Allow "Admin" and "User" (formerly Consultant) in the dropdown
+    if (Utility.isSuperAdmin(userLoginDetails?.roleId)) {
+      final snapshot = await firestore
+          .collection('roles')
+          .where('roleId', whereIn: ['1', '2']).get();
       return snapshot.docs
           .map((doc) => RoleModel.fromFirestore(doc.data()))
           .toList();
-    }else{
-      final snapshot = await firestore.collection('roles') .where('roleId', whereNotIn: ['0','1']).get();
+    } else {
+      // Admins can only add "User" (formerly Consultant)
+      final snapshot = await firestore
+          .collection('roles')
+          .where('roleId', isEqualTo: '2').get();
       return snapshot.docs
           .map((doc) => RoleModel.fromFirestore(doc.data()))
           .toList();
@@ -76,33 +84,46 @@ class UserRepository {
     }
   }
 
-  // 🔹 Fetch Users (System Consultants)
-  Future<List<EmployeeUserModel>> fetchUsers() async {
-    final snapshot = await firestore
-        .collection('users')
-        .where('roleId', isEqualTo: AppConst.consultantRole) // Only Consultants (Role 2)
-        .get();
-    return snapshot.docs
-        .map((doc) => EmployeeUserModel.fromFirestore(doc.id, doc.data()))
-        .toList();
-  }
+  // 🔹 Fetch Users (Filtered based on viewer role)
+  Future<List<EmployeeUserModel>> fetchUsers({String? viewerRoleId}) async {
+    Query query = firestore.collection('users');
 
-  // 🔹 Fetch Employees (Role 4)
-  Future<List<EmployeeUserModel>> fetchEmployees({List<String>? customerIds, String? createdBy}) async {
-    Query query = firestore.collectionGroup('employees');
-
-    if (customerIds != null && customerIds.isNotEmpty) {
-      query = query.where('customerId', whereIn: customerIds);
-    }
-
-    if (createdBy != null && createdBy.isNotEmpty) {
-      query = query.where('createdBy', isEqualTo: createdBy);
+    if (Utility.isSuperAdmin(viewerRoleId)) {
+      // 🚀 Super Admin sees both Admins and Consultants
+      query = query.where('roleId', whereIn: [AppConst.adminRole, AppConst.consultantRole]);
+    } else {
+      // 🚀 Admins (or others) only see Consultants
+      query = query.where('roleId', isEqualTo: AppConst.consultantRole);
     }
 
     final snapshot = await query.get();
     return snapshot.docs
         .map((doc) => EmployeeUserModel.fromFirestore(doc.id, doc.data() as Map<String, dynamic>))
         .toList();
+  }
+
+  // 🔹 Fetch Employees (Role 4)
+  Future<List<EmployeeUserModel>> fetchEmployees({List<String>? customerIds, String? createdBy}) async {
+    try {
+      Query query = firestore.collectionGroup('employees');
+
+      if (customerIds != null && customerIds.isNotEmpty) {
+        query = query.where('customerId', whereIn: customerIds);
+      }
+
+      if (createdBy != null && createdBy.isNotEmpty) {
+        query = query.where('createdBy', isEqualTo: createdBy);
+      }
+
+      final snapshot = await query.get();
+      return snapshot.docs
+          .map((doc) => EmployeeUserModel.fromFirestore(doc.id, doc.data() as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      developer.log("Error fetching employees: $e");
+      // Return empty list if index is missing to prevent UI crash
+      return [];
+    }
   }
 
   // 🔹 Delete User
@@ -174,9 +195,24 @@ class UserRepository {
   }
 
   Future<int> getTotalActiveUserCount() async {
-    final users = await firestore.collection('users').where('blockStatus', isEqualTo: false).count().get();
-    final customers = await firestore.collection('customers').where('isProfileApproved', isEqualTo: true).count().get();
-    final employees = await firestore.collectionGroup('employees').where('blockStatus', isEqualTo: false).count().get();
-    return (users.count ?? 0) + (customers.count ?? 0) + (employees.count ?? 0);
+    try {
+      final users = await firestore.collection('users').where('blockStatus', isEqualTo: false).count().get();
+      final customers = await firestore.collection('customers').where('isProfileApproved', isEqualTo: true).count().get();
+      
+      // 🚀 Wrap collectionGroup in try-catch to prevent crash if index is missing
+      int employeeCount = 0;
+      try {
+        final employees = await firestore.collectionGroup('employees').where('blockStatus', isEqualTo: false).count().get();
+        employeeCount = employees.count ?? 0;
+      } catch (e) {
+        developer.log("Firestore Index Error for employees blockStatus: $e");
+        // Fallback or just return 0 for now until index is created
+      }
+      
+      return (users.count ?? 0) + (customers.count ?? 0) + employeeCount;
+    } catch (e) {
+      developer.log("Error calculating active users: $e");
+      return 0;
+    }
   }
 }

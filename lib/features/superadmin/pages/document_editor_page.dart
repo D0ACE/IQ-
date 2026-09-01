@@ -24,9 +24,11 @@ import 'package:flutter_quill_extensions/flutter_quill_extensions.dart';
 import 'package:docx_creator/docx_creator.dart';
 import 'package:flutter_quill_delta_from_html/flutter_quill_delta_from_html.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 // 📑 PDF & Excel Imports
 import 'package:syncfusion_flutter_pdf/pdf.dart' as sf_pdf;
+import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 
 class DocumentEditorPage extends StatefulWidget {
   final dynamic document;
@@ -48,6 +50,10 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
   String? selectedReviewerId;
   String? selectedReviewerName;
   final _currentUser = getIt<HiveService>().getUser();
+
+  // 🔄 Re-upload support
+  Uint8List? selectedFileBytes;
+  String? selectedFileName;
 
   // 🔄 Change Tracking
   String? _initialTitle;
@@ -144,6 +150,9 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
     if (!mounted) return;
     setState(() {
       _controller.document = Document.fromDelta(_ensureNewline(delta));
+      if (widget.document != null && widget.document.fileType.toLowerCase() != '.quill') {
+        _controller.readOnly = true;
+      }
     });
   }
 
@@ -177,7 +186,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
     return Scaffold(
       backgroundColor: AppColors.scaffoldBg,
       appBar: CommonAppBar(
-        title: widget.document == null ? 'Create Policy & Procedure' : 'Edit Policy & Procedure',
+        title: widget.document == null ? 'Create Policy' : 'Edit Policy',
       ),
       body: Stack(
         children: [
@@ -240,7 +249,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
                               builder: (context, consultantState) {
                                 if (consultantState is ConsultantLoaded) {
                                   return DropdownButtonFormField<String>(
-                                    value: selectedReviewerId, // 🚀 Pre-select assigned consultant
+                                    initialValue: selectedReviewerId, // 🚀 Pre-select assigned consultant
                                     decoration: InputDecoration(
                                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -278,95 +287,145 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
                 
                 const Divider(height: 1),
 
-                QuillSimpleToolbar(
-                  controller: _controller,
-                  config: QuillSimpleToolbarConfig(
-                    showSearchButton: true,
-                    showFontFamily: true,
-                    showFontSize: true,
-                    showBoldButton: true,
-                    showItalicButton: true,
-                    showUnderLineButton: true,
-                    showStrikeThrough: true,
-                    showColorButton: true,
-                    showBackgroundColorButton: true,
-                    showListNumbers: true,
-                    showListBullets: true,
-                    showListCheck: true,
-                    showCodeBlock: true,
-                    showQuote: true,
-                    showIndent: true,
-                    showLink: true,
-                    showDirection: true,
-                    showAlignmentButtons: true,
-                    showUndo: true,
-                    showRedo: true,
-                    multiRowsDisplay: true,
-                    embedButtons: _toolbarEmbedButtons,
-                  ),
-                ),
-                
-                const Divider(height: 1),
-
-                // 🖥 Editor Section (Expanded to take finite height)
-                Expanded(
-                  child: Container(
-                    margin: const EdgeInsets.all(16),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey.shade200),
+                // 🖥 Editor / Preview Section
+                if (widget.document != null && widget.document.fileType.toLowerCase() != '.quill')
+                  Expanded(
+                    child: Container(
+                      margin: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.shade200),
+                      ),
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(24),
+                              decoration: BoxDecoration(
+                                color: AppColors.kPrimaryLightColor.withValues(alpha: 0.5),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                _getFileIcon(widget.document.fileType),
+                                size: 64,
+                                color: AppColors.kPrimaryColor,
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                            Text(
+                              selectedFileName ?? widget.document.fileName,
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                            ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              "Uploaded Policy File",
+                              style: TextStyle(color: AppColors.greyTextColor),
+                            ),
+                            const SizedBox(height: 24),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                OutlinedButton.icon(
+                                  onPressed: () => launchUrl(Uri.parse(widget.document.fileUrl)),
+                                  icon: const Icon(Icons.download_rounded),
+                                  label: const Text("Download & View File"),
+                                  style: OutlinedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                ElevatedButton.icon(
+                                  onPressed: _importFromFile,
+                                  icon: const Icon(Icons.upload_file_rounded),
+                                  label: const Text("Re-upload"),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.kPrimaryColor,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                    child: QuillEditor.basic(
-                      controller: _controller,
-                      focusNode: _focusNode,
-                      scrollController: _scrollController,
-                      config: QuillEditorConfig(
-                        placeholder: 'Start typing policy content...',
-                        autoFocus: false,
-                        expands: true,
-                        padding: EdgeInsets.zero,
-                        embedBuilders: _editorEmbedBuilders,
+                  )
+                else ...[
+                  // Standard Editor for .quill or New Documents
+                  QuillSimpleToolbar(
+                    controller: _controller,
+                    config: QuillSimpleToolbarConfig(
+                      showSearchButton: true,
+                      showFontFamily: true,
+                      showFontSize: true,
+                      showBoldButton: true,
+                      showItalicButton: true,
+                      showUnderLineButton: true,
+                      showStrikeThrough: true,
+                      showColorButton: true,
+                      showBackgroundColorButton: true,
+                      showListNumbers: true,
+                      showListBullets: true,
+                      showListCheck: true,
+                      showCodeBlock: true,
+                      showQuote: true,
+                      showIndent: true,
+                      showLink: true,
+                      showDirection: true,
+                      showAlignmentButtons: true,
+                      showUndo: true,
+                      showRedo: true,
+                      multiRowsDisplay: true,
+                      embedButtons: _toolbarEmbedButtons,
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  Expanded(
+                    child: Container(
+                      margin: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.shade200),
+                      ),
+                      child: QuillEditor.basic(
+                        controller: _controller,
+                        focusNode: _focusNode,
+                        scrollController: _scrollController,
+                        config: QuillEditorConfig(
+                          placeholder: 'Start typing policy content...',
+                          autoFocus: false,
+                          expands: true,
+                          padding: EdgeInsets.zero,
+                          embedBuilders: _editorEmbedBuilders,
+                        ),
                       ),
                     ),
                   ),
-                ),
+                ],
 
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                  child: Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
-                    children: [
-                      SizedBox(
-                        width: 150,
-                        child: ElevatedButton(
-                          onPressed: _saveDocument,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.purple,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
-                          child: Text(widget.document == null ? 'Save' : 'Update'),
+                  child: Center(
+                    child: SizedBox(
+                      width: 200,
+                      child: ElevatedButton(
+                        onPressed: _saveDocument,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.purple,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
+                        child: Text(widget.document == null ? 'Save' : 'Update'),
                       ),
-                      SizedBox(
-                        width: 150,
-                        child: ElevatedButton.icon(
-                          onPressed: _importFromFile,
-                          icon: const Icon(Icons.upload_file),
-                          label: const Text('Import'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ],
@@ -398,22 +457,38 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
       return;
     }
 
-    final currentContentDelta = _controller.document.toDelta();
-    final jsonContent = jsonEncode(currentContentDelta.toJson());
-    final title = titleCtrl.text.trim();
+    if (widget.document != null && widget.document.fileType.toLowerCase() != '.quill') {
+      // 🚀 Handle Uploaded Policy Update (Metadata + File)
+      context.read<DocumentCubit>().updateDocument(
+            docId: widget.document.docId,
+            title: titleCtrl.text.trim(),
+            newFileBytes: selectedFileBytes,
+            newFileName: selectedFileName,
+            currentFilePath: widget.document.filePath,
+            customerId: selectedCustomerId,
+            assignedReviewerId: selectedReviewerId,
+            assignedReviewerName: selectedReviewerName,
+            changeDescription: changeDescriptionCtrl.text.trim(),
+          );
+    } else {
+      // 🚀 Handle Rich Text Document
+      final currentContentDelta = _controller.document.toDelta();
+      final jsonContent = jsonEncode(currentContentDelta.toJson());
+      final title = titleCtrl.text.trim();
 
-    context.read<DocumentCubit>().saveRichDocument(
-      docId: widget.document?.docId,
-      title: title,
-      content: jsonContent,
-      customerId: selectedCustomerId,
-      assignedReviewerId: selectedReviewerId,
-      assignedReviewerName: selectedReviewerName,
-      changeDescription: changeDescriptionCtrl.text.trim(),
-    );
+      context.read<DocumentCubit>().saveRichDocument(
+            docId: widget.document?.docId,
+            title: title,
+            content: jsonContent,
+            customerId: selectedCustomerId,
+            assignedReviewerId: selectedReviewerId,
+            assignedReviewerName: selectedReviewerName,
+            changeDescription: changeDescriptionCtrl.text.trim(),
+          );
+    }
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Policy saved successfully!')),
+      const SnackBar(content: Text('Policy updated successfully!')),
     );
     context.pop();
   }
@@ -434,35 +509,17 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
       final bytes = file.bytes;
       if (bytes == null) throw Exception("Could not read file bytes");
       
-      final fileName = file.name.toLowerCase();
+      setState(() {
+        selectedFileBytes = bytes;
+        selectedFileName = file.name;
+        _isLoading = false;
+      });
 
-      if (fileName.endsWith('.docx') || fileName.endsWith('.doc')) {
-        // 🔄 Word Document -> HTML -> Delta
-        final docModel = await DocxReader.loadFromBytes(bytes);
-        final htmlContent = HtmlExporter().export(docModel);
-        final sanitizedHtml = _sanitizeHtmlForQuill(htmlContent);
-        final delta = HtmlToDelta().convert(sanitizedHtml);
-        if (mounted) {
-          setState(() => _isLoading = false);
-          _showImportReviewDialog(delta, file.name);
-        }
-      } 
-      else if (fileName.endsWith('.pdf')) {
-        final sf_pdf.PdfDocument document = sf_pdf.PdfDocument(inputBytes: bytes);
-        final sf_pdf.PdfTextExtractor extractor = sf_pdf.PdfTextExtractor(document);
-        String extractedText = "";
-        for (int i = 0; i < document.pages.count; i++) {
-          final String pageText = extractor.extractText(startPageIndex: i);
-          extractedText += pageText;
-          if (pageText.isNotEmpty && !pageText.endsWith('\n')) extractedText += "\n";
-        }
-        document.dispose();
-        final delta = Delta()..insert(extractedText.trim());
-        if (mounted) {
-          setState(() => _isLoading = false);
-          _showImportReviewDialog(delta, file.name);
-        }
-      } 
+      if(mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("New file selected. Click Save to upload.")),
+      );
+      }
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -473,54 +530,6 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
     }
   }
 
-  void _showImportReviewDialog(Delta delta, String fileName) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) {
-        final previewController = QuillController(
-          document: Document.fromDelta(_ensureNewline(delta)),
-          selection: const TextSelection.collapsed(offset: 0),
-        );
-        
-        return Dialog.fullscreen(
-          child: Scaffold(
-            appBar: AppBar(
-              title: Text("Review Policy Content: $fileName"),
-              leading: IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: () => Navigator.pop(ctx),
-              ),
-              actions: [
-                TextButton.icon(
-                  onPressed: () {
-                    _updateEditorContent(delta);
-                    Navigator.pop(ctx);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Content successfully imported!")),
-                    );
-                  },
-                  icon: const Icon(Icons.check_circle, color: Colors.green),
-                  label: const Text("IMPORT NOW", style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
-                ),
-                const SizedBox(width: 8),
-              ],
-            ),
-            body: Padding(
-              padding: const EdgeInsets.all(24),
-              child: QuillEditor.basic(
-                controller: previewController,
-                config: QuillEditorConfig(
-                  padding: EdgeInsets.zero,
-                  embedBuilders: _editorEmbedBuilders,
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
 
   String _sanitizeHtmlForQuill(String html) {
     return html
@@ -530,5 +539,14 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
       .replaceAll('align="center"', 'style="text-align: center;"')
       .replaceAll('align="right"', 'style="text-align: right;"')
       .replaceAll('align="justify"', 'style="text-align: justify;"');
+  }
+
+  IconData _getFileIcon(String type) {
+    final t = type.toLowerCase();
+    if (t.contains('pdf')) return Icons.picture_as_pdf;
+    if (t.contains('doc')) return Icons.description;
+    if (t.contains('xls')) return Icons.table_chart;
+    if (t.contains('quill')) return Icons.edit_note;
+    return Icons.insert_drive_file;
   }
 }

@@ -22,6 +22,7 @@ class _CustomerProfileEditPageState extends State<CustomerProfileEditPage> {
   late TextEditingController certificateCtrl;
   late TextEditingController locationsCtrl;
   late TextEditingController employeesCtrl;
+  late TextEditingController companyFunctionCtrl;
 
   // Department controllers
   late TextEditingController topNameCtrl;
@@ -39,37 +40,27 @@ class _CustomerProfileEditPageState extends State<CustomerProfileEditPage> {
   @override
   void initState() {
     super.initState();
-    companyCtrl = TextEditingController(text: widget.customer.companyName);
-    phoneCtrl = TextEditingController(text: widget.customer.phoneNumber);
-    emailCtrl = TextEditingController(text: widget.customer.email);
-    addressCtrl = TextEditingController(text: widget.customer.address);
-    certificateCtrl = TextEditingController(
-      text: widget.customer.certificateStandard,
-    );
-    locationsCtrl = TextEditingController(
-      text: widget.customer.numberOfLocations,
-    );
-    employeesCtrl = TextEditingController(
-      text: widget.customer.numberOfEmployees,
-    );
+    final c = widget.customer;
+    companyCtrl = TextEditingController(text: c.companyName);
+    phoneCtrl = TextEditingController(text: c.phoneNumber);
+    emailCtrl = TextEditingController(text: c.email);
+    addressCtrl = TextEditingController(text: c.address);
+    certificateCtrl = TextEditingController(text: c.certificateStandard);
+    locationsCtrl = TextEditingController(text: c.numberOfLocations);
+    employeesCtrl = TextEditingController(text: c.numberOfEmployees);
+    companyFunctionCtrl = TextEditingController(text: c.companyFunction);
 
-    topNameCtrl = TextEditingController(text: widget.customer.topLevelName);
-    topEmailCtrl = TextEditingController(text: widget.customer.topLevelEmail);
-    topMobileCtrl = TextEditingController(text: widget.customer.topLevelMobile);
+    topNameCtrl = TextEditingController(text: c.topLevelName);
+    topEmailCtrl = TextEditingController(text: c.topLevelEmail);
+    topMobileCtrl = TextEditingController(text: c.topLevelMobile);
 
-    mediumNameCtrl = TextEditingController(
-      text: widget.customer.mediumLevelName,
-    );
-    mediumEmailCtrl = TextEditingController(
-      text: widget.customer.mediumLevelEmail,
-    );
-    mediumMobileCtrl = TextEditingController(
-      text: widget.customer.mediumLevelMobile,
-    );
+    mediumNameCtrl = TextEditingController(text: c.mediumLevelName);
+    mediumEmailCtrl = TextEditingController(text: c.mediumLevelEmail);
+    mediumMobileCtrl = TextEditingController(text: c.mediumLevelMobile);
 
-    lowNameCtrl = TextEditingController(text: widget.customer.lowLevelName);
-    lowEmailCtrl = TextEditingController(text: widget.customer.lowLevelEmail);
-    lowMobileCtrl = TextEditingController(text: widget.customer.lowLevelMobile);
+    lowNameCtrl = TextEditingController(text: c.lowLevelName);
+    lowEmailCtrl = TextEditingController(text: c.lowLevelEmail);
+    lowMobileCtrl = TextEditingController(text: c.lowLevelMobile);
   }
 
   @override
@@ -81,6 +72,7 @@ class _CustomerProfileEditPageState extends State<CustomerProfileEditPage> {
     certificateCtrl.dispose();
     locationsCtrl.dispose();
     employeesCtrl.dispose();
+    companyFunctionCtrl.dispose();
 
     topNameCtrl.dispose();
     topEmailCtrl.dispose();
@@ -104,6 +96,7 @@ class _CustomerProfileEditPageState extends State<CustomerProfileEditPage> {
       certificateStandard: certificateCtrl.text,
       numberOfLocations: locationsCtrl.text,
       numberOfEmployees: employeesCtrl.text,
+      companyFunction: companyFunctionCtrl.text,
       topLevelName: topNameCtrl.text,
       topLevelEmail: topEmailCtrl.text,
       topLevelMobile: topMobileCtrl.text,
@@ -120,7 +113,6 @@ class _CustomerProfileEditPageState extends State<CustomerProfileEditPage> {
 
     if (!mounted) return;
     context.pop(updatedCustomer);
-    // Return updated customer
   }
 
   @override
@@ -131,91 +123,32 @@ class _CustomerProfileEditPageState extends State<CustomerProfileEditPage> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            AppTextFieldWidget(
-              labelText: "Company Name",
-              textFieldController: companyCtrl,
-            ),
-            AppTextFieldWidget(
-              labelText: "Email",
-              textFieldController: emailCtrl,
-              readOnly: true,
-              isEnabled: false,
-            ),
-
-            AppTextFieldWidget(
-              labelText: "Phone",
-              textFieldController: phoneCtrl,
-            ),
-            AppTextFieldWidget(
-              labelText: "Address",
-              textFieldController: addressCtrl,
-            ),
-            AppTextFieldWidget(
-              labelText: "Certificate Standard",
-              textFieldController: certificateCtrl,
-            ),
-            AppTextFieldWidget(
-              labelText: "Number of Locations",
-              textFieldController: locationsCtrl,
-            ),
-            AppTextFieldWidget(
-              labelText: "Number of Employees",
-              textFieldController: employeesCtrl,
-            ),
+            AppTextFieldWidget(labelText: "Company Name", textFieldController: companyCtrl),
+            AppTextFieldWidget(labelText: "Email", textFieldController: emailCtrl, readOnly: true, isEnabled: false),
+            AppTextFieldWidget(labelText: "Phone", textFieldController: phoneCtrl),
+            AppTextFieldWidget(labelText: "Address", textFieldController: addressCtrl),
+            AppTextFieldWidget(labelText: "Certificate Standard", textFieldController: certificateCtrl),
+            AppTextFieldWidget(labelText: "Number of Locations", textFieldController: locationsCtrl),
+            AppTextFieldWidget(labelText: "Number of Employees", textFieldController: employeesCtrl),
+            AppTextFieldWidget(labelText: "Company Function", textFieldController: companyFunctionCtrl),
 
             const SizedBox(height: 20),
-            const Text(
-              "Top Level Department",
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            AppTextFieldWidget(
-              labelText: "Name",
-              textFieldController: topNameCtrl,
-            ),
-            AppTextFieldWidget(
-              labelText: "Email",
-              textFieldController: topEmailCtrl,
-            ),
-            AppTextFieldWidget(
-              labelText: "Mobile",
-              textFieldController: topMobileCtrl,
-            ),
+            const Text("Top Level Department", style: TextStyle(fontWeight: FontWeight.bold)),
+            AppTextFieldWidget(labelText: "Name", textFieldController: topNameCtrl),
+            AppTextFieldWidget(labelText: "Email", textFieldController: topEmailCtrl),
+            AppTextFieldWidget(labelText: "Mobile", textFieldController: topMobileCtrl),
 
             const SizedBox(height: 10),
-            const Text(
-              "Medium Level Department",
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            AppTextFieldWidget(
-              labelText: "Name",
-              textFieldController: mediumNameCtrl,
-            ),
-            AppTextFieldWidget(
-              labelText: "Email",
-              textFieldController: mediumEmailCtrl,
-            ),
-            AppTextFieldWidget(
-              labelText: "Mobile",
-              textFieldController: mediumMobileCtrl,
-            ),
+            const Text("Medium Level Department", style: TextStyle(fontWeight: FontWeight.bold)),
+            AppTextFieldWidget(labelText: "Name", textFieldController: mediumNameCtrl),
+            AppTextFieldWidget(labelText: "Email", textFieldController: mediumEmailCtrl),
+            AppTextFieldWidget(labelText: "Mobile", textFieldController: mediumMobileCtrl),
 
             const SizedBox(height: 10),
-            const Text(
-              "Low Level Department",
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            AppTextFieldWidget(
-              labelText: "Name",
-              textFieldController: lowNameCtrl,
-            ),
-            AppTextFieldWidget(
-              labelText: "Email",
-              textFieldController: lowEmailCtrl,
-            ),
-            AppTextFieldWidget(
-              labelText: "Mobile",
-              textFieldController: lowMobileCtrl,
-            ),
+            const Text("Low Level Department", style: TextStyle(fontWeight: FontWeight.bold)),
+            AppTextFieldWidget(labelText: "Name", textFieldController: lowNameCtrl),
+            AppTextFieldWidget(labelText: "Email", textFieldController: lowEmailCtrl),
+            AppTextFieldWidget(labelText: "Mobile", textFieldController: lowMobileCtrl),
 
             const SizedBox(height: 20),
             SizedBox(
