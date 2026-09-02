@@ -10,6 +10,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
+      title: 'IQ Plus',
       debugShowCheckedModeBanner: false,
       routerConfig: AppRouter.router,
       localizationsDelegates: const [

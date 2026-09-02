@@ -47,6 +47,20 @@ export const ncrDailyReminder = onSchedule(
 );
 
 /* =======================
+   Periodic Compliance Scheduled Job
+======================= */
+export const periodicComplianceDailyReminder = onSchedule(
+  {
+    schedule: "every day 01:30",
+    timeZone: "Asia/Kolkata",
+  },
+  async () => {
+    const {runPeriodicComplianceReminderJob} = require("./jobs/periodicComplianceReminderJob");
+    await runPeriodicComplianceReminderJob();
+  }
+);
+
+/* =======================
    ANNUAL DOCUMENT REVIEW
 ======================= */
 export const annualDocumentReviewTask = onSchedule(

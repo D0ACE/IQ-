@@ -214,103 +214,192 @@ class _EmployeeDashboardPageState extends State<EmployeeDashboardPage> {
   Widget _buildDrawer() {
     return Drawer(
       backgroundColor: Colors.white,
-      child: Column(
+      child: Stack(
         children: [
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(20, 60, 20, 32),
-            decoration: const BoxDecoration(
-              color: AppColors.kPrimaryColor, // Solid high-contrast background
-              borderRadius: BorderRadius.only(
-                bottomRight: Radius.circular(40),
+          // 🎨 Main Vibrant Gradient Background
+          Positioned.fill(
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    AppColors.kPrimaryColor,
+                    Color(0xFF8B5CF6), // Vibrant Violet
+                    Colors.white,
+                  ],
+                  stops: [0.0, 0.4, 0.8],
+                ),
               ),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(2),
+          ),
+          
+          // 🎨 Decorative Glass Circles for Header Depth
+          Positioned(
+            top: -40,
+            left: -40,
+            child: _buildGlassCircle(150, Colors.white.withOpacity(0.1)),
+          ),
+          Positioned(
+            top: 100,
+            right: -30,
+            child: _buildGlassCircle(100, Colors.white.withOpacity(0.05)),
+          ),
+
+          // 🎨 Background Watermark
+          Positioned(
+            bottom: -50,
+            left: -50,
+            child: Icon(
+              Icons.dashboard_rounded,
+              size: 300,
+              color: AppColors.kPrimaryColor.withOpacity(0.02),
+            ),
+          ),
+
+          Column(
+            children: [
+              // 🚀 Stylish Header Section
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(24, 70, 24, 40),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white.withOpacity(0.5), width: 1.5),
+                      ),
+                      child: const CircleAvatar(
+                        radius: 35,
+                        backgroundColor: Colors.white,
+                        child: Icon(Icons.person_rounded, color: AppColors.kPrimaryColor, size: 35),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      user?.userName ?? 'Employee',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                        letterSpacing: -0.5,
+                        shadows: [
+                          Shadow(
+                            color: Colors.black12,
+                            offset: Offset(0, 2),
+                            blurRadius: 4,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      user?.email ?? '',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.9),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // 📋 Menu Area
+              Expanded(
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.fromLTRB(16, 24, 16, 20),
                   decoration: const BoxDecoration(
                     color: Colors.white,
-                    shape: BoxShape.circle,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(40),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black12,
+                        blurRadius: 20,
+                        offset: Offset(0, -10),
+                      ),
+                    ],
                   ),
-                  child: const CircleAvatar(
-                    radius: 30,
-                    backgroundColor: AppColors.kPrimaryLightColor,
-                    child: Icon(Icons.person_rounded, color: AppColors.kPrimaryColor, size: 30),
+                  child: ListView(
+                    padding: EdgeInsets.zero,
+                    physics: const BouncingScrollPhysics(),
+                    children: [
+                      _drawerItem(
+                        icon: Icons.policy_rounded,
+                        title: 'Policies & Procedures',
+                        onTap: () {
+                          GoRouter.of(context).pop();
+                          context.push(AppRoutes.customerPolicyList);
+                        },
+                      ),
+                      _drawerItem(
+                        icon: Icons.video_library,
+                        title: 'My Training Videos',
+                        onTap: () {
+                          GoRouter.of(context).pop();
+                          context.push(AppRoutes.employeeTraining);
+                        },
+                      ),
+                      _drawerItem(
+                        icon: Icons.assignment_turned_in,
+                        title: 'My Training Results',
+                        onTap: () {
+                          GoRouter.of(context).pop();
+                          context.push(AppRoutes.trainingResults);
+                        },
+                      ),
+                      _drawerItem(
+                        icon: Icons.lock_rounded,
+                        title: 'Change Password',
+                        onTap: () {
+                          GoRouter.of(context).pop();
+                          _showChangePasswordDialog();
+                        },
+                      ),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 20, horizontal: 8),
+                        child: Divider(height: 1, color: Colors.black12),
+                      ),
+                      _drawerItem(
+                        icon: Icons.logout_rounded,
+                        title: 'Logout',
+                        color: Colors.redAccent,
+                        onTap: () {
+                          getIt<HiveService>().clearAll();
+                          GoRouter.of(context).pop();
+                          context.go(AppRoutes.login);
+                        },
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 20),
-                Text(
-                  user?.userName ?? 'Employee',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w900,
-                    color: Colors.white, // Highly visible
-                  ),
-                ),
-                Text(
-                  user?.email ?? '',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.85),
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              children: [
-                _drawerItem(
-                  icon: Icons.policy_rounded,
-                  title: 'Policies & Procedures',
-                  onTap: () {
-                    GoRouter.of(context).pop();
-                    context.push(AppRoutes.customerPolicyList);
-                  },
-                ),
-                _drawerItem(
-                  icon: Icons.video_library,
-                  title: 'My Training Videos',
-                  onTap: () {
-                    GoRouter.of(context).pop();
-                    context.push(AppRoutes.employeeTraining);
-                  },
-                ),
-                _drawerItem(
-                  icon: Icons.lock_rounded,
-                  title: 'Change Password',
-                  onTap: () {
-                    GoRouter.of(context).pop();
-                    _showChangePasswordDialog();
-                  },
-                ),
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 12),
-                  child: Divider(height: 1, color: Colors.black12),
-                ),
-                _drawerItem(
-                  icon: Icons.logout_rounded,
-                  title: 'Logout',
-                  color: Colors.redAccent,
-                  onTap: () {
-                    getIt<HiveService>().clearAll();
-                    GoRouter.of(context).pop();
-                    context.go(AppRoutes.login);
-                  },
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildGlassCircle(double size, Color color) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
       ),
     );
   }
@@ -322,26 +411,34 @@ class _EmployeeDashboardPageState extends State<EmployeeDashboardPage> {
     Color? color,
   }) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: color != null ? color.withOpacity(0.08) : AppColors.kPrimaryColor.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(12),
+        color: color != null ? color.withOpacity(0.08) : AppColors.kPrimaryColor.withOpacity(0.06),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: (color ?? AppColors.kPrimaryColor).withOpacity(0.1),
+          width: 1,
+        ),
       ),
       child: Material(
         color: Colors.transparent,
         clipBehavior: Clip.antiAlias,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         child: ListTile(
-          leading: Icon(icon, color: color ?? AppColors.purple, size: 22),
+          leading: Icon(icon, color: color ?? AppColors.kPrimaryColor, size: 22),
           title: Text(
             title,
             style: TextStyle(
               color: color ?? AppColors.titleText,
               fontSize: 14,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w800,
             ),
           ),
-          trailing: const Icon(Icons.chevron_right, size: 18),
+          trailing: Icon(
+            Icons.chevron_right_rounded, 
+            size: 18, 
+            color: (color ?? AppColors.kPrimaryColor).withOpacity(0.3)
+          ),
           onTap: onTap,
           dense: true,
         ),

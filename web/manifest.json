@@ -1,6 +1,6 @@
 {
-    "name": "iq_plus",
-    "short_name": "iq_plus",
+    "name": "IQ Plus",
+    "short_name": "IQ Plus",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
