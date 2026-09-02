@@ -14,6 +14,7 @@ import 'package:iq_plus/core/local_storage/hive_service.dart';
 import 'package:iq_plus/di/service_locator.dart';
 import 'package:iq_plus/features/users/repository/user_repository.dart';
 import 'package:iq_plus/ncr_form/ncr_provider.dart';
+import 'package:iq_plus/features/periodic_compliance/periodic_compliance_provider.dart';
 
 class SuperadminDashboardPage extends StatefulWidget {
   const SuperadminDashboardPage({super.key});
@@ -54,6 +55,7 @@ class _SuperadminDashboardPageState extends State<SuperadminDashboardPage>
 
     // 🚀 Start listening to NCR data for the graph
     context.read<NcrProvider>().listenToNcrs();
+    context.read<PeriodicComplianceProvider>().listenToTasks();
 
     _animationController.forward();
   }
@@ -522,6 +524,14 @@ class _SuperadminDashboardPageState extends State<SuperadminDashboardPage>
                     context.push(AppRoutes.videoList);
                   },
                 ),
+                _drawerItem(
+                  icon: Icons.assignment_rounded,
+                  title: 'Compliance Tasks',
+                  onTap: () {
+                    GoRouter.of(context).pop();
+                    context.push(AppRoutes.periodicComplianceList);
+                  },
+                ),
 
                 const SizedBox(height: 20),
                 _drawerSectionTitle('SYSTEM'),
@@ -757,60 +767,157 @@ class _SuperadminDashboardPageState extends State<SuperadminDashboardPage>
       children: [
         _sectionTitle('Compliance Intelligence'),
         const SizedBox(height: 14),
-        Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(30),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.03),
-                blurRadius: 30,
-                offset: const Offset(0, 15),
-              ),
-            ],
+        _buildChartCard(
+          title: "Global NCR Trends",
+          badgeText: "Global Analytics",
+          badgeColor: AppColors.kPrimaryColor,
+          child: SizedBox(
+            height: 250,
+            child: AnimatedBarChart(
+              values: barValues,
+              barColor: AppColors.kPrimaryColor,
+            ),
           ),
-          child: Column(
+        ),
+        const SizedBox(height: 24),
+        _buildPeriodicComplianceChart(context),
+      ],
+    );
+  }
+
+  Widget _buildChartCard({
+    required String title,
+    required String badgeText,
+    required Color badgeColor,
+    required Widget child,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 30,
+            offset: const Offset(0, 15),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    "Global NCR Trends",
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.kPrimaryColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Text(
-                      "Global Analytics",
-                      style: TextStyle(
-                        color: AppColors.kPrimaryColor,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
+              Text(
+                title,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
-              const SizedBox(height: 32),
-              SizedBox(
-                height: 250,
-                child: AnimatedBarChart(
-                  values: barValues,
-                  barColor: AppColors.kPrimaryColor,
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: badgeColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  badgeText,
+                  style: TextStyle(
+                    color: badgeColor,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],
           ),
+          const SizedBox(height: 32),
+          child,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPeriodicComplianceChart(BuildContext context) {
+    final provider = context.watch<PeriodicComplianceProvider>();
+
+    final barValues = [
+      provider.pendingCount.toDouble(),
+      provider.completedCount.toDouble(),
+    ];
+
+    return _buildChartCard(
+      title: "Periodic Compliance Tasks",
+      badgeText: "Global Task Analytics",
+      badgeColor: Colors.orange,
+      child: SizedBox(
+        height: 250,
+        child: BarChart(
+          BarChartData(
+            alignment: BarChartAlignment.spaceAround,
+            maxY: barValues.isEmpty ? 5 : (barValues.reduce(max) + 2).toDouble(),
+            barTouchData: BarTouchData(enabled: true),
+            titlesData: FlTitlesData(
+              show: true,
+              bottomTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 32,
+                  getTitlesWidget: (value, meta) {
+                    const labels = ['Pending', 'Completed'];
+                    if (value.toInt() >= 0 && value.toInt() < labels.length) {
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Text(
+                          labels[value.toInt()],
+                          style: TextStyle(
+                            color: Colors.grey.shade500,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                      );
+                    }
+                    return const SizedBox();
+                  },
+                ),
+              ),
+              leftTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 28,
+                  getTitlesWidget: (value, meta) => Text(
+                    value.toInt().toString(),
+                    style: TextStyle(color: Colors.grey.shade400, fontSize: 10),
+                  ),
+                ),
+              ),
+              topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            ),
+            gridData: FlGridData(show: true, drawVerticalLine: false),
+            borderData: FlBorderData(show: false),
+            barGroups: barValues.asMap().entries.map((entry) {
+              return BarChartGroupData(
+                x: entry.key,
+                barRods: [
+                  BarChartRodData(
+                    toY: entry.value,
+                    color: entry.key == 0 ? Colors.orange : Colors.green,
+                    width: 22,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(6),
+                      topRight: Radius.circular(6),
+                    ),
+                  ),
+                ],
+              );
+            }).toList(),
+          ),
         ),
-      ],
+      ),
     );
   }
 
@@ -873,6 +980,11 @@ class _SuperadminDashboardPageState extends State<SuperadminDashboardPage>
               title: 'Training Videos',
               icon: Icons.video_library_rounded,
               onTap: () => GoRouter.of(context).push(AppRoutes.videoList),
+            ),
+            _clickableCard(
+              title: 'Compliance Tasks',
+              icon: Icons.assignment_rounded,
+              onTap: () => GoRouter.of(context).push(AppRoutes.periodicComplianceList),
             ),
           ],
         );

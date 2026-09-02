@@ -59,6 +59,10 @@ import 'package:iq_plus/features/videos/pages/video_player_page.dart';
 import 'package:iq_plus/features/videos/pages/video_details_page.dart';
 import 'package:iq_plus/features/videos/pages/employee_training_page.dart';
 import 'package:iq_plus/features/videos/pages/training_results_page.dart';
+import 'package:iq_plus/features/periodic_compliance/models/periodic_compliance_model.dart';
+import 'package:iq_plus/features/periodic_compliance/pages/periodic_compliance_list_page.dart';
+import 'package:iq_plus/features/periodic_compliance/pages/periodic_compliance_form_page.dart';
+import 'package:iq_plus/features/periodic_compliance/pages/periodic_compliance_details_page.dart';
 
 class AppRouter {
   static final GoRouter router = GoRouter(
@@ -465,6 +469,26 @@ class AppRouter {
               customerId: extra?['customerId'], // 🚀 Pass customerId from extra
             ),
           );
+        },
+      ),
+
+      /// PERIODIC COMPLIANCE
+      GoRoute(
+        path: AppRoutes.periodicComplianceList,
+        builder: (context, state) => const PeriodicComplianceListPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.periodicComplianceForm,
+        builder: (context, state) {
+          final task = state.extra as PeriodicComplianceTask?;
+          return PeriodicComplianceFormPage(task: task);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.periodicComplianceDetails,
+        builder: (context, state) {
+          final task = state.extra as PeriodicComplianceTask;
+          return PeriodicComplianceDetailsPage(task: task);
         },
       ),
     ],

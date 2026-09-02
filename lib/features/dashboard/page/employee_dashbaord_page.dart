@@ -213,31 +213,31 @@ class _EmployeeDashboardPageState extends State<EmployeeDashboardPage> {
 
   Widget _buildDrawer() {
     return Drawer(
-      backgroundColor: AppColors.scaffoldBg,
+      backgroundColor: Colors.white,
       child: Column(
         children: [
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(20, 60, 20, 30),
+            padding: const EdgeInsets.fromLTRB(20, 60, 20, 32),
             decoration: const BoxDecoration(
-              gradient: AppColors.mainGradient,
+              color: AppColors.kPrimaryColor, // Solid high-contrast background
               borderRadius: BorderRadius.only(
-                bottomRight: Radius.circular(32),
+                bottomRight: Radius.circular(40),
               ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  padding: const EdgeInsets.all(3),
+                  padding: const EdgeInsets.all(2),
                   decoration: const BoxDecoration(
                     color: Colors.white,
                     shape: BoxShape.circle,
                   ),
                   child: const CircleAvatar(
-                    radius: 35,
+                    radius: 30,
                     backgroundColor: AppColors.kPrimaryLightColor,
-                    child: Icon(Icons.dashboard_rounded, color: AppColors.purple, size: 35),
+                    child: Icon(Icons.person_rounded, color: AppColors.kPrimaryColor, size: 30),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -247,8 +247,8 @@ class _EmployeeDashboardPageState extends State<EmployeeDashboardPage> {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white, // Highly visible
                   ),
                 ),
                 Text(
@@ -256,14 +256,15 @@ class _EmployeeDashboardPageState extends State<EmployeeDashboardPage> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.8),
-                    fontSize: 14,
+                    color: Colors.white.withOpacity(0.85),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
           Expanded(
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -292,7 +293,10 @@ class _EmployeeDashboardPageState extends State<EmployeeDashboardPage> {
                     _showChangePasswordDialog();
                   },
                 ),
-                const Divider(height: 40, thickness: 1, indent: 10, endIndent: 10),
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  child: Divider(height: 1, color: Colors.black12),
+                ),
                 _drawerItem(
                   icon: Icons.logout_rounded,
                   title: 'Logout',
@@ -320,7 +324,7 @@ class _EmployeeDashboardPageState extends State<EmployeeDashboardPage> {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: color != null ? color.withOpacity(0.05) : Colors.white,
+        color: color != null ? color.withOpacity(0.08) : AppColors.kPrimaryColor.withOpacity(0.05),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Material(
@@ -328,18 +332,18 @@ class _EmployeeDashboardPageState extends State<EmployeeDashboardPage> {
         clipBehavior: Clip.antiAlias,
         borderRadius: BorderRadius.circular(12),
         child: ListTile(
-          leading: Icon(icon, color: color ?? AppColors.purple),
+          leading: Icon(icon, color: color ?? AppColors.purple, size: 22),
           title: Text(
             title,
             style: TextStyle(
               color: color ?? AppColors.titleText,
-              fontSize: 15,
+              fontSize: 14,
               fontWeight: FontWeight.w600,
             ),
           ),
-          trailing: const Icon(Icons.chevron_right, size: 20),
+          trailing: const Icon(Icons.chevron_right, size: 18),
           onTap: onTap,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          dense: true,
         ),
       ),
     );
@@ -348,31 +352,31 @@ class _EmployeeDashboardPageState extends State<EmployeeDashboardPage> {
   Widget _dashboardGrid(BuildContext context, {required bool isMobile}) {
     final actions = [
       _ActionItem(
-        title: 'Policies',
-        subtitle: 'View company docs',
+        title: 'Policies & Procedures',
+        subtitle: 'Company Docs',
         icon: Icons.auto_stories_rounded,
-        color: const Color(0xFF6366F1), // Indigo
+        color: const Color(0xFF6366F1),
         onTap: () => context.push(AppRoutes.customerPolicyList),
       ),
       _ActionItem(
-        title: 'Trainings',
+        title: 'My Training Videos',
         subtitle: 'Watch & Learn',
         icon: Icons.video_library_rounded,
-        color: const Color(0xFF8B5CF6), // Violet
+        color: const Color(0xFF8B5CF6),
         onTap: () => context.push(AppRoutes.employeeTraining),
       ),
       _ActionItem(
-        title: 'Results',
-        subtitle: 'View performance',
+        title: 'My Training Results',
+        subtitle: 'Performance',
         icon: Icons.assignment_turned_in_rounded,
-        color: const Color(0xFF10B981), // Emerald
+        color: const Color(0xFF10B981),
         onTap: () => context.push(AppRoutes.trainingResults),
       ),
       _ActionItem(
-        title: 'Security',
-        subtitle: 'Update settings',
+        title: 'Change Password',
+        subtitle: 'Security',
         icon: Icons.shield_rounded,
-        color: const Color(0xFFF59E0B), // Amber
+        color: const Color(0xFFF59E0B),
         onTap: _showChangePasswordDialog,
       ),
     ];
@@ -382,69 +386,110 @@ class _EmployeeDashboardPageState extends State<EmployeeDashboardPage> {
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: isMobile ? 2 : 4,
-        crossAxisSpacing: 20,
-        mainAxisSpacing: 20,
-        childAspectRatio: isMobile ? 0.85 : 1,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+        childAspectRatio: isMobile ? 1.15 : 1.35, // Balanced for visibility and style
       ),
       itemCount: actions.length,
       itemBuilder: (context, index) {
-        return _glowActionTile(actions[index]);
+        return _compactActionTile(actions[index]);
       },
     );
   }
 
-  Widget _glowActionTile(_ActionItem item) {
+  Widget _compactActionTile(_ActionItem item) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: item.color.withOpacity(0.15), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: item.color.withOpacity(0.15),
+            color: item.color.withOpacity(0.06),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
         ],
       ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(28),
-          onTap: item.onTap,
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: item.color.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Icon(item.icon, color: item.color, size: 28),
-                ),
-                const Spacer(),
-                Text(
-                  item.title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w900,
-                    color: AppColors.titleText,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  item.subtitle,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.subText.withOpacity(0.6),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: Stack(
+          children: [
+            // 🎨 Decorative Background Tint
+            Positioned.fill(
+              child: Container(color: item.color.withOpacity(0.03)),
             ),
-          ),
+            // 🎨 Large Background Watermark Icon
+            Positioned(
+              right: -15,
+              bottom: -15,
+              child: Icon(
+                item.icon,
+                size: 80,
+                color: item.color.withOpacity(0.04),
+              ),
+            ),
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: item.onTap,
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: item.color.withOpacity(0.1),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Icon(item.icon, color: item.color, size: 24),
+                      ),
+                      const Spacer(),
+                      Text(
+                        item.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.titleText,
+                          height: 1.1,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              item.subtitle,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: AppColors.subText.withOpacity(0.7),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          Icon(Icons.arrow_forward_ios_rounded, 
+                               color: item.color.withOpacity(0.4), size: 10),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

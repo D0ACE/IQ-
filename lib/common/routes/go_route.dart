@@ -46,4 +46,7 @@ class AppRoutes {
   static const String videoDetails = '/videoDetails';
   static const String employeeTraining = '/employeeTraining';
   static const String trainingResults = '/trainingResults';
+  static const String periodicComplianceList = '/periodicComplianceList';
+  static const String periodicComplianceForm = '/periodicComplianceForm';
+  static const String periodicComplianceDetails = '/periodicComplianceDetails';
 }

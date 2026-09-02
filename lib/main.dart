@@ -15,6 +15,7 @@ import 'package:iq_plus/features/auth/cubit/customer/customer_cubit.dart';
 import 'package:iq_plus/features/auth/model/customer_model.dart';
 import 'package:iq_plus/features/auth/model/user_model.dart';
 import 'package:iq_plus/ncr_form/ncr_provider.dart';
+import 'package:iq_plus/features/periodic_compliance/periodic_compliance_provider.dart';
 import 'package:iq_plus/features/dashboard/page/visit_summary/cubit/visitor_summary_cubit.dart';
 import 'package:iq_plus/features/admin/customers/cubit/customer_list_cubit.dart';
 import 'package:iq_plus/features/superadmin/cubit/document_cubit.dart';
@@ -52,6 +53,7 @@ void main() async {
       MultiProvider(
         providers: [
           ChangeNotifierProvider(create: (_) => NcrProvider()),
+          ChangeNotifierProvider(create: (_) => PeriodicComplianceProvider()),
         ],
         child: MultiBlocProvider(
           providers: [
