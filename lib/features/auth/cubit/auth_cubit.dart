@@ -30,8 +30,6 @@ class AuthCubit extends Cubit<AuthState> {
 
     // 🔒 role validation (CRITICAL)
     final actualRoleName = Utility.getUserRoleName(role.id);
-    final selectedTabName = Utility.getRoleNameLogin(selectedRole);
-
     // If selected tab is Customer (index 3), allow both role '3' (Customer) and '4' (Employee)
     if (selectedRole == 3) {
       if (role.id != '3' && role.id != '4') {

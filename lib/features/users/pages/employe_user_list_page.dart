@@ -1,10 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
-import 'package:iq_plus/common/utility/utility.dart';
 import 'package:iq_plus/features/users/cubit/employee_user_cubit.dart';
 import 'package:iq_plus/features/users/cubit/employee_user_state.dart';
 import 'package:iq_plus/features/users/pages/add_user_dialog.dart';
@@ -47,7 +44,7 @@ class UserListPage extends StatelessWidget {
             child: IgnorePointer(
               child: CustomPaint(
                 painter: _DotPatternPainter(
-                  dotColor: AppColors.kPrimaryColor.withOpacity(0.03),
+                  dotColor: AppColors.kPrimaryColor.withValues(alpha: 0.03),
                 ),
               ),
             ),
@@ -129,7 +126,7 @@ class UserListPage extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: AppColors.kPrimaryColor.withOpacity(0.05),
+            color: AppColors.kPrimaryColor.withValues(alpha: 0.05),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -162,8 +159,8 @@ class UserListPage extends StatelessWidget {
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: [
-                              AppColors.kPrimaryColor.withOpacity(0.1),
-                              AppColors.kPrimaryColor.withOpacity(0.05),
+                              AppColors.kPrimaryColor.withValues(alpha: 0.1),
+                              AppColors.kPrimaryColor.withValues(alpha: 0.05),
                             ],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
@@ -227,7 +224,7 @@ class UserListPage extends StatelessWidget {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
-                                color: roleColor.withOpacity(0.1),
+                                color: roleColor.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(

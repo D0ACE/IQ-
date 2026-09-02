@@ -94,7 +94,7 @@ class _TrainingResultsPageState extends State<TrainingResultsPage> {
       final targetUserName = widget.userName ?? _currentUser?.userName ?? 'Employee';
       final blob = html.Blob([Uint8List.fromList(fileBytes)], 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       final url = html.Url.createObjectUrlFromBlob(blob);
-      final anchor = html.AnchorElement(href: url)
+      html.AnchorElement(href: url)
         ..setAttribute("download", "Training_Results_$targetUserName.xlsx")
         ..click();
       html.Url.revokeObjectUrl(url);

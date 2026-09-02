@@ -137,7 +137,7 @@ class _CustomerPolicyDetailPageState extends State<CustomerPolicyDetailPage> {
             child: IgnorePointer(
               child: CustomPaint(
                 painter: _DotPatternPainter(
-                  dotColor: AppColors.kPrimaryColor.withOpacity(0.05),
+                  dotColor: AppColors.kPrimaryColor.withValues(alpha: 0.05),
                 ),
               ),
             ),
@@ -156,7 +156,7 @@ class _CustomerPolicyDetailPageState extends State<CustomerPolicyDetailPage> {
                     borderRadius: BorderRadius.circular(32),
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.kPrimaryColor.withOpacity(0.2),
+                        color: AppColors.kPrimaryColor.withValues(alpha: 0.2),
                         blurRadius: 25,
                         offset: const Offset(0, 10),
                       ),
@@ -171,7 +171,7 @@ class _CustomerPolicyDetailPageState extends State<CustomerPolicyDetailPage> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
+                              color: Colors.white.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
@@ -229,7 +229,7 @@ class _CustomerPolicyDetailPageState extends State<CustomerPolicyDetailPage> {
                     borderRadius: BorderRadius.circular(32),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.04),
+                        color: Colors.black.withValues(alpha: 0.04),
                         blurRadius: 20,
                         offset: const Offset(0, 10),
                       ),
@@ -272,7 +272,7 @@ class _CustomerPolicyDetailPageState extends State<CustomerPolicyDetailPage> {
                               Container(
                                 padding: const EdgeInsets.all(24),
                                 decoration: BoxDecoration(
-                                  color: AppColors.kPrimaryLightColor.withOpacity(0.5),
+                                  color: AppColors.kPrimaryLightColor.withValues(alpha: 0.5),
                                   shape: BoxShape.circle,
                                 ),
                                 child: const Icon(Icons.file_present_rounded, size: 64, color: AppColors.kPrimaryColor),
@@ -292,7 +292,7 @@ class _CustomerPolicyDetailPageState extends State<CustomerPolicyDetailPage> {
                                 "This policy is available for download",
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: AppColors.subText.withOpacity(0.6),
+                                  color: AppColors.subText.withValues(alpha: 0.6),
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -308,7 +308,7 @@ class _CustomerPolicyDetailPageState extends State<CustomerPolicyDetailPage> {
                                     padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 18),
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                                     elevation: 8,
-                                    shadowColor: AppColors.kPrimaryColor.withOpacity(0.4),
+                                    shadowColor: AppColors.kPrimaryColor.withValues(alpha: 0.4),
                                     textStyle: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w800,
@@ -330,7 +330,7 @@ class _CustomerPolicyDetailPageState extends State<CustomerPolicyDetailPage> {
 
   Widget _infoBlockModern(String label, String value, IconData icon, bool isInverse) {
     final Color textColor = isInverse ? Colors.white : AppColors.titleText;
-    final Color subColor = isInverse ? Colors.white.withOpacity(0.6) : AppColors.subText.withOpacity(0.6);
+    final Color subColor = isInverse ? Colors.white.withValues(alpha: 0.6) : AppColors.subText.withValues(alpha: 0.6);
 
     return Row(
       children: [

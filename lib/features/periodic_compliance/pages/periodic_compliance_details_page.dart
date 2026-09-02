@@ -33,7 +33,7 @@ class PeriodicComplianceDetailsPage extends StatelessWidget {
                 borderRadius: BorderRadius.circular(30),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.03),
+                    color: Colors.black.withValues(alpha: 0.03),
                     blurRadius: 30,
                     offset: const Offset(0, 15),
                   ),
@@ -96,7 +96,7 @@ class PeriodicComplianceDetailsPage extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: (isPending ? Colors.orange : Colors.green).withOpacity(0.1),
+        color: (isPending ? Colors.orange : Colors.green).withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(

@@ -170,10 +170,10 @@ class _EmployeeTrainingPageState extends State<EmployeeTrainingPage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: accentColor.withOpacity(0.1), width: 1.5),
+        border: Border.all(color: accentColor.withValues(alpha: 0.1), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: accentColor.withOpacity(0.05),
+            color: accentColor.withValues(alpha: 0.05),
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),
@@ -189,7 +189,7 @@ class _EmployeeTrainingPageState extends State<EmployeeTrainingPage> {
               child: Icon(
                 Icons.assignment_turned_in_rounded,
                 size: 80,
-                color: accentColor.withOpacity(0.06),
+                color: accentColor.withValues(alpha: 0.06),
               ),
             ),
             Material(
@@ -203,7 +203,7 @@ class _EmployeeTrainingPageState extends State<EmployeeTrainingPage> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: accentColor.withOpacity(0.1),
+                          color: accentColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: const Icon(Icons.assignment_turned_in_rounded, color: accentColor, size: 28),
@@ -225,7 +225,7 @@ class _EmployeeTrainingPageState extends State<EmployeeTrainingPage> {
                               "View your scores and history",
                               style: TextStyle(
                                 fontSize: 12,
-                                color: AppColors.subText.withOpacity(0.6),
+                                color: AppColors.subText.withValues(alpha: 0.6),
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -235,7 +235,7 @@ class _EmployeeTrainingPageState extends State<EmployeeTrainingPage> {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: accentColor.withOpacity(0.1),
+                          color: accentColor.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(Icons.arrow_forward_ios_rounded, color: accentColor, size: 14),
@@ -259,7 +259,7 @@ class _EmployeeTrainingPageState extends State<EmployeeTrainingPage> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -276,7 +276,7 @@ class _EmployeeTrainingPageState extends State<EmployeeTrainingPage> {
               child: Icon(
                 Icons.video_library_rounded,
                 size: 80,
-                color: AppColors.purple.withOpacity(0.04),
+                color: AppColors.purple.withValues(alpha: 0.04),
               ),
             ),
             Column(
@@ -286,7 +286,7 @@ class _EmployeeTrainingPageState extends State<EmployeeTrainingPage> {
                   leading: Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: AppColors.kPrimaryLightColor.withOpacity(0.6),
+                      color: AppColors.kPrimaryLightColor.withValues(alpha: 0.6),
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: const Icon(Icons.video_library_rounded, color: AppColors.purple, size: 24),
@@ -306,7 +306,7 @@ class _EmployeeTrainingPageState extends State<EmployeeTrainingPage> {
                       "Added on ${DateFormat('dd MMM yyyy').format(video.createdAt)}",
                       style: TextStyle(
                         fontSize: 12,
-                        color: AppColors.subText.withOpacity(0.7),
+                        color: AppColors.subText.withValues(alpha: 0.7),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -321,7 +321,7 @@ class _EmployeeTrainingPageState extends State<EmployeeTrainingPage> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                         decoration: BoxDecoration(
-                          color: (isCompleted ? Colors.blueAccent : (isEnrolled ? Colors.green : AppColors.purple)).withOpacity(0.1),
+                          color: (isCompleted ? Colors.blueAccent : (isEnrolled ? Colors.green : AppColors.purple)).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(

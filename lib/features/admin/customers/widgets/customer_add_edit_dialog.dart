@@ -199,7 +199,7 @@ class _CustomerAddEditDialogState extends State<CustomerAddEditDialog> {
                           border: Border.all(color: Colors.grey.shade200),
                         ),
                         child: DropdownButtonFormField<String>(
-                          value: selectedConsultantId,
+                          initialValue: selectedConsultantId,
                           dropdownColor: Colors.white,
                           style: const TextStyle(color: AppColors.titleText, fontWeight: FontWeight.bold, fontSize: 14),
                           decoration: const InputDecoration(
@@ -307,9 +307,9 @@ class _CustomerAddEditDialogState extends State<CustomerAddEditDialog> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.05),
+            color: AppColors.primary.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(15),
-            border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+            border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
           ),
           child: Row(
             children: [
@@ -350,7 +350,7 @@ class _CustomerAddEditDialogState extends State<CustomerAddEditDialog> {
           border: Border.all(color: Colors.grey.shade100),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.02),
+              color: Colors.black.withValues(alpha: 0.02),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),

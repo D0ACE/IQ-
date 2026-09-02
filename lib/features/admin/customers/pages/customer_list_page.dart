@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:iq_plus/common/routes/go_route.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
-import 'package:iq_plus/common/themes/app_theme_data.dart';
-import 'package:iq_plus/common/themes/app_ui_helper.dart';
 import 'package:iq_plus/di/service_locator.dart';
 import 'package:iq_plus/features/admin/customers/cubit/customer_list_cubit.dart';
 import 'package:iq_plus/features/admin/customers/cubit/customer_list_state.dart';
@@ -44,7 +42,7 @@ class CustomerListPage extends StatelessWidget {
               child: IgnorePointer(
                 child: CustomPaint(
                   painter: _DotPatternPainter(
-                    dotColor: AppColors.primary.withOpacity(0.05),
+                    dotColor: AppColors.primary.withValues(alpha: 0.05),
                   ),
                 ),
               ),
@@ -199,7 +197,7 @@ class _CustomerCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.05),
+            color: AppColors.primary.withValues(alpha: 0.05),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -222,8 +220,8 @@ class _CustomerCard extends StatelessWidget {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          AppColors.primary.withOpacity(0.1),
-                          AppColors.primary.withOpacity(0.05),
+                          AppColors.primary.withValues(alpha: 0.1),
+                          AppColors.primary.withValues(alpha: 0.05),
                         ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
@@ -303,7 +301,7 @@ class _CustomerCard extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: (customer.isProfileApproved ? Colors.green : Colors.orange).withOpacity(0.1),
+                          color: (customer.isProfileApproved ? Colors.green : Colors.orange).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(

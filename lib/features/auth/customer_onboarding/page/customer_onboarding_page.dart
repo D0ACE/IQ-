@@ -8,7 +8,6 @@ import 'package:go_router/go_router.dart';
 import 'package:iq_plus/common/app_widget/app_text_field_widget.dart';
 import 'package:iq_plus/common/app_widget/common_gradient_button.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
-import 'package:iq_plus/common/themes/app_ui_helper.dart';
 import 'package:iq_plus/common/utility/app_validation.dart';
 import 'package:iq_plus/features/admin/consultants/cubit/consultant_cubit.dart';
 import 'package:iq_plus/features/admin/consultants/cubit/consultant_state.dart';
@@ -554,7 +553,7 @@ class _CustomerOnboardingPageState extends State<CustomerOnboardingPage> with Ti
                       border: Border.all(color: Colors.white.withValues(alpha: 0.5)),
                     ),
                     child: DropdownButtonFormField<String>(
-                      value: selectedConsultantId,
+                      initialValue: selectedConsultantId,
                       dropdownColor: Colors.white,
                       style: const TextStyle(color: Color(0xFF1E293B), fontWeight: FontWeight.bold),
                       decoration: const InputDecoration(

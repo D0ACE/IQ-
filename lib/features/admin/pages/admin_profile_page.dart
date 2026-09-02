@@ -1,11 +1,6 @@
-import 'dart:math';
-import 'dart:ui';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
-import 'package:iq_plus/common/themes/app_theme_data.dart';
-import 'package:iq_plus/common/themes/app_ui_helper.dart';
 import 'package:iq_plus/core/local_storage/hive_service.dart';
 import 'package:iq_plus/di/service_locator.dart';
 import 'package:iq_plus/features/auth/model/user_model.dart';
@@ -87,12 +82,12 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
           Positioned(
             top: -50,
             right: -50,
-            child: _buildDecorativeCircle(200, AppColors.kPrimaryColor.withOpacity(0.03)),
+            child: _buildDecorativeCircle(200, AppColors.kPrimaryColor.withValues(alpha: 0.03)),
           ),
           Positioned(
             bottom: 100,
             left: -30,
-            child: _buildDecorativeCircle(150, AppColors.secondary.withOpacity(0.03)),
+            child: _buildDecorativeCircle(150, AppColors.secondary.withValues(alpha: 0.03)),
           ),
           
           SingleChildScrollView(
@@ -148,7 +143,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
         borderRadius: BorderRadius.circular(30),
         boxShadow: [
           BoxShadow(
-            color: (isSuperAdmin ? const Color(0xFF0F172A) : AppColors.kPrimaryColor).withOpacity(0.15),
+            color: (isSuperAdmin ? const Color(0xFF0F172A) : AppColors.kPrimaryColor).withValues(alpha: 0.15),
             blurRadius: 30,
             offset: const Offset(0, 15),
           ),
@@ -178,11 +173,11 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white.withOpacity(0.2), width: 2),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 2),
                     ),
                     child: CircleAvatar(
                       radius: 35,
-                      backgroundColor: Colors.white.withOpacity(0.15),
+                      backgroundColor: Colors.white.withValues(alpha: 0.15),
                       child: Icon(
                         isSuperAdmin ? Icons.admin_panel_settings_rounded : Icons.person_rounded, 
                         color: Colors.white, 
@@ -198,7 +193,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                         Text(
                           isSuperAdmin ? "ROOT AUTHORIZATION" : "PRIVILEGED ACCOUNT",
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.5),
+                            color: Colors.white.withValues(alpha: 0.5),
                             fontSize: 10,
                             fontWeight: FontWeight.w900,
                             letterSpacing: 2,
@@ -219,7 +214,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.2),
+                            color: Colors.black.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
@@ -246,7 +241,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 30,
             offset: const Offset(0, 15),
           ),
@@ -282,7 +277,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: (color ?? AppColors.kPrimaryColor).withOpacity(0.1),
+            color: (color ?? AppColors.kPrimaryColor).withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(icon, color: color ?? AppColors.kPrimaryColor, size: 20),

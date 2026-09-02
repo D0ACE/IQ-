@@ -48,7 +48,7 @@ class _CustomerPolicyListPageState extends State<CustomerPolicyListPage> {
             child: IgnorePointer(
               child: CustomPaint(
                 painter: _DotPatternPainter(
-                  dotColor: AppColors.kPrimaryColor.withOpacity(0.05),
+                  dotColor: AppColors.kPrimaryColor.withValues(alpha: 0.05),
                 ),
               ),
             ),
@@ -104,7 +104,7 @@ class _CustomerPolicyListPageState extends State<CustomerPolicyListPage> {
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF6366F1).withOpacity(0.08),
+            color: const Color(0xFF6366F1).withValues(alpha: 0.08),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -125,7 +125,7 @@ class _CustomerPolicyListPageState extends State<CustomerPolicyListPage> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF6366F1).withOpacity(0.1),
+                        color: const Color(0xFF6366F1).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Icon(_getFileIcon(doc.fileType), color: const Color(0xFF6366F1), size: 28),
@@ -167,7 +167,7 @@ class _CustomerPolicyListPageState extends State<CustomerPolicyListPage> {
                                 "Prepared on ${DateFormat('dd MMM').format(doc.createdAt)}",
                                 style: TextStyle(
                                   fontSize: 11,
-                                  color: AppColors.subText.withOpacity(0.6),
+                                  color: AppColors.subText.withValues(alpha: 0.6),
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -203,7 +203,7 @@ class _CustomerPolicyListPageState extends State<CustomerPolicyListPage> {
   Widget _auditItemModern(String label, String value, IconData icon) {
     return Row(
       children: [
-        Icon(icon, size: 16, color: AppColors.subText.withOpacity(0.4)),
+        Icon(icon, size: 16, color: AppColors.subText.withValues(alpha: 0.4)),
         const SizedBox(width: 8),
         Expanded(
           child: Column(
@@ -214,7 +214,7 @@ class _CustomerPolicyListPageState extends State<CustomerPolicyListPage> {
                 style: TextStyle(
                   fontSize: 9,
                   fontWeight: FontWeight.w900,
-                  color: AppColors.subText.withOpacity(0.5),
+                  color: AppColors.subText.withValues(alpha: 0.5),
                   letterSpacing: 1.0,
                 ),
               ),
@@ -254,7 +254,7 @@ class _CustomerPolicyListPageState extends State<CustomerPolicyListPage> {
               title,
               style: TextStyle(
                 fontSize: 13,
-                color: AppColors.subText.withOpacity(0.7),
+                color: AppColors.subText.withValues(alpha: 0.7),
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -307,7 +307,7 @@ class _CustomerPolicyListPageState extends State<CustomerPolicyListPage> {
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                   decoration: BoxDecoration(
-                                    color: AppColors.purple.withOpacity(0.1),
+                                    color: AppColors.purple.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Text(
@@ -323,7 +323,7 @@ class _CustomerPolicyListPageState extends State<CustomerPolicyListPage> {
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                   decoration: BoxDecoration(
-                                    color: (isActive ? Colors.green : Colors.orange).withOpacity(0.1),
+                                    color: (isActive ? Colors.green : Colors.orange).withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Text(
@@ -341,7 +341,7 @@ class _CustomerPolicyListPageState extends State<CustomerPolicyListPage> {
                               DateFormat('dd MMM yyyy').format(v.performedDate),
                               style: TextStyle(
                                 fontSize: 11,
-                                color: AppColors.subText.withOpacity(0.6),
+                                color: AppColors.subText.withValues(alpha: 0.6),
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -362,7 +362,7 @@ class _CustomerPolicyListPageState extends State<CustomerPolicyListPage> {
                           style: TextStyle(
                             fontSize: 11,
                             fontStyle: FontStyle.italic,
-                            color: AppColors.subText.withOpacity(0.7),
+                            color: AppColors.subText.withValues(alpha: 0.7),
                           ),
                         ),
                         if (isActive && v.approvedBy != null)
@@ -370,7 +370,7 @@ class _CustomerPolicyListPageState extends State<CustomerPolicyListPage> {
                             margin: const EdgeInsets.only(top: 10),
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: Colors.green.withOpacity(0.05),
+                              color: Colors.green.withValues(alpha: 0.05),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Row(

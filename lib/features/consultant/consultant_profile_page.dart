@@ -1,9 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:iq_plus/common/app_widget/app_text_field_widget.dart';
-import 'package:iq_plus/common/app_widget/common_gradient_button.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
-import 'package:iq_plus/common/themes/app_theme_data.dart';
 import 'package:iq_plus/core/local_storage/hive_service.dart';
 import 'package:iq_plus/di/service_locator.dart';
 import 'package:iq_plus/features/auth/model/user_model.dart';
@@ -74,12 +70,12 @@ class _ConsultantProfilePageState extends State<ConsultantProfilePage> {
           Positioned(
             top: -50,
             right: -50,
-            child: _buildDecorativeCircle(200, AppColors.kPrimaryColor.withOpacity(0.03)),
+            child: _buildDecorativeCircle(200, AppColors.kPrimaryColor.withValues(alpha: 0.03)),
           ),
           Positioned(
             bottom: 100,
             left: -30,
-            child: _buildDecorativeCircle(150, AppColors.secondary.withOpacity(0.03)),
+            child: _buildDecorativeCircle(150, AppColors.secondary.withValues(alpha: 0.03)),
           ),
           
           SingleChildScrollView(
@@ -132,7 +128,7 @@ class _ConsultantProfilePageState extends State<ConsultantProfilePage> {
         borderRadius: BorderRadius.circular(30),
         boxShadow: [
           BoxShadow(
-            color: AppColors.kPrimaryColor.withOpacity(0.15),
+            color: AppColors.kPrimaryColor.withValues(alpha: 0.15),
             blurRadius: 30,
             offset: const Offset(0, 15),
           ),
@@ -158,11 +154,11 @@ class _ConsultantProfilePageState extends State<ConsultantProfilePage> {
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white.withOpacity(0.2), width: 2),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 2),
                     ),
                     child: CircleAvatar(
                       radius: 35,
-                      backgroundColor: Colors.white.withOpacity(0.15),
+                      backgroundColor: Colors.white.withValues(alpha: 0.15),
                       child: const Icon(Icons.person_rounded, color: Colors.white, size: 40),
                     ),
                   ),
@@ -174,7 +170,7 @@ class _ConsultantProfilePageState extends State<ConsultantProfilePage> {
                         Text(
                           "SYSTEM PROFILE",
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.5),
+                            color: Colors.white.withValues(alpha: 0.5),
                             fontSize: 10,
                             fontWeight: FontWeight.w900,
                             letterSpacing: 2,
@@ -195,7 +191,7 @@ class _ConsultantProfilePageState extends State<ConsultantProfilePage> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.1),
+                            color: Colors.black.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Text(
@@ -222,7 +218,7 @@ class _ConsultantProfilePageState extends State<ConsultantProfilePage> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 30,
             offset: const Offset(0, 15),
           ),
@@ -258,7 +254,7 @@ class _ConsultantProfilePageState extends State<ConsultantProfilePage> {
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: (color ?? AppColors.kPrimaryColor).withOpacity(0.1),
+            color: (color ?? AppColors.kPrimaryColor).withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(icon, color: color ?? AppColors.kPrimaryColor, size: 20),

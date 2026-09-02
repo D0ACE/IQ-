@@ -3,7 +3,6 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
 import 'package:iq_plus/common/themes/responsive.dart';
-import 'package:iq_plus/common/utility/utility.dart';
 
 import 'components/login_form.dart';
 import 'components/login_screen_top_image.dart';

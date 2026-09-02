@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:iq_plus/common/routes/go_route.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
-import 'package:iq_plus/common/themes/app_ui_helper.dart';
 import 'package:iq_plus/core/access/access_control.dart';
 import 'package:iq_plus/features/admin/customers/widgets/customer_hierarchy_graph.dart';
 import 'package:iq_plus/features/auth/model/customer_model.dart';
@@ -141,7 +140,7 @@ class _CustomerDetailViewState extends State<CustomerProfilePage>
                     width: double.infinity,
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.5),
+                      color: Colors.white.withValues(alpha: 0.5),
                       borderRadius: BorderRadius.circular(32),
                       border: Border.all(color: Colors.white),
                     ),
@@ -178,7 +177,7 @@ class _CustomerDetailViewState extends State<CustomerProfilePage>
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(24),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20)],
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 20)],
           ),
           child: Center(
             child: Text(
@@ -219,7 +218,7 @@ class _CustomerDetailViewState extends State<CustomerProfilePage>
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.7),
+        color: Colors.white.withValues(alpha: 0.7),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: Colors.white),
       ),
@@ -244,9 +243,9 @@ class _CustomerDetailViewState extends State<CustomerProfilePage>
           width: double.infinity,
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.4),
+            color: Colors.white.withValues(alpha: 0.4),
             borderRadius: BorderRadius.circular(28),
-            border: Border.all(color: Colors.white.withOpacity(0.8)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.8)),
           ),
           child: child,
         ),

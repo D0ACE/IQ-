@@ -26,10 +26,6 @@ import 'package:flutter_quill_delta_from_html/flutter_quill_delta_from_html.dart
 import 'package:file_picker/file_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-// 📑 PDF & Excel Imports
-import 'package:syncfusion_flutter_pdf/pdf.dart' as sf_pdf;
-import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
-
 class DocumentEditorPage extends StatefulWidget {
   final dynamic document;
   const DocumentEditorPage({super.key, this.document});

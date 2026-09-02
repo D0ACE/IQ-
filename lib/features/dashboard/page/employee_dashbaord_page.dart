@@ -57,7 +57,7 @@ class _EmployeeDashboardPageState extends State<EmployeeDashboardPage> {
             child: IgnorePointer(
               child: CustomPaint(
                 painter: _DotPatternPainter(
-                  dotColor: AppColors.kPrimaryColor.withOpacity(0.05),
+                  dotColor: AppColors.kPrimaryColor.withValues(alpha: 0.05),
                 ),
               ),
             ),
@@ -106,7 +106,7 @@ class _EmployeeDashboardPageState extends State<EmployeeDashboardPage> {
             borderRadius: BorderRadius.circular(32),
             boxShadow: [
               BoxShadow(
-                color: AppColors.kPrimaryColor.withOpacity(0.3),
+                color: AppColors.kPrimaryColor.withValues(alpha: 0.3),
                 blurRadius: 30,
                 offset: const Offset(0, 15),
               ),
@@ -121,7 +121,7 @@ class _EmployeeDashboardPageState extends State<EmployeeDashboardPage> {
                   top: -30,
                   child: CircleAvatar(
                     radius: 80,
-                    backgroundColor: Colors.white.withOpacity(0.1),
+                    backgroundColor: Colors.white.withValues(alpha: 0.1),
                   ),
                 ),
               ],
@@ -139,7 +139,7 @@ class _EmployeeDashboardPageState extends State<EmployeeDashboardPage> {
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.06),
+                  color: Colors.black.withValues(alpha: 0.06),
                   blurRadius: 20,
                   offset: const Offset(0, 10),
                 ),
@@ -151,7 +151,7 @@ class _EmployeeDashboardPageState extends State<EmployeeDashboardPage> {
                   padding: const EdgeInsets.all(2),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.kPrimaryColor.withOpacity(0.1), width: 2),
+                    border: Border.all(color: AppColors.kPrimaryColor.withValues(alpha: 0.1), width: 2),
                   ),
                   child: const CircleAvatar(
                     radius: 28,
@@ -180,7 +180,7 @@ class _EmployeeDashboardPageState extends State<EmployeeDashboardPage> {
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 13,
-                          color: AppColors.subText.withOpacity(0.7),
+                          color: AppColors.subText.withValues(alpha: 0.7),
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -238,12 +238,12 @@ class _EmployeeDashboardPageState extends State<EmployeeDashboardPage> {
           Positioned(
             top: -40,
             left: -40,
-            child: _buildGlassCircle(150, Colors.white.withOpacity(0.1)),
+            child: _buildGlassCircle(150, Colors.white.withValues(alpha: 0.1)),
           ),
           Positioned(
             top: 100,
             right: -30,
-            child: _buildGlassCircle(100, Colors.white.withOpacity(0.05)),
+            child: _buildGlassCircle(100, Colors.white.withValues(alpha: 0.05)),
           ),
 
           // 🎨 Background Watermark
@@ -253,7 +253,7 @@ class _EmployeeDashboardPageState extends State<EmployeeDashboardPage> {
             child: Icon(
               Icons.dashboard_rounded,
               size: 300,
-              color: AppColors.kPrimaryColor.withOpacity(0.02),
+              color: AppColors.kPrimaryColor.withValues(alpha: 0.02),
             ),
           ),
 
@@ -269,9 +269,9 @@ class _EmployeeDashboardPageState extends State<EmployeeDashboardPage> {
                     Container(
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white.withOpacity(0.5), width: 1.5),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 1.5),
                       ),
                       child: const CircleAvatar(
                         radius: 35,
@@ -304,7 +304,7 @@ class _EmployeeDashboardPageState extends State<EmployeeDashboardPage> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withValues(alpha: 0.9),
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         letterSpacing: 0.2,
@@ -413,10 +413,10 @@ class _EmployeeDashboardPageState extends State<EmployeeDashboardPage> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: color != null ? color.withOpacity(0.08) : AppColors.kPrimaryColor.withOpacity(0.06),
+        color: color != null ? color.withValues(alpha: 0.08) : AppColors.kPrimaryColor.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: (color ?? AppColors.kPrimaryColor).withOpacity(0.1),
+          color: (color ?? AppColors.kPrimaryColor).withValues(alpha: 0.1),
           width: 1,
         ),
       ),
@@ -437,7 +437,7 @@ class _EmployeeDashboardPageState extends State<EmployeeDashboardPage> {
           trailing: Icon(
             Icons.chevron_right_rounded, 
             size: 18, 
-            color: (color ?? AppColors.kPrimaryColor).withOpacity(0.3)
+            color: (color ?? AppColors.kPrimaryColor).withValues(alpha: 0.3)
           ),
           onTap: onTap,
           dense: true,
@@ -499,10 +499,10 @@ class _EmployeeDashboardPageState extends State<EmployeeDashboardPage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: item.color.withOpacity(0.15), width: 1.5),
+        border: Border.all(color: item.color.withValues(alpha: 0.15), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: item.color.withOpacity(0.06),
+            color: item.color.withValues(alpha: 0.06),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -514,7 +514,7 @@ class _EmployeeDashboardPageState extends State<EmployeeDashboardPage> {
           children: [
             // 🎨 Decorative Background Tint
             Positioned.fill(
-              child: Container(color: item.color.withOpacity(0.03)),
+              child: Container(color: item.color.withValues(alpha: 0.03)),
             ),
             // 🎨 Large Background Watermark Icon
             Positioned(
@@ -523,7 +523,7 @@ class _EmployeeDashboardPageState extends State<EmployeeDashboardPage> {
               child: Icon(
                 item.icon,
                 size: 80,
-                color: item.color.withOpacity(0.04),
+                color: item.color.withValues(alpha: 0.04),
               ),
             ),
             Material(
@@ -542,7 +542,7 @@ class _EmployeeDashboardPageState extends State<EmployeeDashboardPage> {
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: item.color.withOpacity(0.1),
+                              color: item.color.withValues(alpha: 0.1),
                               blurRadius: 8,
                               offset: const Offset(0, 4),
                             ),
@@ -572,13 +572,13 @@ class _EmployeeDashboardPageState extends State<EmployeeDashboardPage> {
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 fontSize: 11,
-                                color: AppColors.subText.withOpacity(0.7),
+                                color: AppColors.subText.withValues(alpha: 0.7),
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
                           ),
                           Icon(Icons.arrow_forward_ios_rounded, 
-                               color: item.color.withOpacity(0.4), size: 10),
+                               color: item.color.withValues(alpha: 0.4), size: 10),
                         ],
                       ),
                     ],

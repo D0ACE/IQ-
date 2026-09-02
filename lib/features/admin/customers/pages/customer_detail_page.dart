@@ -1,9 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:iq_plus/common/app_widget/app_text_field_widget.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
-import 'package:iq_plus/common/themes/app_ui_helper.dart';
 import 'package:iq_plus/features/admin/consultants/cubit/consultant_cubit.dart';
 import 'package:iq_plus/features/admin/consultants/cubit/consultant_state.dart';
 import 'package:iq_plus/features/admin/customers/cubit/customer_list_cubit.dart';
@@ -64,7 +62,7 @@ class _CustomerDetailViewState extends State<CustomerDetailPage> {
               child: IgnorePointer(
                 child: CustomPaint(
                   painter: _DotPatternPainter(
-                    dotColor: AppColors.primary.withOpacity(0.05),
+                    dotColor: AppColors.primary.withValues(alpha: 0.05),
                   ),
                 ),
               ),
@@ -106,7 +104,7 @@ class _CustomerDetailViewState extends State<CustomerDetailPage> {
 
                               if (state is ConsultantLoaded) {
                                 return DropdownButtonFormField<String>(
-                                  value: selectedConsultantId,
+                                  initialValue: selectedConsultantId,
                                   decoration: InputDecoration(
                                     labelText: 'Designated Consultant',
                                     labelStyle: TextStyle(color: Colors.grey.shade500, fontSize: 12),
@@ -140,7 +138,7 @@ class _CustomerDetailViewState extends State<CustomerDetailPage> {
                             borderRadius: BorderRadius.circular(32),
                             border: Border.all(color: Colors.grey.shade100),
                             boxShadow: [
-                              BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 20, offset: const Offset(0, 10))
+                              BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 20, offset: const Offset(0, 10))
                             ],
                           ),
                           child: CustomerHierarchyCustom(customer: widget.customer),
@@ -157,7 +155,7 @@ class _CustomerDetailViewState extends State<CustomerDetailPage> {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     boxShadow: [
-                      BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20, offset: const Offset(0, -10))
+                      BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 20, offset: const Offset(0, -10))
                     ],
                   ),
                   child: SizedBox(
@@ -218,7 +216,7 @@ class _CustomerDetailViewState extends State<CustomerDetailPage> {
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: Colors.grey.shade100),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 20, offset: const Offset(0, 10))
+          BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 20, offset: const Offset(0, 10))
         ],
       ),
       child: Column(
@@ -232,7 +230,7 @@ class _CustomerDetailViewState extends State<CustomerDetailPage> {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       child: Row(
         children: [
-          Icon(icon, color: AppColors.primary.withOpacity(0.6), size: 20),
+          Icon(icon, color: AppColors.primary.withValues(alpha: 0.6), size: 20),
           const SizedBox(width: 16),
           Expanded(
             child: Column(

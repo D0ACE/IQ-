@@ -140,7 +140,7 @@ class _PeriodicComplianceFormPageState extends State<PeriodicComplianceFormPage>
                       }
 
                       return DropdownButtonFormField<CustomerModel>(
-                        value: _selectedCustomer,
+                        initialValue: _selectedCustomer,
                         decoration: _inputDecoration('Assign Customer', 'Select a customer'),
                         items: customers.map((c) {
                           return DropdownMenuItem(

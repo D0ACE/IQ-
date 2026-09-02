@@ -1,17 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
 import 'package:iq_plus/common/utility/utility.dart';
 import 'package:iq_plus/common/widgets/common_app_bar.dart';
 import 'package:iq_plus/core/local_storage/hive_service.dart';
 import 'package:iq_plus/di/service_locator.dart';
 import 'package:iq_plus/features/videos/cubit/video_cubit.dart';
-import 'package:iq_plus/features/videos/cubit/video_state.dart';
 import 'package:iq_plus/features/videos/models/video_model.dart';
-
-import '../../../common/routes/go_route.dart';
 
 class VideoQuizPage extends StatefulWidget {
   final AwarenessVideoModel video;
@@ -199,18 +194,22 @@ class _VideoQuizPageState extends State<VideoQuizPage> {
                 const SizedBox(height: 8),
                 Text(q.question, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 16),
-                ...List.generate(q.options.length, (optIdx) {
-                  final optionText = q.options[optIdx];
-                  if (optionText.isEmpty) return const SizedBox.shrink();
-                  return RadioListTile<int>(
-                    title: Text(optionText),
-                    value: optIdx,
-                    groupValue: _answers[index],
-                    onChanged: (val) => setState(() => _answers[index] = val),
-                    contentPadding: EdgeInsets.zero,
-                    dense: true,
-                  );
-                }),
+                RadioGroup<int>(
+                  groupValue: _answers[index],
+                  onChanged: (val) => setState(() => _answers[index] = val),
+                  child: Column(
+                    children: List.generate(q.options.length, (optIdx) {
+                      final optionText = q.options[optIdx];
+                      if (optionText.isEmpty) return const SizedBox.shrink();
+                      return RadioListTile<int>(
+                        title: Text(optionText),
+                        value: optIdx,
+                        contentPadding: EdgeInsets.zero,
+                        dense: true,
+                      );
+                    }),
+                  ),
+                ),
               ],
             ),
           ),

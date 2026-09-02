@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
-import 'package:iq_plus/common/themes/app_theme_data.dart';
 
 class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
@@ -45,9 +44,7 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
                 letterSpacing: -0.5,
               ),
             ),
-            actions: actions != null 
-                ? actions!.map((a) => Padding(padding: const EdgeInsets.only(right: 8), child: a)).toList()
-                : null,
+            actions: actions?.map((a) => Padding(padding: const EdgeInsets.only(right: 8), child: a)).toList(),
           ),
         ),
       ),
