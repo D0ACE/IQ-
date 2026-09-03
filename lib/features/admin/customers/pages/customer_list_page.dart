@@ -15,111 +15,153 @@ class CustomerListPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => getIt<CustomerListCubit>()..fetchCustomers(),
-      child: Scaffold(
-        backgroundColor: const Color(0xFFF8FAFC),
-        appBar: AppBar(
-          elevation: 0,
-          backgroundColor: Colors.white,
-          foregroundColor: AppColors.titleText,
-          centerTitle: false,
-          title: const Text(
-            'Customer Management',
-            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20, letterSpacing: -0.5),
-          ),
+    // 🚀 Using Global CustomerListCubit provided in main.dart
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: Colors.white,
+        foregroundColor: AppColors.titleText,
+        centerTitle: false,
+        title: const Text(
+          'Customer Management',
+          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20, letterSpacing: -0.5),
         ),
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: () => _showAddEditDialog(context),
-          backgroundColor: AppColors.primary,
-          icon: const Icon(Icons.business_center_rounded, color: Colors.white),
-          label: const Text("Add Customer", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        ),
-        body: Stack(
-          children: [
-            // 🎨 Background Pattern
-            Positioned.fill(
-              child: IgnorePointer(
-                child: CustomPaint(
-                  painter: _DotPatternPainter(
-                    dotColor: AppColors.primary.withValues(alpha: 0.05),
-                  ),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showAddEditDialog(context),
+        backgroundColor: AppColors.primary,
+        icon: const Icon(Icons.business_center_rounded, color: Colors.white),
+        label: const Text("Add Customer", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+      ),
+      body: Stack(
+        children: [
+          // 🎨 Background Pattern
+          Positioned.fill(
+            child: IgnorePointer(
+              child: CustomPaint(
+                painter: _DotPatternPainter(
+                  dotColor: AppColors.primary.withValues(alpha: 0.05),
                 ),
               ),
             ),
+          ),
 
-            BlocListener<CustomerListCubit, CustomerListState>(
-              listener: (context, state) {
-                if (state is CustomerListOperationSuccess) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(state.message)),
-                  );
+          BlocListener<CustomerListCubit, CustomerListState>(
+            listener: (context, state) {
+              if (state is CustomerListOperationSuccess) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(state.message)),
+                );
+              }
+              if (state is CustomerListError) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+                );
+              }
+            },
+            child: BlocBuilder<CustomerListCubit, CustomerListState>(
+              builder: (context, state) {
+                // 🔄 Only show full screen loader for initial load or manual refresh
+                if (state is CustomerListLoading) {
+                  return const Center(child: CircularProgressIndicator());
                 }
-                if (state is CustomerListError) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(state.message), backgroundColor: Colors.red),
-                  );
-                }
-              },
-              child: BlocBuilder<CustomerListCubit, CustomerListState>(
-                builder: (context, state) {
-                  if (state is CustomerListLoading) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
 
-                  if (state is CustomerListLoaded) {
-                    if (state.customers.isEmpty) {
-                      return Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.business_rounded, size: 64, color: Colors.grey.shade300),
-                            const SizedBox(height: 16),
-                            const Text(
-                              "No customers found",
-                              style: TextStyle(color: Colors.grey, fontSize: 16, fontWeight: FontWeight.w500),
-                            ),
-                          ],
-                        ),
-                      );
-                    }
-
-                    return ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
-                      physics: const BouncingScrollPhysics(),
-                      itemCount: state.customers.length,
-                      itemBuilder: (context, index) {
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 16),
-                          child: _CustomerCard(
-                            customer: state.customers[index],
-                            onTap: () async {
-                              await GoRouter.of(context).push(
-                                AppRoutes.customerDetail,
-                                extra: state.customers[index],
-                              );
-                              if (context.mounted) {
-                                context.read<CustomerListCubit>().fetchCustomers();
-                              }
-                            },
-                            onEdit: () => _showAddEditDialog(context, customer: state.customers[index]),
-                            onDelete: () => _showDeleteConfirm(context, state.customers[index]),
+                if (state is CustomerListLoaded || state is CustomerListOperationSuccess) {
+                  final customers = state is CustomerListLoaded ? state.customers : <CustomerModel>[];
+                  
+                  // If we are in Success state, we might not have the customers in the state object.
+                  // However, the Cubit will emit Loaded immediately after Success.
+                  // If it's currently Success, we can show a loader or just wait. 
+                  // But since we removed the loader here, it will fall through.
+                  
+                  if (customers.isEmpty && state is CustomerListLoaded) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.business_rounded, size: 64, color: Colors.grey.shade300),
+                          const SizedBox(height: 16),
+                          const Text(
+                            "No customers found",
+                            style: TextStyle(color: Colors.grey, fontSize: 16, fontWeight: FontWeight.w500),
                           ),
-                        );
-                      },
+                        ],
+                      ),
                     );
                   }
 
-                  if (state is CustomerListOperationSuccess) {
+                  if (customers.isEmpty && state is CustomerListOperationSuccess) {
                     return const Center(child: CircularProgressIndicator());
                   }
 
-                  return const SizedBox();
-                },
-              ),
+                  return ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
+                    physics: const BouncingScrollPhysics(),
+                    itemCount: customers.length,
+                    itemBuilder: (context, index) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: _CustomerCard(
+                          customer: customers[index],
+                          onTap: () async {
+                            await GoRouter.of(context).push(
+                              AppRoutes.customerDetail,
+                              extra: customers[index],
+                            );
+                            if (context.mounted) {
+                              context.read<CustomerListCubit>().fetchCustomers();
+                            }
+                          },
+                          onEdit: () => _showAddEditDialog(context, customer: customers[index]),
+                          onDelete: () => _showDeleteConfirm(context, customers[index]),
+                        ),
+                      );
+                    },
+                  );
+                }
+
+                if (state is CustomerListError) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.error_outline_rounded, size: 64, color: Colors.redAccent),
+                        const SizedBox(height: 16),
+                        Text(
+                          "Failed to load customers",
+                          style: TextStyle(color: Colors.grey.shade800, fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 8),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 40),
+                          child: Text(
+                            state.message,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        ElevatedButton.icon(
+                          onPressed: () => context.read<CustomerListCubit>().fetchCustomers(),
+                          icon: const Icon(Icons.refresh_rounded),
+                          label: const Text("Try Again"),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                return const SizedBox();
+              },
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

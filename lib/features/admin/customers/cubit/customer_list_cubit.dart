@@ -10,11 +10,14 @@ class CustomerListCubit extends Cubit<CustomerListState> {
 
   CustomerListCubit(this.repo) : super(CustomerListInitial());
 
+  // 🔄 Memory for refreshing the correct list
+  Future<void> Function()? _lastFetchAction;
+
   Future<void> fetchCustomers() async {
+    _lastFetchAction = () => fetchCustomers();
     emit(CustomerListLoading());
     try {
       final customers = await repo.getAllCustomers();
-      
       emit(CustomerListLoaded(customers));
     } catch (e) {
       emit(CustomerListError(e.toString()));
@@ -22,10 +25,10 @@ class CustomerListCubit extends Cubit<CustomerListState> {
   }
 
   Future<void> fetchAssignCustomers(String consultantId) async {
+    _lastFetchAction = () => fetchAssignCustomers(consultantId);
     emit(CustomerListLoading());
     try {
       final customers = await repo.getFetchAssignCustomers(consultantId);
-      
       emit(CustomerListLoaded(customers));
     } catch (e) {
       emit(CustomerListError(e.toString()));
@@ -33,15 +36,14 @@ class CustomerListCubit extends Cubit<CustomerListState> {
   }
 
   Future<void> fetchApprovedCustomers(String? consultantId) async {
+    _lastFetchAction = () => fetchApprovedCustomers(consultantId);
     emit(CustomerListLoading());
     try {
-      if((consultantId??'').isNotEmpty){
-        final customers = await repo.getFetchConsultantCustomers(consultantId);
-        
+      if ((consultantId ?? '').isNotEmpty) {
+        final customers = await repo.getFetchConsultantCustomers(consultantId!);
         emit(CustomerListLoaded(customers));
-      }else{
+      } else {
         final customers = await repo.getFetchAllApprovedCustomers();
-        
         emit(CustomerListLoaded(customers));
       }
     } catch (e) {
@@ -49,15 +51,31 @@ class CustomerListCubit extends Cubit<CustomerListState> {
     }
   }
 
-  Future<void> approveCustomer({required String customerId,required String companyName,required String customerEmail,required String consultantId,}) async {
+  /// 🔄 Utility to refresh based on last action
+  Future<void> refresh() async {
+    if (_lastFetchAction != null) {
+      await _lastFetchAction!();
+    } else {
+      await fetchCustomers();
+    }
+  }
+
+  Future<void> approveCustomer({
+    required String customerId,
+    required String companyName,
+    required String customerEmail,
+    required String consultantId,
+  }) async {
     try {
       emit(CustomerListLoading());
-      await repo.approveCustomer(customerId: customerId,
-          companyName: companyName,
-          customerEmail:customerEmail,
-          consultantId: consultantId);
+      await repo.approveCustomer(
+        customerId: customerId,
+        companyName: companyName,
+        customerEmail: customerEmail,
+        consultantId: consultantId,
+      );
       emit(CustomerListOperationSuccess("Customer approved successfully"));
-      fetchCustomers();
+      await refresh();
     } catch (e) {
       emit(CustomerListError(e.toString()));
     }
@@ -70,19 +88,19 @@ class CustomerListCubit extends Cubit<CustomerListState> {
   }) async {
     try {
       emit(CustomerListLoading());
-
       await repo.updateCustomerNextVisitDate(
         customerId: customer.customerId,
         nextVisitDate: nextVisitDate,
       );
-      fetchAssignCustomers(consultant?.userId??"");
+      emit(CustomerListOperationSuccess("Visit date updated successfully"));
+      await refresh();
       await BrevoEmailService.sendNextVisitDateAssignedMail(
         customer: customer,
         consultant: consultant,
         nextVisitDate: nextVisitDate,
       );
     } catch (e) {
-      emit(CustomerListError("Failed to update password"));
+      emit(CustomerListError("Failed to update visit date: ${e.toString()}"));
     }
   }
 
@@ -91,10 +109,10 @@ class CustomerListCubit extends Cubit<CustomerListState> {
     try {
       emit(CustomerListLoading());
       await repo.createCustomer(customer);
-      
+
       // 📧 If direct approval is active, send credentials email
       if (customer.isProfileApproved) {
-         BrevoEmailService.sendCustomerApprovedMail(
+        BrevoEmailService.sendCustomerApprovedMail(
           companyName: customer.companyName,
           email: customer.email,
           password: customer.password,
@@ -102,7 +120,7 @@ class CustomerListCubit extends Cubit<CustomerListState> {
       }
 
       emit(CustomerListOperationSuccess("Customer created successfully"));
-      fetchCustomers();
+      await refresh();
     } catch (e) {
       emit(CustomerListError(e.toString()));
     }
@@ -114,7 +132,7 @@ class CustomerListCubit extends Cubit<CustomerListState> {
       emit(CustomerListLoading());
       await repo.updateCustomer(customer);
       emit(CustomerListOperationSuccess("Customer updated successfully"));
-      fetchCustomers();
+      await refresh();
     } catch (e) {
       emit(CustomerListError(e.toString()));
     }
@@ -126,7 +144,7 @@ class CustomerListCubit extends Cubit<CustomerListState> {
       emit(CustomerListLoading());
       await repo.deleteCustomer(customerId);
       emit(CustomerListOperationSuccess("Customer deleted successfully"));
-      fetchCustomers();
+      await refresh();
     } catch (e) {
       emit(CustomerListError(e.toString()));
     }

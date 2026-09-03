@@ -13,7 +13,8 @@ class CustomerListLoaded extends CustomerListState {
 
 class CustomerListOperationSuccess extends CustomerListState {
   final String message;
-  CustomerListOperationSuccess(this.message);
+  final List<CustomerModel> customers;
+  CustomerListOperationSuccess(this.message, {this.customers = const []});
 }
 
 class CustomerListError extends CustomerListState {

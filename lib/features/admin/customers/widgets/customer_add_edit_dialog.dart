@@ -374,14 +374,17 @@ class _CustomerAddEditDialogState extends State<CustomerAddEditDialog> {
   }
 
   void _onSave() {
-    if (_formKey.currentState!.validate()) {
-      if (selectedConsultantId == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Please assign a consultant")),
-        );
-        return;
-      }
+    if (selectedConsultantId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Please assign a Lead Consultant"),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
 
+    if (_formKey.currentState!.validate()) {
       final cubit = context.read<CustomerListCubit>();
       final isNew = widget.customer == null;
       
