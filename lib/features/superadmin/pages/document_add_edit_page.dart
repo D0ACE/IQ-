@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:iq_plus/common/app_widget/app_text_field_widget.dart';
 import 'package:iq_plus/common/routes/go_route.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
+import 'package:iq_plus/common/themes/app_const.dart';
 import 'package:iq_plus/common/widgets/common_app_bar.dart';
 import 'package:iq_plus/features/admin/consultants/cubit/consultant_cubit.dart';
 import 'package:iq_plus/features/admin/consultants/cubit/consultant_state.dart';
@@ -69,9 +70,24 @@ class _DocumentAddEditPageState extends State<DocumentAddEditPage> {
       withData: true, // Required for Web to get bytes
     );
     if (result != null && result.files.single.bytes != null) {
+      final file = result.files.single;
+
+      // 🛡️ Check file size
+      if (file.size > AppConst.maxVideoSize) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("File too large (${(file.size / (1024 * 1024)).toStringAsFixed(2)} MB). Maximum allowed is 50 MB."),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
       setState(() {
-        selectedFileBytes = result.files.single.bytes;
-        selectedFileName = result.files.single.name;
+        selectedFileBytes = file.bytes;
+        selectedFileName = file.name;
       });
     }
   }
@@ -191,9 +207,20 @@ class _DocumentAddEditPageState extends State<DocumentAddEditPage> {
                           const Icon(Icons.attach_file, color: AppColors.purple),
                           const SizedBox(width: 12),
                           Expanded(
-                            child: Text(
-                              selectedFileName ?? (existingFileName ?? "No file selected"),
-                              overflow: TextOverflow.ellipsis,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  selectedFileName ?? (existingFileName ?? "No file selected"),
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                if (selectedFileBytes != null)
+                                  Text(
+                                    "${(selectedFileBytes!.length / (1024 * 1024)).toStringAsFixed(2)} MB",
+                                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                  ),
+                              ],
                             ),
                           ),
                           const Text("Select File", style: TextStyle(color: AppColors.purple, fontWeight: FontWeight.bold)),

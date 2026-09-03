@@ -137,11 +137,18 @@ class DocumentRepository {
     final userId = user?.userId ?? 'unknown';
     
     final String supabasePath = 'policies/${DateTime.now().millisecondsSinceEpoch}_$fileName';
-    await _supabase.storage.from(SupabaseConfig.bucketName).uploadBinary(
-      supabasePath,
-      bytes,
-      fileOptions: const FileOptions(cacheControl: '3600', upsert: false),
-    );
+    try {
+      await _supabase.storage.from(SupabaseConfig.bucketName).uploadBinary(
+        supabasePath,
+        bytes,
+        fileOptions: const FileOptions(cacheControl: '3600', upsert: false),
+      );
+    } on StorageException catch (e) {
+      if (e.statusCode == '413') {
+        throw 'The file is too large for the storage server. Please try a smaller file (max 50MB).';
+      }
+      rethrow;
+    }
     
     final String fileUrl = _supabase.storage.from(SupabaseConfig.bucketName).getPublicUrl(supabasePath);
 
@@ -250,11 +257,18 @@ class DocumentRepository {
       }
       
       supabasePath = 'policies/${DateTime.now().millisecondsSinceEpoch}_$fileName';
-      await _supabase.storage.from(SupabaseConfig.bucketName).uploadBinary(
-        supabasePath,
-        bytes,
-        fileOptions: const FileOptions(cacheControl: '3600', contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'),
-      );
+      try {
+        await _supabase.storage.from(SupabaseConfig.bucketName).uploadBinary(
+          supabasePath,
+          bytes,
+          fileOptions: const FileOptions(cacheControl: '3600', contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'),
+        );
+      } on StorageException catch (e) {
+        if (e.statusCode == '413') {
+          throw 'The spreadsheet is too large for the storage server. Please try a smaller file (max 50MB).';
+        }
+        rethrow;
+      }
     }
     
     final String fileUrl = _supabase.storage.from(SupabaseConfig.bucketName).getPublicUrl(supabasePath);
@@ -338,7 +352,14 @@ class DocumentRepository {
       final extension = p.extension(newFileName);
       final String supabasePath = 'policies/${DateTime.now().millisecondsSinceEpoch}_$newFileName';
       
-      await _supabase.storage.from(SupabaseConfig.bucketName).uploadBinary(supabasePath, newFileBytes);
+      try {
+        await _supabase.storage.from(SupabaseConfig.bucketName).uploadBinary(supabasePath, newFileBytes);
+      } on StorageException catch (e) {
+        if (e.statusCode == '413') {
+          throw 'The new file is too large for the storage server. Please try a smaller file (max 50MB).';
+        }
+        rethrow;
+      }
       
       final String fileUrl = _supabase.storage.from(SupabaseConfig.bucketName).getPublicUrl(supabasePath);
 

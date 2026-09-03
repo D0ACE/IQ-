@@ -19,12 +19,19 @@ class VideoRepository {
   }) async {
     final String supabasePath = 'videos/${DateTime.now().millisecondsSinceEpoch}_$fileName';
 
-    // 1. Upload to Supabase Storage using Binary (Web compatible)
-    await _supabase.storage.from(SupabaseConfig.bucketName).uploadBinary(
-      supabasePath,
-      bytes,
-      fileOptions: const FileOptions(cacheControl: '3600', upsert: false),
-    );
+    try {
+      // 1. Upload to Supabase Storage using Binary (Web compatible)
+      await _supabase.storage.from(SupabaseConfig.bucketName).uploadBinary(
+        supabasePath,
+        bytes,
+        fileOptions: const FileOptions(cacheControl: '3600', upsert: false),
+      );
+    } on StorageException catch (e) {
+      if (e.statusCode == '413') {
+        throw 'The video file is too large for the storage server. Please try a smaller video (max 50MB).';
+      }
+      rethrow;
+    }
 
     final String videoUrl = _supabase.storage.from(SupabaseConfig.bucketName).getPublicUrl(supabasePath);
 

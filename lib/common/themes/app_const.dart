@@ -39,5 +39,5 @@ class AppConst {
   static const String customerRole = '3';
   static const String employeeRole = '4';
 
-
+  static const int maxVideoSize = 50 * 1024 * 1024; // 50MB
 }

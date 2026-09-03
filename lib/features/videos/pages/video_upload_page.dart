@@ -5,6 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:go_router/go_router.dart';
 import 'package:iq_plus/common/app_widget/app_text_field_widget.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
+import 'package:iq_plus/common/themes/app_const.dart';
 import 'package:iq_plus/common/widgets/common_app_bar.dart';
 import 'package:iq_plus/common/utility/utility.dart';
 import 'package:iq_plus/core/local_storage/hive_service.dart';
@@ -47,9 +48,24 @@ class _VideoUploadPageState extends State<VideoUploadPage> {
     );
 
     if (result != null && result.files.single.bytes != null) {
+      final file = result.files.single;
+      
+      // 🛡️ Check file size (Supabase Free Tier limit is 50MB)
+      if (file.size > AppConst.maxVideoSize) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("File too large (${(file.size / (1024 * 1024)).toStringAsFixed(2)} MB). Maximum allowed is 50 MB."),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
       setState(() {
-        _selectedFileBytes = result.files.single.bytes;
-        _selectedFileName = result.files.single.name;
+        _selectedFileBytes = file.bytes;
+        _selectedFileName = file.name;
       });
     }
   }
@@ -131,6 +147,16 @@ class _VideoUploadPageState extends State<VideoUploadPage> {
       return;
     }
 
+    if (_questions.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Please add at least one MCQ question for the video quiz"),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
     context.read<VideoCubit>().uploadVideo(
           title: _titleCtrl.text.trim(),
           bytes: _selectedFileBytes!,
@@ -199,9 +225,20 @@ class _VideoUploadPageState extends State<VideoUploadPage> {
                         const Icon(Icons.video_library, color: AppColors.purple),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: Text(
-                            _selectedFileName ?? "No video selected",
-                            overflow: TextOverflow.ellipsis,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _selectedFileName ?? "No video selected",
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              if (_selectedFileBytes != null)
+                                Text(
+                                  "${(_selectedFileBytes!.length / (1024 * 1024)).toStringAsFixed(2)} MB",
+                                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                ),
+                            ],
                           ),
                         ),
                         const Text(
