@@ -146,7 +146,7 @@ class _LoginFormState extends State<LoginForm> {
             ),
           ),
 
-          Align(
+          /*Align(
             alignment: Alignment.centerRight,
             child: TextButton(
               onPressed: () {},
@@ -155,7 +155,7 @@ class _LoginFormState extends State<LoginForm> {
                 style: TextStyle(color: Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.w800),
               ),
             ),
-          ),
+          ),*/
 
           const SizedBox(height: 35),
 
