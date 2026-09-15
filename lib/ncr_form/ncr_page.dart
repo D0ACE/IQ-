@@ -81,12 +81,12 @@ class _NcrPageState extends State<NcrPage> {
                 final ncr = provider.ncrList[index];
                 return NcrListCard(
                   ncr: ncr,
-                  roleId: roleId, // 👈 ADD THIS
+                  roleId: roleId,
                   onTap: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => NCRFormPage(ncrData: ncr),
+                        builder: (_) => NCRFormPage(ncrData: ncr, forceEdit: false),
                       ),
                     );
                   },
@@ -123,6 +123,29 @@ class _NcrListCardState extends State<NcrListCard> {
   void initState() {
     super.initState();
     status = widget.ncr['status'] ?? AppConst.openNCRStatusKey;
+  }
+
+  void _showDeleteDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Delete NCR"),
+        content: const Text("Are you sure you want to delete this NCR?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () {
+              context.read<NcrProvider>().deleteNcr(widget.ncr['id']);
+              Navigator.pop(ctx);
+            },
+            child: const Text("Delete", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
   }
 
   // List<String> allowedStatusChanges() {
@@ -272,17 +295,28 @@ class _NcrListCardState extends State<NcrListCard> {
               //       : _statusTag(),
               // ),
 
-                            Padding(
-                padding: const EdgeInsets.only(left: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4.0),
                 child: _statusTag(),
               ),
-              /// Right: status buttons
-              // Row(
-              //   children: allowedStatusChanges().map((s) {
-              //     return Padding(
-              //       padding: const EdgeInsets.only(left: 8),
-              //       child: ElevatedButton(
-              //         style: ElevatedButton.styleFrom(
+              if (!Utility.isCustomer(widget.roleId)) ...[
+                IconButton(
+                  icon: const Icon(Icons.edit, color: AppColors.primary),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            NCRFormPage(ncrData: widget.ncr, forceEdit: true),
+                      ),
+                    );
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, color: Colors.red),
+                  onPressed: () => _showDeleteDialog(context),
+                ),
+              ],
               //           backgroundColor: Utility.getNCRStatusColor(s),
               //         ),
               //         onPressed: () => _updateStatus(s),

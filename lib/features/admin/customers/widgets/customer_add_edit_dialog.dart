@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:iq_plus/common/app_widget/app_text_field_widget.dart';
@@ -161,7 +162,7 @@ class _CustomerAddEditDialogState extends State<CustomerAddEditDialog> {
                 _sectionHeader("ORGANIZATION CORE"),
                 _buildModernField("Company Name", companyNameName: companyNameCtrl, icon: Icons.business_rounded, isRequired: true),
                 _buildModernField("Headquarters Address", companyNameName: addressCtrl, icon: Icons.location_on_rounded, isRequired: true),
-                _buildModernField("Primary Contact", companyNameName: phoneCtrl, icon: Icons.phone_android_rounded, isRequired: true, keyboardType: TextInputType.phone),
+                _buildModernField("Primary Contact", companyNameName: phoneCtrl, icon: Icons.phone_android_rounded, isRequired: true, keyboardType: TextInputType.number, validator: AppValidation.phoneNumberValidator, inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)]),
                 _buildModernField("Corporate Email", companyNameName: emailCtrl, icon: Icons.alternate_email_rounded, isRequired: true, isEnabled: !isEdit, validator: AppValidation.checkEmailValidation, keyboardType: TextInputType.emailAddress),
                 
                 const SizedBox(height: 20),
@@ -263,7 +264,7 @@ class _CustomerAddEditDialogState extends State<CustomerAddEditDialog> {
     );
   }
 
-  Widget _buildModernField(String hint, {required TextEditingController companyNameName, required IconData icon, bool isRequired = false, bool isEnabled = true, String? Function(String?)? validator, TextInputType? keyboardType}) {
+  Widget _buildModernField(String hint, {required TextEditingController companyNameName, required IconData icon, bool isRequired = false, bool isEnabled = true, String? Function(String?)? validator, TextInputType? keyboardType, List<TextInputFormatter>? inputFormatters}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Container(
@@ -279,6 +280,7 @@ class _CustomerAddEditDialogState extends State<CustomerAddEditDialog> {
           isEnabled: isEnabled,
           validator: validator,
           keyboardType: keyboardType,
+          inputFormatters: inputFormatters,
           prefixIconWidget: Icon(icon, color: AppColors.primary, size: 20),
           textStyle: const TextStyle(color: AppColors.titleText, fontSize: 14, fontWeight: FontWeight.bold),
           decoration: InputDecoration(
@@ -366,7 +368,7 @@ class _CustomerAddEditDialogState extends State<CustomerAddEditDialog> {
             const SizedBox(height: 16),
             _buildModernField("Authority Name", companyNameName: name, icon: Icons.person_rounded, isRequired: true),
             _buildModernField("Direct Email", companyNameName: email, icon: Icons.email_rounded, keyboardType: TextInputType.emailAddress, validator: AppValidation.checkEmailValidation),
-            _buildModernField("Mobile Connection", companyNameName: mobile, icon: Icons.phone_rounded, keyboardType: TextInputType.phone, validator: AppValidation.phoneNumberValidator),
+            _buildModernField("Mobile Connection", companyNameName: mobile, icon: Icons.phone_rounded, keyboardType: TextInputType.number, validator: AppValidation.phoneNumberValidator, inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)]),
           ],
         ),
       ),

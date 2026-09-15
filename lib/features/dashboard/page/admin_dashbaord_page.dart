@@ -569,7 +569,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
       children: [
         _sectionTitle('System Statistics'),
         const SizedBox(height: 14),
-        FutureBuilder<int>(
+    /*    FutureBuilder<int>(
           future: userRepository.getTotalActiveUserCount(),
           builder: (context, snapshot) {
             return _statCard(
@@ -583,7 +583,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
             );
           },
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 16),*/
         FutureBuilder<int>(
           future: userRepository.getTotalCustomerCount(),
           builder: (context, snapshot) {
@@ -759,10 +759,15 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                title,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12,
@@ -898,6 +903,11 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
               title: 'User Management',
               icon: Icons.badge_rounded,
               onTap: () => context.push(AppRoutes.employeeList),
+            ),
+            _clickableCard(
+              title: 'Visit Summary',
+              icon: Icons.event_available_rounded,
+              onTap: () => GoRouter.of(context).push(AppRoutes.visitorSummaryList),
             ),
             _clickableCard(
               title: 'Policies & Procedures',

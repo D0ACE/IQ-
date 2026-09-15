@@ -682,10 +682,15 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                title,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12,
@@ -812,25 +817,25 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
               onTap: () => context.push(AppRoutes.ncrPage),
             ),
             _clickableCard(
-              title: 'Risk',
-              icon: Icons.shield_rounded,
-              onTap: () {},
-            ),
-            _clickableCard(
               title: 'Next Visit',
               icon: Icons.event_available_rounded,
               onTap: () => showNextVisitDialog(),
             ),
-            _clickableCard(
+            /*   _clickableCard(
+              title: 'Risk',
+              icon: Icons.shield_rounded,
+              onTap: () {},
+            ),*/
+          /*  _clickableCard(
               title: 'Next Audit',
               icon: Icons.fact_check_rounded,
               onTap: () {},
-            ),
-            _clickableCard(
+            ),*/
+        /*    _clickableCard(
               title: 'Next Training',
               icon: Icons.school_rounded,
               onTap: () {},
-            ),
+            ),*/
             _clickableCard(
               title: 'Policies & Procedures',
               icon: Icons.description_rounded,

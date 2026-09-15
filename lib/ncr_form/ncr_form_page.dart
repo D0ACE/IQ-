@@ -22,8 +22,9 @@ import 'package:iq_plus/ncr_form/ncr/repository/ncr_repository.dart';
 
 class NCRFormPage extends StatefulWidget {
   final Map<String, dynamic>? ncrData;
+  final bool forceEdit;
 
-  const NCRFormPage({super.key, this.ncrData});
+  const NCRFormPage({super.key, this.ncrData, this.forceEdit = false});
 
   @override
   State<NCRFormPage> createState() => _NCRFormPageState();
@@ -34,6 +35,8 @@ class _NCRFormPageState extends State<NCRFormPage> {
   final picker = ImagePicker();
   final NcrRepository _ncrRepository = NcrRepository();
   late bool isReview;
+  bool isEditable = true;
+  bool isSaving = false;
   String roleId = '';
 
   // role fetched from Firebase
@@ -107,6 +110,9 @@ class _NCRFormPageState extends State<NCRFormPage> {
 
       /// Fetch user role from Firebase
       fetchUserRole();
+    } else {
+      isEditable = true;
+      fetchUserRole();
     }
   }
 
@@ -127,6 +133,9 @@ class _NCRFormPageState extends State<NCRFormPage> {
   void fetchUserRole() {
     roleId = userLoginDetails?.roleId ?? customerLoginDetails?.roleId ?? '';
     isRoleLoaded = true;
+    if (isReview) {
+      isEditable = widget.forceEdit && !Utility.isCustomer(roleId);
+    }
     setState(() {});
   }
 
@@ -187,7 +196,15 @@ class _NCRFormPageState extends State<NCRFormPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(isReview ? "View NCR" : "NCR Form")),
+      appBar: AppBar(
+        title: Text(
+          !isReview
+              ? "NCR Form"
+              : isEditable
+                  ? "Edit NCR"
+                  : "View NCR",
+        ),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(12),
         child: Column(
@@ -244,13 +261,13 @@ class _NCRFormPageState extends State<NCRFormPage> {
                         AppTextFieldWidget(
                           hintText: "DOC NO",
                           textFieldController: docNoCtrl,
-                          readOnly: isReview,
+                          readOnly: !isEditable,
                         ),
                         const SizedBox(height: 6),
                         AppTextFieldWidget(
                           hintText: "REV NO",
                           textFieldController: revNoCtrl,
-                          readOnly: isReview,
+                          readOnly: !isEditable,
                         ),
                         const SizedBox(height: 6),
                         AppTextFieldWidget(
@@ -263,7 +280,7 @@ class _NCRFormPageState extends State<NCRFormPage> {
                         AppTextFieldWidget(
                           hintText: "PAGE",
                           textFieldController: pageCtrl,
-                          readOnly: isReview,
+                          readOnly: !isEditable,
                         ),
                       ],
                     ),
@@ -361,9 +378,11 @@ class _NCRFormPageState extends State<NCRFormPage> {
             /// 🔹 SECTION 5
             sectionHeader("Select Company"),
             CustomerDropdownWidget(
-              consultantId: userLoginDetails?.userId,
+              consultantId: userLoginDetails?.roleId == AppConst.superAdminRole || userLoginDetails?.roleId == AppConst.adminRole
+                  ? null
+                  : userLoginDetails?.userId,
               selectedCustomer: selectedCustomer,
-              readOnly: isReview,
+              readOnly: !isEditable,
               onChanged: (customer) {
                 setState(() {
                   selectedCustomer = customer;
@@ -385,7 +404,7 @@ class _NCRFormPageState extends State<NCRFormPage> {
                   child: AppTextFieldWidget(
                     hintText: "Process / Area / Department",
                     textFieldController: processCtrl,
-                    readOnly: isReview,
+                    readOnly: !isEditable,
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -393,7 +412,7 @@ class _NCRFormPageState extends State<NCRFormPage> {
                   child: AppTextFieldWidget(
                     hintText: "IQA Number",
                     textFieldController: iqaCtrl,
-                    readOnly: isReview,
+                    readOnly: !isEditable,
                     keyboardType: TextInputType.number,
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   ),
@@ -408,7 +427,7 @@ class _NCRFormPageState extends State<NCRFormPage> {
                   child: AppTextFieldWidget(
                     hintText: "Requirement / Clause No(s)",
                     textFieldController: clauseCtrl,
-                    readOnly: isReview,
+                    readOnly: !isEditable,
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -416,7 +435,7 @@ class _NCRFormPageState extends State<NCRFormPage> {
                   child: AppTextFieldWidget(
                     hintText: "NCR Number & Date",
                     textFieldController: ncrNoCtrl,
-                    readOnly: isReview,
+                    readOnly: !isEditable,
                   ),
                 ),
               ],
@@ -427,14 +446,14 @@ class _NCRFormPageState extends State<NCRFormPage> {
               hintText: "Statement of Non Conformity",
               maxLines: 2,
               textFieldController: statementCtrl,
-              readOnly: isReview,
+              readOnly: !isEditable,
             ),
 
             const SizedBox(height: 8),
             AppTextFieldWidget(
               hintText: "Objective Evidence",
               textFieldController: evidenceCtrl,
-              readOnly: isReview,
+              readOnly: !isEditable,
             ),
 
             const SizedBox(height: 8),
@@ -444,7 +463,7 @@ class _NCRFormPageState extends State<NCRFormPage> {
                   child: AppTextFieldWidget(
                     hintText: "Classification",
                     textFieldController: classificationCtrl,
-                    readOnly: isReview,
+                    readOnly: !isEditable,
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -453,7 +472,7 @@ class _NCRFormPageState extends State<NCRFormPage> {
                     hintText: "Due Date",
                     textFieldController: dueDateCtrl,
                     readOnly: true,
-                    onTap: () => pickDate(dueDateCtrl),
+                    onTap: () => isEditable ? pickDate(dueDateCtrl) : null,
                   ),
                 ),
               ],
@@ -465,7 +484,7 @@ class _NCRFormPageState extends State<NCRFormPage> {
               hintText: "Corrections / Containment Action",
               maxLines: 2,
               textFieldController: correctionCtrl,
-              readOnly: isReview,
+              readOnly: !isEditable,
             ),
             const SizedBox(height: 8),
             Row(
@@ -475,7 +494,7 @@ class _NCRFormPageState extends State<NCRFormPage> {
                     hintText: "Planned Completion Date",
                     textFieldController: plannedDateCtrl,
                     readOnly: true,
-                    onTap: () => pickDate(plannedDateCtrl),
+                    onTap: () => isEditable ? pickDate(plannedDateCtrl) : null,
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -484,7 +503,7 @@ class _NCRFormPageState extends State<NCRFormPage> {
                     hintText: "Actual Completion Date",
                     textFieldController: actualDateCtrl,
                     readOnly: true,
-                    onTap: () => pickDate(actualDateCtrl),
+                    onTap: () => isEditable ? pickDate(actualDateCtrl) : null,
                   ),
                 ),
               ],
@@ -494,14 +513,14 @@ class _NCRFormPageState extends State<NCRFormPage> {
               hintText: "Root Cause",
               maxLines: 2,
               textFieldController: rootCauseCtrl,
-              readOnly: isReview,
+              readOnly: !isEditable,
             ),
             const SizedBox(height: 8),
             AppTextFieldWidget(
               hintText: "Corrective Actions",
               maxLines: 2,
               textFieldController: correctiveCtrl,
-              readOnly: isReview,
+              readOnly: !isEditable,
             ),
 
             /// 🔹 SECTION 3
@@ -510,7 +529,7 @@ class _NCRFormPageState extends State<NCRFormPage> {
               hintText: "Verification Details",
               maxLines: 2,
               textFieldController: verificationCtrl,
-              readOnly: isReview,
+              readOnly: !isEditable,
             ),
 
             /// 🔹 SECTION 4
@@ -521,7 +540,7 @@ class _NCRFormPageState extends State<NCRFormPage> {
                   child: AppTextFieldWidget(
                     hintText: "Auditor Name / Date",
                     textFieldController: auditorCtrl,
-                    readOnly: isReview,
+                    readOnly: !isEditable,
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -529,7 +548,7 @@ class _NCRFormPageState extends State<NCRFormPage> {
                   child: AppTextFieldWidget(
                     hintText: "Approved by MR",
                     textFieldController: approvedCtrl,
-                    readOnly: isReview,
+                    readOnly: !isEditable,
                   ),
                 ),
               ],
@@ -586,70 +605,136 @@ class _NCRFormPageState extends State<NCRFormPage> {
 
             const SizedBox(height: 15),
 
-            /// 🔹 SAVE BUTTON
-            if (!isReview)
-              GradientButton(
-                text: "Save NCR",
-                radiusSize: 50,
-                onPressed: () async {
-                  final hiveService = getIt<HiveService>();
-                  UserModel? consultantUserModel = hiveService.getUser();
-                  if ((selectedCustomer?.customerId ?? '').isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Please select a company first'),
-                        behavior: SnackBarBehavior.floating,
-                        backgroundColor: Colors.redAccent,
-                      ),
-                    );
-                    return;
-                  } else if ((consultantUserModel?.userId ?? '').isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Please login first'),
-                        behavior: SnackBarBehavior.floating,
-                        backgroundColor: Colors.redAccent,
-                      ),
-                    );
-                    return;
-                  }
+            /// 🔹 SAVE BUTTON / UPDATE BUTTON
+            if (!isReview || isEditable)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 24.0),
+                child: GradientButton(
+                  text: isReview ? "Update NCR" : "Save NCR",
+                  radiusSize: 50,
+                  isLoading: isSaving,
+                  onPressed: isSaving ? null : () async {
+                    if ((selectedCustomer?.customerId ?? '').isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Please select a company first'),
+                          behavior: SnackBarBehavior.floating,
+                          backgroundColor: Colors.redAccent,
+                        ),
+                      );
+                      return;
+                    }
 
-                  final model = NcrFormModel(
-                    docNo: docNoCtrl.text,
-                    revNo: revNoCtrl.text,
-                    issueDate: issueDateCtrl.text,
-                    page: pageCtrl.text,
-                    process: processCtrl.text,
-                    iqaNo: iqaCtrl.text,
-                    clause: clauseCtrl.text,
-                    ncrNo: ncrNoCtrl.text,
-                    statement: statementCtrl.text,
-                    evidence: evidenceCtrl.text,
-                    classification: classificationCtrl.text,
-                    dueDate: dueDateCtrl.text,
-                    correction: correctionCtrl.text,
-                    plannedDate: plannedDateCtrl.text,
-                    actualDate: actualDateCtrl.text,
-                    rootCause: rootCauseCtrl.text,
-                    correctiveAction: correctiveCtrl.text,
-                    verification: verificationCtrl.text,
-                    auditor: auditorCtrl.text,
-                    approvedBy: approvedCtrl.text,
-                    consultantId: consultantUserModel?.userId ?? "",
-                    companyId: selectedCustomer?.customerId ?? '',
-                    status: currentStatus,
-                    createdAt: Timestamp.now(),
-                  );
+                    setState(() {
+                      isSaving = true;
+                    });
 
-                  await _ncrRepository.saveNcrForm(model);
+                    try {
+                      final Map<String, dynamic> dataMap = {
+                        'docNo': docNoCtrl.text,
+                        'revNo': revNoCtrl.text,
+                        'issueDate': issueDateCtrl.text,
+                        'page': pageCtrl.text,
+                        'process': processCtrl.text,
+                        'iqaNo': iqaCtrl.text,
+                        'clause': clauseCtrl.text,
+                        'ncrNo': ncrNoCtrl.text,
+                        'statement': statementCtrl.text,
+                        'evidence': evidenceCtrl.text,
+                        'classification': classificationCtrl.text,
+                        'dueDate': dueDateCtrl.text,
+                        'correction': correctionCtrl.text,
+                        'plannedDate': plannedDateCtrl.text,
+                        'actualDate': actualDateCtrl.text,
+                        'rootCause': rootCauseCtrl.text,
+                        'correctiveAction': correctiveCtrl.text,
+                        'verification': verificationCtrl.text,
+                        'auditor': auditorCtrl.text,
+                        'approvedBy': approvedCtrl.text,
+                        'customerId': selectedCustomer?.customerId ?? '',
+                        'status': currentStatus,
+                      };
 
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("NCR Saved Successfully")),
-                    );
-                    GoRouter.of(context).pop();
-                  }
-                },
+                      if (isReview) {
+                        final docId = widget.ncrData?['id'];
+                        if (docId != null) {
+                          dataMap['updatedAt'] = Timestamp.now();
+                          await _ncrRepository.updateNcrForm(docId, dataMap);
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text("NCR Updated Successfully")),
+                            );
+                            GoRouter.of(context).pop();
+                          }
+                        }
+                      } else {
+                        final hiveService = getIt<HiveService>();
+                        UserModel? consultantUserModel = hiveService.getUser();
+                        if ((consultantUserModel?.userId ?? '').isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Please login first'),
+                              behavior: SnackBarBehavior.floating,
+                              backgroundColor: Colors.redAccent,
+                            ),
+                          );
+                          return;
+                        }
+
+                        dataMap['consultantId'] = consultantUserModel?.userId ?? "";
+                        dataMap['createdAt'] = Timestamp.now();
+
+                        final model = NcrFormModel(
+                          docNo: docNoCtrl.text,
+                          revNo: revNoCtrl.text,
+                          issueDate: issueDateCtrl.text,
+                          page: pageCtrl.text,
+                          process: processCtrl.text,
+                          iqaNo: iqaCtrl.text,
+                          clause: clauseCtrl.text,
+                          ncrNo: ncrNoCtrl.text,
+                        statement: statementCtrl.text,
+                        evidence: evidenceCtrl.text,
+                        classification: classificationCtrl.text,
+                        dueDate: dueDateCtrl.text,
+                        correction: correctionCtrl.text,
+                        plannedDate: plannedDateCtrl.text,
+                        actualDate: actualDateCtrl.text,
+                        rootCause: rootCauseCtrl.text,
+                        correctiveAction: correctiveCtrl.text,
+                        verification: verificationCtrl.text,
+                        auditor: auditorCtrl.text,
+                        approvedBy: approvedCtrl.text,
+                        consultantId: consultantUserModel?.userId ?? "",
+                        companyId: selectedCustomer?.customerId ?? '',
+                        status: currentStatus,
+                        createdAt: Timestamp.now(),
+                      );
+
+                        await _ncrRepository.saveNcrForm(model);
+
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text("NCR Saved Successfully")),
+                          );
+                          GoRouter.of(context).pop();
+                        }
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text("Operation failed: $e")),
+                        );
+                      }
+                    } finally {
+                      if (mounted) {
+                        setState(() {
+                          isSaving = false;
+                        });
+                      }
+                    }
+                  },
+                ),
               ),
           ],
         ),

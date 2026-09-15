@@ -278,14 +278,36 @@ class UserListPage extends StatelessWidget {
                   ),
 
                   const SizedBox(width: 12),
-                  // Delete Button
-                  IconButton(
-                    onPressed: () => _showDeleteDialog(context, user),
-                    icon: Icon(Icons.delete_outline_rounded, color: Colors.red.shade300, size: 22),
-                    style: IconButton.styleFrom(
-                      backgroundColor: Colors.red.shade50,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
+                  // Actions
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        onPressed: () {
+                          showDialog(
+                            context: context,
+                            builder: (_) => BlocProvider.value(
+                              value: context.read<UserCubit>(),
+                              child: AddUserDialog(user: user),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.edit_note_rounded, color: AppColors.kPrimaryColor, size: 22),
+                        style: IconButton.styleFrom(
+                          backgroundColor: AppColors.kPrimaryColor.withValues(alpha: 0.1),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      IconButton(
+                        onPressed: () => _showDeleteDialog(context, user),
+                        icon: Icon(Icons.delete_outline_rounded, color: Colors.red.shade300, size: 22),
+                        style: IconButton.styleFrom(
+                          backgroundColor: Colors.red.shade50,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

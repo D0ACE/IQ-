@@ -17,6 +17,11 @@ class NcrRepository {
     await ncrCollection.add(model.toMap());
   }
 
+  /// Update full NCR or partial data
+  Future<void> updateNcrForm(String docId, Map<String, dynamic> data) async {
+    await ncrCollection.doc(docId).update(data);
+  }
+
   //Update NCR Status
    Future<void> updateNcrStatus(String docId, String status) async {
 
@@ -27,6 +32,11 @@ class NcrRepository {
     'updatedAt': Timestamp.now(),
   });
 }
+
+  /// Delete NCR form
+  Future<void> deleteNcrForm(String docId) async {
+    await ncrCollection.doc(docId).delete();
+  }
 
 
 

@@ -45,6 +45,12 @@ class NcrProvider extends ChangeNotifier {
     }
   }
 
+  /// 🔹 Delete NCR
+  Future<void> deleteNcr(String ncrId) async {
+    await _ncrRepository.deleteNcrForm(ncrId);
+    // Stream listener will handle local list update automatically
+  }
+
 
   String _normalizeStatus(dynamic status) {
   final s = status?.toString().toLowerCase().trim() ?? '';

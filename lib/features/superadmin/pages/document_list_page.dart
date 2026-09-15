@@ -68,6 +68,7 @@ class _DocumentListPageState extends State<DocumentListPage> {
                 final user = getIt<HiveService>().getUser();
                 final bool isCreator = doc.createdByUserId == user?.userId;
                 final bool isSystemAdmin = Utility.isSuperAdmin(user?.roleId) || Utility.isAdmin(user?.roleId);
+                final bool isConsultant = Utility.isConsultant(user?.roleId);
                 final bool isAssignedReviewer = doc.assignedReviewerId == user?.userId;
 
                 return Card(
@@ -114,7 +115,7 @@ class _DocumentListPageState extends State<DocumentListPage> {
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            if (isAssignedReviewer)
+                            if (isSystemAdmin || isConsultant || isAssignedReviewer)
                               IconButton(
                                 tooltip: 'View Details',
                                 icon: const Icon(Icons.visibility, color: Colors.blueAccent),

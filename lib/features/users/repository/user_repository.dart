@@ -190,7 +190,7 @@ class UserRepository {
   }
 
   Future<int> getTotalAdminCount() async {
-    final snapshot = await firestore.collection('users').where('roleId', isEqualTo: AppConst.adminRole).count().get();
+    final snapshot = await firestore.collection('admins').count().get();
     return snapshot.count ?? 0;
   }
 

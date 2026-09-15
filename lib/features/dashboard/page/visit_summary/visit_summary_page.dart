@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
+import 'package:iq_plus/common/themes/app_const.dart';
 import 'package:iq_plus/common/app_widget/app_text_field_widget.dart';
 import 'package:iq_plus/core/local_storage/hive_service.dart';
 import 'package:iq_plus/di/service_locator.dart';
@@ -408,7 +409,9 @@ class _VisitorSummaryPageState extends State<VisitorSummaryPage> {
                       sectionCard('Select Company', [
                         CustomerDropdownWidget(
                           selectedCustomer: selectedCustomer,
-                          consultantId: consultantUserModel?.userId,
+                          consultantId: consultantUserModel?.roleId == AppConst.superAdminRole || consultantUserModel?.roleId == AppConst.adminRole
+                              ? null
+                              : consultantUserModel?.userId,
                           onChanged: (customer) {
                             setState(() {
                               selectedCustomer = customer;
@@ -767,7 +770,15 @@ class _VisitorSummaryPageState extends State<VisitorSummaryPage> {
                             context.read<VisitorSummaryCubit>().createVisitorSummary(payload: _buildPayload(),selectedCustomer: selectedCustomer,consultantUserModel: consultantUserModel);
                           }
                         },
-                        child: const Text('Submit'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.kPrimaryColor,
+                          minimumSize: const Size(double.infinity, 50),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: Text(
+                          widget.visitorSummaryModel != null ? 'Update Summary' : 'Submit Summary',
+                          style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
                       ),
                     ],
                   ),

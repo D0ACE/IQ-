@@ -2,6 +2,7 @@ import 'dart:math';
 import 'dart:ui';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
@@ -470,7 +471,9 @@ class _CustomerOnboardingPageState extends State<CustomerOnboardingPage> with Ti
             controller: contactController,
             icon: Icons.phone_android_rounded,
             isRequired: true,
-            keyboardType: TextInputType.phone,
+            keyboardType: TextInputType.number,
+            validator: AppValidation.phoneNumberValidator,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)],
           ),
           _buildModernField(
             hintText: "Email",
@@ -650,6 +653,7 @@ class _CustomerOnboardingPageState extends State<CustomerOnboardingPage> with Ti
     bool isRequired = false,
     String? Function(String?)? validator,
     TextInputType? keyboardType,
+    List<TextInputFormatter>? inputFormatters,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
@@ -661,6 +665,7 @@ class _CustomerOnboardingPageState extends State<CustomerOnboardingPage> with Ti
         ),
         child: AppTextFieldWidget(
           keyboardType: keyboardType,
+          inputFormatters: inputFormatters,
           hintText: hintText,
           textFieldController: controller,
           isRequired: isRequired,
@@ -753,7 +758,7 @@ class _CustomerOnboardingPageState extends State<CustomerOnboardingPage> with Ti
             const SizedBox(height: 20),
             _buildModernField(hintText: "Name", controller: nameController, icon: Icons.person_rounded, isRequired: true),
             _buildModernField(hintText: "Email", controller: emailController, icon: Icons.email_rounded, keyboardType: TextInputType.emailAddress, validator: AppValidation.checkEmailValidation),
-            _buildModernField(hintText: "Mobile Number", controller: mobileController, icon: Icons.phone_rounded, keyboardType: TextInputType.phone, validator: AppValidation.phoneNumberValidator),
+            _buildModernField(hintText: "Mobile Number", controller: mobileController, icon: Icons.phone_rounded, keyboardType: TextInputType.number, validator: AppValidation.phoneNumberValidator, inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)]),
           ],
         ),
       ),

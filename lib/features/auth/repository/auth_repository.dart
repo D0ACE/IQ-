@@ -36,7 +36,7 @@ class AuthRepository {
       final data = doc.data();
 
       if (data['blockStatus'] == true) {
-        throw Exception("Your account is blocked");
+        throw Exception("Your account is blocked. Please contact the administrator.");
       }
 
       await hiveService.saveUser(
@@ -74,7 +74,7 @@ class AuthRepository {
         final data = doc.data();
 
         if (data['blockStatus'] == true) {
-          throw Exception("Your account is blocked");
+          throw Exception("Your account is blocked. Please contact the administrator.");
         }
 
         await hiveService.saveUser(
@@ -126,6 +126,12 @@ class AuthRepository {
     if (customerQuery.docs.isNotEmpty) {
       final doc = customerQuery.docs.first;
       final data = doc.data();
+
+      // 🚫 Check if blocked
+      if (data['blockStatus'] == true) {
+        throw Exception("Your account is blocked. Please contact the administrator.");
+      }
+
       final approved = data['isProfileApproved'] as bool? ?? false;
 
       if (!approved) {

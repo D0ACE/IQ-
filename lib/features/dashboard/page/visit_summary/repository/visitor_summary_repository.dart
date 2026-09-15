@@ -39,15 +39,22 @@ class VisitorSummaryRepository {
   }
 
   Future<List<VisitorSummaryModel>> fetchVisitorSummaries() async {
-    final snapshot = await firestore
-        .collection('visitor_summaries')
-        .where('consultantId', isEqualTo: getIt<HiveService>()
-        .getUser()
-        ?.userId)
-        .get();
+    final user = getIt<HiveService>().getUser();
+    final QuerySnapshot snapshot;
+    
+    if (user?.roleId == '0' || user?.roleId == '1') {
+      // Super Admin and Admin can see all visitor summaries globally
+      snapshot = await firestore.collection('visitor_summaries').get();
+    } else {
+      // Consultants can see only summaries created by them
+      snapshot = await firestore
+          .collection('visitor_summaries')
+          .where('consultantId', isEqualTo: user?.userId)
+          .get();
+    }
 
     return snapshot.docs
-        .map((e) => VisitorSummaryModel.fromJson(e.id, e.data()))
+        .map((e) => VisitorSummaryModel.fromJson(e.id, e.data() as Map<String, dynamic>))
         .toList();
   }
 
@@ -60,7 +67,7 @@ class VisitorSummaryRepository {
         .get();
 
     return snapshot.docs
-        .map((e) => VisitorSummaryModel.fromJson(e.id, e.data()))
+        .map((e) => VisitorSummaryModel.fromJson(e.id, e.data() as Map<String, dynamic>))
         .toList();
   }
 

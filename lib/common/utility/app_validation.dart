@@ -21,9 +21,13 @@ class AppValidation {
 static String? phoneNumberValidator(String? text) {
     if (text == null || text.trim().isEmpty) {
       return 'Please enter your phone number.';
-    }  else {
-      return null;
     }
+    // 🇮🇳 Indian 10-digit mobile number validation pattern (starts with 6-9 followed by 9 digits)
+    final regExp = RegExp(r'^[6-9]\d{9}$');
+    if (!regExp.hasMatch(text.trim())) {
+      return 'Please enter a valid 10-digit Indian mobile number.';
+    }
+    return null;
   }
 
 static String? numberOfLocationValidator(String? text) {
@@ -241,7 +245,7 @@ static String? numberOfLocationValidator(String? text) {
       FilteringTextInputFormatter.allow(
         RegExp("[0-9]"),
       ),
-      LengthLimitingTextInputFormatter(16),
+      LengthLimitingTextInputFormatter(10), // Limit to exactly 10 digits for Indian standard numbers
     ];
   }
 

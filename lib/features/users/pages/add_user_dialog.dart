@@ -239,7 +239,9 @@ class _AddUserDialogState extends State<AddUserDialog> {
                   userName: nameController.text.trim(),
                   email: emailController.text.trim(),
                   phoneNumber: phoneController.text.trim(),
+                  password: passwordController.text.trim(),
                   roleId: selectedRoleId!,
+                  blockStatus: blockStatus,
                   joiningDate: joiningDate,
                   designation: widget.user!.designation, // 👈 Keep existing designation
                   customerId: widget.user!.customerId,   // 👈 Keep existing customerId

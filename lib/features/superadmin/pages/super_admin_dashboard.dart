@@ -809,10 +809,15 @@ class _SuperadminDashboardPageState extends State<SuperadminDashboardPage>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                title,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12,
@@ -957,7 +962,7 @@ class _SuperadminDashboardPageState extends State<SuperadminDashboardPage>
             _clickableCard(
               title: 'Visit Summary',
               icon: Icons.event_available_rounded,
-              onTap: () => GoRouter.of(context).push(AppRoutes.visitorSummary),
+              onTap: () => GoRouter.of(context).push(AppRoutes.visitorSummaryList),
             ),
             _clickableCard(
               title: 'Policies & Procedures',
