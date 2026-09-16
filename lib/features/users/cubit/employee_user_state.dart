@@ -1,5 +1,4 @@
 import 'package:iq_plus/features/auth/model/role_model.dart';
-import 'package:iq_plus/features/users/models/employe_user.dart';
 
 abstract class UserState {}
 
@@ -8,7 +7,7 @@ class UserInitial extends UserState {}
 class UserLoading extends UserState {}
 
 class UserLoaded extends UserState {
-  final List<EmployeeUserModel> users;
+  final List<dynamic> users;
   UserLoaded(this.users);
 }
 

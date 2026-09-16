@@ -2,11 +2,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:iq_plus/features/auth/model/role_model.dart';
 import 'package:iq_plus/features/users/cubit/employee_user_state.dart';
-import 'package:iq_plus/features/users/models/employe_user.dart';
-import 'package:iq_plus/features/users/repository/user_repository.dart';
 import 'package:iq_plus/core/email_services/email_service.dart';
 import 'package:iq_plus/core/local_storage/hive_service.dart';
 import 'package:iq_plus/di/service_locator.dart';
+import '../repository/user_repository.dart';
+import '../models/employe_user.dart';
+import '../models/system_user_model.dart';
 
 class UserCubit extends Cubit<UserState> {
   final UserRepository repository;
@@ -14,7 +15,7 @@ class UserCubit extends Cubit<UserState> {
   UserCubit(this.repository) : super(UserInitial());
 
   List<RoleModel> roles = [];
-  List<EmployeeUserModel> users = [];
+  List<dynamic> users = [];
   
   // Track last fetch to refresh correctly
   List<String>? _lastCustomerIds;
@@ -39,16 +40,18 @@ class UserCubit extends Cubit<UserState> {
   }
 
   /// 🔹 ADD USER
-  Future<void> addUser(EmployeeUserModel user, {String? companyName}) async {
+  Future<void> addUser(dynamic user, {String? companyName}) async {
     emit(UserLoading());
     try {
       await repository.createUser(user);
 
       // 📧 Send Credentials Email if it's an employee linked to a company
-      if (companyName != null) {
-        // Set mode to employee so refresh loads the correct list
-        _isEmployeeList = true;
-        _lastCustomerIds = user.customerId != null ? [user.customerId!] : null;
+      if (companyName != null && user is EmployeeUserModel) {
+        // Set mode to employee if not already
+        if (!_isEmployeeList) {
+          _isEmployeeList = true;
+          _lastCustomerIds = user.customerId != null ? [user.customerId!] : null;
+        }
 
         await BrevoEmailService.sendEmployeeCreatedMail(
           userName: user.userName,
@@ -131,21 +134,28 @@ class UserCubit extends Cubit<UserState> {
     try {
       emit(UserLoading());
 
+      final Map<String, dynamic> updateData = {
+        'userName': userName,
+        'email': email,
+        'phoneNumber': phoneNumber,
+        'roleId': roleId,
+        if (password != null) 'password': password,
+        'blockStatus': blockStatus,
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+
+      // 🚀 activeUser is only for system users (roles != 4)
+      if (roleId != '4') {
+        updateData['activeUser'] = blockStatus != null ? !blockStatus : true;
+      }
+
+      if (designation != null) updateData['designation'] = designation;
+      if (joiningDate != null) updateData['joiningDate'] = joiningDate;
+
       await repository.updateUser(
         userId: userId,
         customerId: customerId,
-        data: {
-          'userName': userName,
-          'email': email,
-          'phoneNumber': phoneNumber,
-          'roleId': roleId,
-          if (password != null) 'password': password,
-          'blockStatus': blockStatus,
-          'activeUser': blockStatus != null ? !blockStatus : null, // 👈 Sync activeUser with blockStatus
-          'joiningDate': joiningDate,
-          'designation': designation,
-          'updatedAt': FieldValue.serverTimestamp(),
-        },
+        data: updateData,
       );
 
       await _refresh(); 

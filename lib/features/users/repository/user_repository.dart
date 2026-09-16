@@ -5,8 +5,9 @@ import 'package:iq_plus/core/local_storage/hive_service.dart';
 import 'package:iq_plus/di/service_locator.dart';
 import 'package:iq_plus/features/auth/model/role_model.dart';
 import 'package:iq_plus/features/auth/model/user_model.dart';
-import 'package:iq_plus/features/users/models/employe_user.dart';
 import 'package:iq_plus/common/themes/app_const.dart';
+import '../models/employe_user.dart';
+import '../models/system_user_model.dart';
 
 class UserRepository {
   final FirebaseFirestore firestore;
@@ -37,17 +38,24 @@ class UserRepository {
   }
 
   // 🔹 Create User (Handles both System Users and Customer Employees)
-  Future<void> createUser(EmployeeUserModel user) async {
+  Future<void> createUser(dynamic user) async {
     // 1. Check uniqueness across all users and employees
+    String email = "";
+    if (user is EmployeeUserModel) {
+      email = user.email;
+    } else if (user is SystemUserModel) {
+      email = user.email;
+    }
+
     final mainUserCheck = await firestore
         .collection('users')
-        .where('email', isEqualTo: user.email)
+        .where('email', isEqualTo: email)
         .limit(1)
         .get();
 
     final employeeCheck = await firestore
         .collectionGroup('employees')
-        .where('email', isEqualTo: user.email)
+        .where('email', isEqualTo: email)
         .limit(1)
         .get();
 
@@ -55,37 +63,41 @@ class UserRepository {
       throw Exception("Email already exists");
     }
 
-    final userData = {
-      "userName": user.userName,
-      "email": user.email,
-      "phoneNumber": user.phoneNumber,
-      "password": user.password,
-      "roleId": user.roleId,
-      "blockStatus": user.blockStatus,
-      "activeUser": user.activeUser, // 👈 Store the actual selected status
-      "joiningDate": user.joiningDate,
-      "designation": user.designation,
-      "customerId": user.customerId,
-      "createdBy": user.createdBy,
-      "fcmToken": "",
-      "createdAt": FieldValue.serverTimestamp(),
-    };
+    Map<String, dynamic> userData;
 
-    if (user.roleId == AppConst.employeeRole && user.customerId != null) {
+    if (user is EmployeeUserModel) {
+      userData = {
+        "userName": user.userName,
+        "email": user.email,
+        "phoneNumber": user.phoneNumber,
+        "password": user.password,
+        "roleId": user.roleId,
+        "blockStatus": user.blockStatus,
+        "joiningDate": user.joiningDate,
+        "designation": user.designation,
+        "customerId": user.customerId,
+        "createdBy": user.createdBy,
+        "fcmToken": "",
+        "createdAt": FieldValue.serverTimestamp(),
+      };
+
       // 🚀 Store in sub-collection for Employees
       await firestore
           .collection('customers')
           .doc(user.customerId)
           .collection('employees')
           .add(userData);
-    } else {
+    } else if (user is SystemUserModel) {
+      userData = user.toMap();
+      userData["createdAt"] = FieldValue.serverTimestamp();
+      
       // 🚀 Store in main "users" collection for Admins/Consultants
       await firestore.collection('users').add(userData);
     }
   }
 
   // 🔹 Fetch Users (Filtered based on viewer role)
-  Future<List<EmployeeUserModel>> fetchUsers({String? viewerRoleId}) async {
+  Future<List<SystemUserModel>> fetchUsers({String? viewerRoleId}) async {
     Query query = firestore.collection('users');
 
     if (Utility.isSuperAdmin(viewerRoleId)) {
@@ -98,7 +110,7 @@ class UserRepository {
 
     final snapshot = await query.get();
     return snapshot.docs
-        .map((doc) => EmployeeUserModel.fromFirestore(doc.id, doc.data() as Map<String, dynamic>))
+        .map((doc) => SystemUserModel.fromFirestore(doc.id, doc.data() as Map<String, dynamic>))
         .toList();
   }
 

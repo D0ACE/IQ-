@@ -62,21 +62,20 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
       userId: '', // Firestore will generate
       userName: _nameCtrl.text.trim(),
       email: _emailCtrl.text.trim(),
-      phoneNumber: _phoneCtrl.text.trim(), 
+      phoneNumber: _phoneCtrl.text.trim(),
       roleId: AppConst.employeeRole, // 🚀 Using New Role ID 4
       password: _generatedPassword,
       createdAt: DateTime.now(),
       blockStatus: false,
-      activeUser: true, // 👈 Add this
       designation: _designationCtrl.text.trim(),
       customerId: _selectedCustomer!.customerId,
       createdBy: _currentUser?.userId,
     );
 
     context.read<UserCubit>().addUser(
-          employee,
-          companyName: _selectedCustomer!.companyName,
-        );
+      employee,
+      companyName: _selectedCustomer!.companyName,
+    );
   }
 
   @override
@@ -87,8 +86,8 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(state.message)),
           );
-          // 🚀 Just pop back to listing. Listing will refresh via await.
-          context.pop();
+          // 🚀 Return 'true' to indicate a record was added/modified
+          context.pop(true);
         } else if (state is UserError) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(state.message), backgroundColor: Colors.red),
@@ -142,6 +141,7 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
                   hintText: "Enter email",
                   textFieldController: _emailCtrl,
                   isRequired: true,
+                  validator: AppValidation.checkEmailValidation,
                   keyboardType: TextInputType.emailAddress,
                 ),
                 verticalSpace15,

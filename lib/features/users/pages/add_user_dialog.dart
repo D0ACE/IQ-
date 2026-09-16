@@ -9,11 +9,12 @@ import 'package:iq_plus/common/utility/app_validation.dart';
 import 'package:iq_plus/features/users/cubit/employee_user_cubit.dart';
 import 'package:iq_plus/features/users/cubit/employee_user_state.dart';
 import 'package:iq_plus/features/users/models/employe_user.dart';
+import 'package:iq_plus/features/users/models/system_user_model.dart';
 import 'package:iq_plus/core/local_storage/hive_service.dart';
 import 'package:iq_plus/di/service_locator.dart';
 
 class AddUserDialog extends StatefulWidget {
-  final EmployeeUserModel? user;
+  final dynamic user;
   const AddUserDialog({super.key, this.user});
 
   @override
@@ -46,7 +47,11 @@ class _AddUserDialogState extends State<AddUserDialog> {
       selectedRoleId = u.roleId;
       passwordController.text = u.password;
       blockStatus = u.blockStatus;
-      joiningDate = u.joiningDate;
+      
+      if (u is EmployeeUserModel) {
+        joiningDate = u.joiningDate;
+      }
+      
       if (joiningDate != null) {
         joiningDateController.text = DateFormat(
           'dd MMM yyyy',
@@ -250,24 +255,41 @@ class _AddUserDialogState extends State<AddUserDialog> {
               /// ➕ ADD MODE
               else {
                 final currentUser = getIt<HiveService>().getUser();
-                context.read<UserCubit>().addUser(
-                  EmployeeUserModel(
-                    userId: '',
-                    userName: nameController.text.trim(),
-                    email: emailController.text.trim(),
-                    phoneNumber: phoneController.text.trim(),
-                    password: passwordController.text.trim(),
-                    roleId: selectedRoleId!,
-                    blockStatus: blockStatus,
-                    activeUser: !blockStatus, // 👈 Set activeUser based on selected status
-                    joiningDate: joiningDate!,
-                    createdAt: DateTime.now(),
-                    createdBy: currentUser?.userId,
-                  ),
-                );
+                
+                if (selectedRoleId == '4') {
+                  context.read<UserCubit>().addUser(
+                    EmployeeUserModel(
+                      userId: '',
+                      userName: nameController.text.trim(),
+                      email: emailController.text.trim(),
+                      phoneNumber: phoneController.text.trim(),
+                      password: passwordController.text.trim(),
+                      roleId: selectedRoleId!,
+                      blockStatus: blockStatus,
+                      joiningDate: joiningDate!,
+                      createdAt: DateTime.now(),
+                      createdBy: currentUser?.userId,
+                    ),
+                  );
+                } else {
+                  context.read<UserCubit>().addUser(
+                    SystemUserModel(
+                      userId: '',
+                      userName: nameController.text.trim(),
+                      email: emailController.text.trim(),
+                      phoneNumber: phoneController.text.trim(),
+                      password: passwordController.text.trim(),
+                      roleId: selectedRoleId!,
+                      activeUser: !blockStatus,
+                      blockStatus: blockStatus,
+                      fcmToken: '',
+                      createdAt: DateTime.now(),
+                    ),
+                  );
+                }
               }
 
-              GoRouter.of(context).pop();
+              GoRouter.of(context).pop(true);
             }
           },
           child: Text(

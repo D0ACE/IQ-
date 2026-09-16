@@ -10,7 +10,6 @@ class EmployeeUserModel {
   final DateTime createdAt;
   final DateTime? joiningDate;
   final bool blockStatus;
-  final bool activeUser; // 👈 Add this field
   final String? designation;
   final String? customerId;
   final String? createdBy; // 👈 User ID of the person who created this employee
@@ -24,7 +23,6 @@ class EmployeeUserModel {
     required this.password,
     required this.createdAt,
     required this.blockStatus,
-    required this.activeUser, // 👈 Add this
     this.joiningDate,
     this.designation,
     this.customerId,
@@ -40,7 +38,6 @@ class EmployeeUserModel {
       roleId: json['roleId'] ?? '',
       password: json['password'] ?? '',
       blockStatus: json['blockStatus'] ?? false,
-      activeUser: json['activeUser'] ?? true, // 👈 Add this
       joiningDate: json['joiningDate'] is Timestamp ? (json['joiningDate'] as Timestamp).toDate() : null,
       designation: json['designation'],
       customerId: json['customerId'],

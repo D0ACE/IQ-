@@ -39,14 +39,14 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
       // 🚀 For consultants, show ONLY employees THEY created
       createdBy = user.userId;
       
-      // Also fetch their assigned customers to resolve company names in the UI
-      await customerCubit.fetchApprovedCustomers(user.userId);
+      // Also fetch their assigned customers to resolve company names in the UI (Run in background)
+      customerCubit.fetchApprovedCustomers(user.userId);
     } else if (customer != null && Utility.isCustomer(customer.roleId)) {
       // For customers, show all employees of their company
       customerIds = [customer.customerId];
     } else {
-      // For Admins/SuperAdmins, show all employees and resolve company names
-      await customerCubit.fetchApprovedCustomers(null);
+      // For Admins/SuperAdmins, show all employees and resolve company names (Run in background)
+      customerCubit.fetchApprovedCustomers(null);
     }
     
     if (mounted) {
@@ -75,8 +75,10 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: ElevatedButton.icon(
               onPressed: () async {
-                await context.push(AppRoutes.addEmployee);
-                _loadData();
+                final result = await context.push(AppRoutes.addEmployee);
+                if (result == true) {
+                  _loadData();
+                }
               },
               icon: const Icon(Icons.add, color: Colors.white, size: 18),
               label: const Text("Add Employee",style: TextStyle(color: Colors.white),),
@@ -292,14 +294,17 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
                                   children: [
                                     IconButton(
                                       icon: const Icon(Icons.edit_outlined, color: Colors.blue, size: 20),
-                                      onPressed: () {
-                                        showDialog(
+                                      onPressed: () async {
+                                        final result = await showDialog(
                                           context: context,
                                           builder: (_) => BlocProvider.value(
                                             value: context.read<UserCubit>(),
                                             child: AddUserDialog(user: employee),
                                           ),
                                         );
+                                        if (result == true) {
+                                          _loadData();
+                                        }
                                       },
                                     ),
                                     IconButton(

@@ -59,6 +59,11 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage>
     // 🚀 Start listening to NCR data for the graph
     context.read<NcrProvider>().listenToNcrs();
     context.read<PeriodicComplianceProvider>().listenToTasks(createdBy: user?.userId);
+    
+    // 🚀 Fetch only assigned customers for this consultant
+    if ((user?.userId ?? '').isNotEmpty) {
+      context.read<CustomerListCubit>().fetchApprovedCustomers(user?.userId);
+    }
 
     _animationController.forward();
   }
@@ -586,9 +591,15 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage>
             if (state is CustomerListLoading) {
               return const Center(child: CircularProgressIndicator());
             }
-            int count = (state is CustomerListLoaded)
-                ? state.customers.length
-                : 0;
+            
+            // 🚀 Ensure we only count customers assigned to this consultant
+            int count = 0;
+            if (state is CustomerListLoaded) {
+              count = state.customers
+                  .where((c) => c.consultantId == user?.userId)
+                  .length;
+            }
+            
             return _statCard(
               'Assigned Customers',
               '$count',

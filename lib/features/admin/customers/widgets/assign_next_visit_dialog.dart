@@ -35,10 +35,20 @@ class _AssignNextVisitDialogState extends State<AssignNextVisitDialog> {
   }
 
   Future<void> pickDate() async {
+    final now = DateTime.now();
+    // Normalize to start of day to avoid assertion issues with time components
+    final today = DateTime(now.year, now.month, now.day);
+
+    // Ensure initialDate is never before firstDate
+    DateTime initial = selectedDate ?? today;
+    if (initial.isBefore(today)) {
+      initial = today;
+    }
+
     final date = await showDatePicker(
       context: context,
-      initialDate: selectedDate ?? DateTime.now(),
-      firstDate: DateTime.now(),
+      initialDate: initial,
+      firstDate: today,
       lastDate: DateTime(2100),
     );
 
