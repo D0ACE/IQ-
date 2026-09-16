@@ -46,35 +46,33 @@ class VisitorSummaryCubit extends Cubit<VisitorSummaryState> {
       final data = _normalizePayload(payload);
 
       await repository.createVisitorSummary(data);
-      //if ((selectedCustomer?.email ?? '').isNotEmpty) {
-      BrevoEmailService.sendVisitorSummaryMailFromPayload(
+      
+      // 📧 Send Emails (Await to catch unhandled errors in UI)
+      await BrevoEmailService.sendVisitorSummaryMailFromPayload(
         toEmail: selectedCustomer?.email ?? '',
         toName: selectedCustomer?.companyName ?? '',
         payload: payload,
         selectedCustomer: selectedCustomer,
         consultantUserModel: consultantUserModel,
       );
-      //}
-      //  if ((consultantUserModel?.email ?? '').isNotEmpty) {
-      BrevoEmailService.sendVisitorSummaryMailFromPayload(
+
+      await BrevoEmailService.sendVisitorSummaryMailFromPayload(
         toEmail: consultantUserModel?.email ?? '',
         toName: consultantUserModel?.userName ?? '',
         payload: payload,
         selectedCustomer: selectedCustomer,
         consultantUserModel: consultantUserModel,
       );
-      //}
+
       List<EmployeeUserModel> adminUsers = await repository.fetchAdminUsers();
       for (var admin in adminUsers) {
-        //  if ((admin.email ?? '').isNotEmpty) {
-        BrevoEmailService.sendVisitorSummaryMailFromPayload(
+        await BrevoEmailService.sendVisitorSummaryMailFromPayload(
           toEmail: admin.email,
           toName: admin.userName,
           payload: payload,
           selectedCustomer: selectedCustomer,
           consultantUserModel: consultantUserModel,
         );
-        //}
       }
       emit(VisitorSummarySuccess('Visitor summary saved'));
       loadVisitorSummaries();
@@ -97,9 +95,8 @@ class VisitorSummaryCubit extends Cubit<VisitorSummaryState> {
 
       await repository.updateVisitorSummary(docId: docId, data: data);
 
-
-      //if ((selectedCustomer?.email ?? '').isNotEmpty) {
-      BrevoEmailService.sendVisitorSummaryMailFromPayload(
+      // 📧 Send Emails (Await to catch unhandled errors in UI)
+      await BrevoEmailService.sendVisitorSummaryMailFromPayload(
         toEmail: selectedCustomer?.email ?? '',
         toName: selectedCustomer?.companyName ?? '',
         payload: payload,
@@ -107,9 +104,8 @@ class VisitorSummaryCubit extends Cubit<VisitorSummaryState> {
         consultantUserModel: consultantUserModel,
         isUpdateVisitorSummary: true,
       );
-      //}
-      //  if ((consultantUserModel?.email ?? '').isNotEmpty) {
-      BrevoEmailService.sendVisitorSummaryMailFromPayload(
+
+      await BrevoEmailService.sendVisitorSummaryMailFromPayload(
         toEmail: consultantUserModel?.email ?? '',
         toName: consultantUserModel?.userName ?? '',
         payload: payload,
@@ -117,11 +113,10 @@ class VisitorSummaryCubit extends Cubit<VisitorSummaryState> {
         consultantUserModel: consultantUserModel,
         isUpdateVisitorSummary: true,
       );
-      //}
+
       List<EmployeeUserModel> adminUsers = await repository.fetchAdminUsers();
       for (var admin in adminUsers) {
-        //  if ((admin.email ?? '').isNotEmpty) {
-        BrevoEmailService.sendVisitorSummaryMailFromPayload(
+        await BrevoEmailService.sendVisitorSummaryMailFromPayload(
           toEmail: admin.email,
           toName: admin.userName,
           payload: payload,
@@ -129,7 +124,6 @@ class VisitorSummaryCubit extends Cubit<VisitorSummaryState> {
           consultantUserModel: consultantUserModel,
           isUpdateVisitorSummary: true,
         );
-        //}
       }
       emit(VisitorSummarySuccess('Visitor summary updated'));
       loadVisitorSummaries();

@@ -141,6 +141,7 @@ class UserCubit extends Cubit<UserState> {
           'roleId': roleId,
           if (password != null) 'password': password,
           'blockStatus': blockStatus,
+          'activeUser': blockStatus != null ? !blockStatus : null, // 👈 Sync activeUser with blockStatus
           'joiningDate': joiningDate,
           'designation': designation,
           'updatedAt': FieldValue.serverTimestamp(),

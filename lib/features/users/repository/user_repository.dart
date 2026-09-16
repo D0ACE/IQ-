@@ -62,7 +62,7 @@ class UserRepository {
       "password": user.password,
       "roleId": user.roleId,
       "blockStatus": user.blockStatus,
-      "activeUser": true,
+      "activeUser": user.activeUser, // 👈 Store the actual selected status
       "joiningDate": user.joiningDate,
       "designation": user.designation,
       "customerId": user.customerId,

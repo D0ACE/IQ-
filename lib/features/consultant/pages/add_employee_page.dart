@@ -67,6 +67,7 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
       password: _generatedPassword,
       createdAt: DateTime.now(),
       blockStatus: false,
+      activeUser: true, // 👈 Add this
       designation: _designationCtrl.text.trim(),
       customerId: _selectedCustomer!.customerId,
       createdBy: _currentUser?.userId,

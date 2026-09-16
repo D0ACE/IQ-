@@ -226,7 +226,7 @@ class AuthRepository {
       "approvedAt": FieldValue.serverTimestamp(),
     });
     // Send approval email
-     BrevoEmailService.sendCustomerApprovedMail(
+    await BrevoEmailService.sendCustomerApprovedMail(
       companyName: companyName,
       email: customerEmail,
       password: autoGeneratePassword,

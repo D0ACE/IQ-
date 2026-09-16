@@ -11,6 +11,13 @@ class BrevoEmailService {
   static const String _firebaseProxyUrl =
       'https://us-central1-iq-plush-dc0e6.cloudfunctions.net/triggerBrevoEmail';
 
+  /// 🔹 Basic Email Validation
+  static bool _isValidEmail(String email) {
+    if (email.isEmpty) return false;
+    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    return emailRegex.hasMatch(email);
+  }
+
   /// 🔹 Helper to dispatch email via Firebase Cloud Function
   /// This bypasses IP whitelisting issues because the request comes from Google's IP.
   static Future<void> _sendViaFirebase({
@@ -20,6 +27,12 @@ class BrevoEmailService {
     required Map<String, dynamic> params,
     List<Map<String, dynamic>>? attachments,
   }) async {
+    // 🛑 Validate email before dispatching to prevent backend 400/500 errors
+    if (!_isValidEmail(toEmail)) {
+      debugPrint("⚠️ Skipping email dispatch: Invalid/Empty email address '$toEmail'");
+      return; 
+    }
+
     final url = Uri.parse(_firebaseProxyUrl);
 
     try {

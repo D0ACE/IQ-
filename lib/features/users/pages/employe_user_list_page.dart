@@ -50,19 +50,21 @@ class UserListPage extends StatelessWidget {
             ),
           ),
 
-          BlocBuilder<UserCubit, UserState>(
+          BlocConsumer<UserCubit, UserState>(
+            listener: (context, state) {
+              if (state is UserError) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(state.message),
+                    backgroundColor: Colors.redAccent,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              }
+            },
             builder: (context, state) {
               if (state is UserLoading) {
                 return const Center(child: CircularProgressIndicator());
-              }
-
-              if (state is UserError) {
-                return Center(
-                  child: Text(
-                    state.message,
-                    style: const TextStyle(color: Colors.red),
-                  ),
-                );
               }
 
               final users = context.read<UserCubit>().users;

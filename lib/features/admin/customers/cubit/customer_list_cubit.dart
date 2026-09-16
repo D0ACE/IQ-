@@ -112,7 +112,7 @@ class CustomerListCubit extends Cubit<CustomerListState> {
 
       // 📧 If direct approval is active, send credentials email
       if (customer.isProfileApproved) {
-        BrevoEmailService.sendCustomerApprovedMail(
+        await BrevoEmailService.sendCustomerApprovedMail(
           companyName: customer.companyName,
           email: customer.email,
           password: customer.password,

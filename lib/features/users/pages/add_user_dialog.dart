@@ -259,6 +259,7 @@ class _AddUserDialogState extends State<AddUserDialog> {
                     password: passwordController.text.trim(),
                     roleId: selectedRoleId!,
                     blockStatus: blockStatus,
+                    activeUser: !blockStatus, // 👈 Set activeUser based on selected status
                     joiningDate: joiningDate!,
                     createdAt: DateTime.now(),
                     createdBy: currentUser?.userId,

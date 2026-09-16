@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:iq_plus/common/routes/app.dart';
 import 'package:iq_plus/features/admin/consultants/cubit/consultant_cubit.dart';
@@ -30,6 +32,14 @@ void main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
+
+    // 🚀 Configure Firestore for Web to handle ERR_QUIC_PROTOCOL_ERROR
+    if (kIsWeb) {
+      FirebaseFirestore.instance.settings = const Settings(
+        persistenceEnabled: false,
+        webExperimentalAutoDetectLongPolling: true,
+      );
+    }
 
     // 2. Initialize Supabase
     await Supabase.initialize(
