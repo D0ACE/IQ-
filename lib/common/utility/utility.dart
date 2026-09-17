@@ -44,10 +44,14 @@ class Utility {
 
   /// email validation check fro sign up
   static bool emailValidationPattern({required String value}) {
-    String pattern =
-        r'^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$';
+    // 🛡️ Enhanced Strict Email Validation (Optimized for professional & Indian context)
+    // - Enforces RFC 5322 local part standards (no double dots, etc.)
+    // - Enforces at least 2 chars for domain segments
+    // - Allows 1 subdomain ONLY if it's exactly 2 chars (like .co.in, .or.jp)
+    // - Restricts final TLD to 2-4 characters
+    String pattern = r'^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@[\w-]{2,}\.(?:[a-zA-Z]{2}\.)?[a-zA-Z]{2,4}$';
     RegExp regExp = RegExp(pattern);
-    return !regExp.hasMatch(value);
+    return !regExp.hasMatch(value.trim());
   }
 
   static bool passwordValidationPattern({required String value}) {

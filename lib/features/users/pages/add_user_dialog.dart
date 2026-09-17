@@ -12,6 +12,7 @@ import 'package:iq_plus/features/users/models/employe_user.dart';
 import 'package:iq_plus/features/users/models/system_user_model.dart';
 import 'package:iq_plus/core/local_storage/hive_service.dart';
 import 'package:iq_plus/di/service_locator.dart';
+import 'package:iq_plus/common/utility/utility.dart';
 
 class AddUserDialog extends StatefulWidget {
   final dynamic user;
@@ -64,43 +65,56 @@ class _AddUserDialogState extends State<AddUserDialog> {
   Widget build(BuildContext context) {
     final isDesktop = MediaQuery.of(context).size.width > 700;
 
-    return AlertDialog(
-      backgroundColor: Colors.white,
-      surfaceTintColor: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
-      title: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            widget.user == null ? "Add New User" : "Edit User Profile",
-            style: const TextStyle(fontWeight: FontWeight.w900, color: AppColors.titleText),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            widget.user == null ? "Register a new system user" : "Update account details for ${widget.user!.userName}",
-            style: TextStyle(fontSize: 12, color: Colors.grey.shade500, fontWeight: FontWeight.w500),
-          ),
-        ],
-      ),
-      content: SizedBox(
-        width: isDesktop ? 520 : double.maxFinite,
-        child: BlocBuilder<UserCubit, UserState>(
-          builder: (context, state) {
-            final cubit = context.read<UserCubit>();
+    return BlocConsumer<UserCubit, UserState>(
+      listener: (context, state) {},
+      builder: (context, state) {
+        final cubit = context.read<UserCubit>();
+        final bool isLoading = state is UserLoading;
 
-            return Form(
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          surfaceTintColor: Colors.white,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                widget.user == null ? "Add New User" : "Edit User Profile",
+                style: const TextStyle(
+                    fontWeight: FontWeight.w900, color: AppColors.titleText),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                widget.user == null
+                    ? "Register a new system user"
+                    : "Update account details for ${widget.user!.userName}",
+                style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade500,
+                    fontWeight: FontWeight.w500),
+              ),
+            ],
+          ),
+          content: SizedBox(
+            width: isDesktop ? 520 : double.maxFinite,
+            child: Form(
               key: _formKey,
               child: SingleChildScrollView(
                 child: Column(
                   children: [
                     const SizedBox(height: 8),
+
                     /// 👤 Name
                     _field(
                       AppTextFieldWidget(
                         hintText: "Full Name",
                         textFieldController: nameController,
                         isRequired: true,
-                        prefixIconWidget: const Icon(Icons.person_outline_rounded, color: AppColors.kPrimaryColor, size: 20),
+                        prefixIconWidget: const Icon(
+                            Icons.person_outline_rounded,
+                            color: AppColors.kPrimaryColor,
+                            size: 20),
                       ),
                     ),
 
@@ -111,7 +125,10 @@ class _AddUserDialogState extends State<AddUserDialog> {
                         hintText: "Email Address",
                         textFieldController: emailController,
                         validator: AppValidation.checkEmailValidation,
-                        prefixIconWidget: const Icon(Icons.alternate_email_rounded, color: AppColors.kPrimaryColor, size: 20),
+                        prefixIconWidget: const Icon(
+                            Icons.alternate_email_rounded,
+                            color: AppColors.kPrimaryColor,
+                            size: 20),
                       ),
                     ),
 
@@ -119,11 +136,12 @@ class _AddUserDialogState extends State<AddUserDialog> {
                     _field(
                       AppTextFieldWidget(
                         keyboardType: TextInputType.number,
-                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                        inputFormatters: AppValidation.phoneNumberFormatters(),
                         hintText: "Phone Number",
                         textFieldController: phoneController,
                         validator: AppValidation.phoneNumberValidator,
-                        prefixIconWidget: const Icon(Icons.phone_iphone_rounded, color: AppColors.kPrimaryColor, size: 20),
+                        prefixIconWidget: const Icon(Icons.phone_iphone_rounded,
+                            color: AppColors.kPrimaryColor, size: 20),
                       ),
                     ),
 
@@ -134,7 +152,8 @@ class _AddUserDialogState extends State<AddUserDialog> {
                         textFieldController: passwordController,
                         isPasswordTextField: true,
                         validator: AppValidation.currentPasswordValidator,
-                        prefixIconWidget: const Icon(Icons.lock_outline_rounded, color: AppColors.kPrimaryColor, size: 20),
+                        prefixIconWidget: const Icon(Icons.lock_outline_rounded,
+                            color: AppColors.kPrimaryColor, size: 20),
                       ),
                     ),
 
@@ -144,9 +163,12 @@ class _AddUserDialogState extends State<AddUserDialog> {
                         TextFormField(
                           controller: joiningDateController,
                           readOnly: true,
-                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-                          decoration: _dropdownDecoration("Joining Date").copyWith(
-                            prefixIcon: const Icon(Icons.calendar_today_rounded, color: AppColors.kPrimaryColor, size: 20),
+                          style: const TextStyle(
+                              fontSize: 14, fontWeight: FontWeight.w600),
+                          decoration:
+                              _dropdownDecoration("Joining Date").copyWith(
+                            prefixIcon: const Icon(Icons.calendar_today_rounded,
+                                color: AppColors.kPrimaryColor, size: 20),
                           ),
                           validator: (value) => value == null || value.isEmpty
                               ? "Joining date required"
@@ -176,14 +198,20 @@ class _AddUserDialogState extends State<AddUserDialog> {
                       _field(
                         DropdownButtonFormField<String>(
                           initialValue: selectedRoleId,
-                          style: const TextStyle(fontSize: 14, color: AppColors.titleText, fontWeight: FontWeight.w600),
-                          decoration: _dropdownDecoration("Assign System Role").copyWith(
-                            prefixIcon: const Icon(Icons.badge_outlined, color: AppColors.kPrimaryColor, size: 20),
+                          style: const TextStyle(
+                              fontSize: 14,
+                              color: AppColors.titleText,
+                              fontWeight: FontWeight.w600),
+                          decoration: _dropdownDecoration("Assign System Role")
+                              .copyWith(
+                            prefixIcon: const Icon(Icons.badge_outlined,
+                                color: AppColors.kPrimaryColor, size: 20),
                           ),
                           items: cubit.roles.map((role) {
                             return DropdownMenuItem(
                               value: role.id,
-                              child: Text(role.name.toUpperCase(), style: const TextStyle(fontSize: 13)),
+                              child: Text(role.name.toUpperCase(),
+                                  style: const TextStyle(fontSize: 13)),
                             );
                           }).toList(),
                           onChanged: (value) =>
@@ -196,13 +224,24 @@ class _AddUserDialogState extends State<AddUserDialog> {
                     _field(
                       DropdownButtonFormField<bool>(
                         initialValue: blockStatus,
-                        style: const TextStyle(fontSize: 14, color: AppColors.titleText, fontWeight: FontWeight.w600),
-                        decoration: _dropdownDecoration("Account Status").copyWith(
-                          prefixIcon: const Icon(Icons.verified_user_outlined, color: AppColors.kPrimaryColor, size: 20),
+                        style: const TextStyle(
+                            fontSize: 14,
+                            color: AppColors.titleText,
+                            fontWeight: FontWeight.w600),
+                        decoration: _dropdownDecoration("Account Status")
+                            .copyWith(
+                          prefixIcon: const Icon(Icons.verified_user_outlined,
+                              color: AppColors.kPrimaryColor, size: 20),
                         ),
                         items: const [
-                          DropdownMenuItem(value: false, child: Text("ACTIVE", style: TextStyle(fontSize: 13))),
-                          DropdownMenuItem(value: true, child: Text("BLOCKED", style: TextStyle(fontSize: 13))),
+                          DropdownMenuItem(
+                              value: false,
+                              child: Text("ACTIVE",
+                                  style: TextStyle(fontSize: 13))),
+                          DropdownMenuItem(
+                              value: true,
+                              child: Text("BLOCKED",
+                                  style: TextStyle(fontSize: 13))),
                         ],
                         onChanged: (value) =>
                             setState(() => blockStatus = value ?? false),
@@ -211,93 +250,116 @@ class _AddUserDialogState extends State<AddUserDialog> {
                   ],
                 ),
               ),
-            );
-          },
-        ),
-      ),
-      actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-      actions: [
-        TextButton(
-          onPressed: () => GoRouter.of(context).pop(),
-          child: Text(
-            "Cancel",
-            style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.bold),
-          ),
-        ),
-        const SizedBox(width: 8),
-        ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.kPrimaryColor,
-            foregroundColor: Colors.white,
-            elevation: 0,
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
             ),
           ),
-          onPressed: () {
-            if (_formKey.currentState!.validate()) {
-              /// 🔁 EDIT MODE
-              if (widget.user != null) {
-                context.read<UserCubit>().updateUser(
-                  userId: widget.user!.userId,
-                  userName: nameController.text.trim(),
-                  email: emailController.text.trim(),
-                  phoneNumber: phoneController.text.trim(),
-                  password: passwordController.text.trim(),
-                  roleId: selectedRoleId!,
-                  blockStatus: blockStatus,
-                  joiningDate: joiningDate,
-                  designation: widget.user!.designation, // 👈 Keep existing designation
-                  customerId: widget.user!.customerId,   // 👈 Keep existing customerId
-                );
-              }
-              /// ➕ ADD MODE
-              else {
-                final currentUser = getIt<HiveService>().getUser();
-                
-                if (selectedRoleId == '4') {
-                  context.read<UserCubit>().addUser(
-                    EmployeeUserModel(
-                      userId: '',
-                      userName: nameController.text.trim(),
-                      email: emailController.text.trim(),
-                      phoneNumber: phoneController.text.trim(),
-                      password: passwordController.text.trim(),
-                      roleId: selectedRoleId!,
-                      blockStatus: blockStatus,
-                      joiningDate: joiningDate!,
-                      createdAt: DateTime.now(),
-                      createdBy: currentUser?.userId,
-                    ),
-                  );
-                } else {
-                  context.read<UserCubit>().addUser(
-                    SystemUserModel(
-                      userId: '',
-                      userName: nameController.text.trim(),
-                      email: emailController.text.trim(),
-                      phoneNumber: phoneController.text.trim(),
-                      password: passwordController.text.trim(),
-                      roleId: selectedRoleId!,
-                      activeUser: !blockStatus,
-                      blockStatus: blockStatus,
-                      fcmToken: '',
-                      createdAt: DateTime.now(),
-                    ),
-                  );
-                }
-              }
+          actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+          actions: [
+            TextButton(
+              onPressed: () => GoRouter.of(context).pop(),
+              child: Text(
+                "Cancel",
+                style: TextStyle(
+                    color: Colors.grey.shade600, fontWeight: FontWeight.bold),
+              ),
+            ),
+            const SizedBox(width: 8),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.kPrimaryColor,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              onPressed: isLoading
+                  ? null
+                  : () async {
+                      if (_formKey.currentState!.validate()) {
+                        bool success = false;
+                        /// 🔁 EDIT MODE
+                        if (widget.user != null) {
+                          final u = widget.user;
+                          String? designation;
+                          String? customerId;
 
-              GoRouter.of(context).pop(true);
-            }
-          },
-          child: Text(
-            widget.user == null ? "Create User" : "Update Account",
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-        ),
-      ],
+                          if (u is EmployeeUserModel) {
+                            designation = u.designation;
+                            customerId = u.customerId;
+                          }
+
+                          success = await cubit.updateUser(
+                                userId: u.userId,
+                                userName: nameController.text.trim(),
+                                email: emailController.text.trim(),
+                                phoneNumber: phoneController.text.trim(),
+                                password: passwordController.text.trim(),
+                                roleId: selectedRoleId!,
+                                blockStatus: blockStatus,
+                                joiningDate: joiningDate,
+                                designation: designation,
+                                customerId: customerId,
+                              );
+                        }
+
+                        /// ➕ ADD MODE
+                        else {
+                          final currentUser = getIt<HiveService>().getUser();
+
+                          if (selectedRoleId == '4') {
+                            success = await cubit.addUser(
+                                  EmployeeUserModel(
+                                    userId: '',
+                                    userName: nameController.text.trim(),
+                                    email: emailController.text.trim(),
+                                    phoneNumber: phoneController.text.trim(),
+                                    password: passwordController.text.trim(),
+                                    roleId: selectedRoleId!,
+                                    blockStatus: blockStatus,
+                                    joiningDate: joiningDate!,
+                                    createdAt: DateTime.now(),
+                                    createdBy: currentUser?.userId,
+                                  ),
+                                );
+                          } else {
+                            success = await cubit.addUser(
+                                  SystemUserModel(
+                                    userId: '',
+                                    userName: nameController.text.trim(),
+                                    email: emailController.text.trim(),
+                                    phoneNumber: phoneController.text.trim(),
+                                    password: passwordController.text.trim(),
+                                    roleId: selectedRoleId!,
+                                    activeUser: !blockStatus,
+                                    blockStatus: blockStatus,
+                                    fcmToken: '',
+                                    createdAt: DateTime.now(),
+                                  ),
+                                );
+                          }
+                        }
+
+                        if (success && mounted) {
+                          Navigator.of(context).pop(true);
+                        }
+                      }
+                    },
+              child: isLoading
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                          color: Colors.white, strokeWidth: 2))
+                  : Text(
+                      widget.user == null ? "Create User" : "Update Account",
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+            ),
+          ],
+        );
+      },
     );
   }
 

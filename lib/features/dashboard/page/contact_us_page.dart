@@ -1,9 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:iq_plus/common/app_widget/common_gradient_button.dart';
 import 'package:iq_plus/common/themes/components/background.dart';
+import 'package:iq_plus/common/utility/app_validation.dart';
 
-class ContactUsPage extends StatelessWidget {
+class ContactUsPage extends StatefulWidget {
   const ContactUsPage({super.key});
+
+  @override
+  State<ContactUsPage> createState() => _ContactUsPageState();
+}
+
+class _ContactUsPageState extends State<ContactUsPage> {
+  final _formKey = GlobalKey<FormState>();
 
   @override
   Widget build(BuildContext context) {
@@ -39,25 +47,41 @@ class ContactUsPage extends StatelessWidget {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
               const SizedBox(height: 12),
 
-              TextFormField(
-                decoration: const InputDecoration(
-                    labelText: "Your Name", border: OutlineInputBorder()),
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                decoration: const InputDecoration(
-                    labelText: "Your Email", border: OutlineInputBorder()),
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                maxLines: 4,
-                decoration: const InputDecoration(
-                    labelText: "Message", border: OutlineInputBorder()),
+              Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    TextFormField(
+                      decoration: const InputDecoration(
+                          labelText: "Your Name", border: OutlineInputBorder()),
+                      validator: AppValidation.nameValidator,
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      decoration: const InputDecoration(
+                          labelText: "Your Email", border: OutlineInputBorder()),
+                      validator: AppValidation.checkEmailValidation,
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      maxLines: 4,
+                      decoration: const InputDecoration(
+                          labelText: "Message", border: OutlineInputBorder()),
+                      validator: AppValidation.messageValidator,
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 20),
 
               GradientButton(
-                onPressed: () {},
+                onPressed: () {
+                  if (_formKey.currentState!.validate()) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Message sent successfully!")),
+                    );
+                  }
+                },
                 text: "Submit",
               ),
             ],

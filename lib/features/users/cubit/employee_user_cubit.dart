@@ -40,7 +40,7 @@ class UserCubit extends Cubit<UserState> {
   }
 
   /// 🔹 ADD USER
-  Future<void> addUser(dynamic user, {String? companyName}) async {
+  Future<bool> addUser(dynamic user, {String? companyName}) async {
     emit(UserLoading());
     try {
       await repository.createUser(user);
@@ -63,8 +63,10 @@ class UserCubit extends Cubit<UserState> {
 
       emit(UserSuccess("User created successfully"));
       await _refresh(); 
+      return true;
     } catch (e) {
       emit(UserError(e.toString()));
+      return false;
     }
   }
 
@@ -119,7 +121,7 @@ class UserCubit extends Cubit<UserState> {
   }
 
   /// 🔹 UPDATE USER
-  Future<void> updateUser({
+  Future<bool> updateUser({
     required String userId,
     required String userName,
     required String email,
@@ -158,9 +160,12 @@ class UserCubit extends Cubit<UserState> {
         data: updateData,
       );
 
+      emit(UserSuccess("User updated successfully"));
       await _refresh(); 
+      return true;
     } catch (e) {
       emit(UserError(e.toString()));
+      return false;
     }
   }
 }

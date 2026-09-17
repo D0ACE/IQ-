@@ -44,9 +44,18 @@ class _GlobalVersionHistoryPageState extends State<GlobalVersionHistoryPage> {
             return Center(child: Text(state.message));
           }
           if (state is GlobalVersionHistoryLoaded) {
-            final history = state.history;
+            final hive = getIt<HiveService>();
+            final user = hive.getUser();
+            final customer = hive.getCustomer();
+            final String? roleId = user?.roleId ?? customer?.roleId;
+            final bool isEmployee = Utility.isEmployee(roleId);
+
+            final history = isEmployee 
+                ? state.history.where((v) => v.status == 'active').toList() 
+                : state.history;
+
             if (history.isEmpty) {
-              return const Center(child: Text('No version history found'));
+              return Center(child: Text(isEmployee ? 'No active policy history found' : 'No version history found'));
             }
             return ListView.separated(
               padding: const EdgeInsets.all(16),

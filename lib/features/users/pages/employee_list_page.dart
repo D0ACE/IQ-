@@ -295,10 +295,11 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
                                     IconButton(
                                       icon: const Icon(Icons.edit_outlined, color: Colors.blue, size: 20),
                                       onPressed: () async {
+                                        final userCubit = context.read<UserCubit>();
                                         final result = await showDialog(
                                           context: context,
                                           builder: (_) => BlocProvider.value(
-                                            value: context.read<UserCubit>(),
+                                            value: userCubit,
                                             child: AddUserDialog(user: employee),
                                           ),
                                         );

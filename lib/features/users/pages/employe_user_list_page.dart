@@ -25,10 +25,11 @@ class UserListPage extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
+          final userCubit = context.read<UserCubit>();
           showDialog(
             context: context,
             builder: (_) => BlocProvider.value(
-              value: context.read<UserCubit>(),
+              value: userCubit,
               child: const AddUserDialog(),
             ),
           );
@@ -63,42 +64,50 @@ class UserListPage extends StatelessWidget {
               }
             },
             builder: (context, state) {
-              if (state is UserLoading) {
+              final cubit = context.read<UserCubit>();
+              if (state is UserLoading && cubit.users.isEmpty) {
                 return const Center(child: CircularProgressIndicator());
               }
 
-              final users = context.read<UserCubit>().users;
+              final users = cubit.users;
 
-              if (users.isNotEmpty) {
-                return ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
-                  physics: const BouncingScrollPhysics(),
-                  itemCount: users.length,
-                  itemBuilder: (context, index) {
-                    final user = users[index];
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: _neoModernUserCard(context, user),
-                    );
-                  },
-                );
-              } else if (state is UserLoaded && users.isEmpty) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.group_off_rounded, size: 64, color: Colors.grey.shade300),
-                      const SizedBox(height: 16),
-                      const Text(
-                        "No users found",
-                        style: TextStyle(color: Colors.grey, fontSize: 16, fontWeight: FontWeight.w500),
+              return Stack(
+                children: [
+                  if (state is UserLoading)
+                    const LinearProgressIndicator(minHeight: 2),
+                  if (users.isNotEmpty)
+                    ListView.builder(
+                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
+                      physics: const BouncingScrollPhysics(),
+                      itemCount: users.length,
+                      itemBuilder: (context, index) {
+                        final user = users[index];
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: _neoModernUserCard(context, cubit, user),
+                        );
+                      },
+                    )
+                  else if (state is UserLoaded && users.isEmpty)
+                    Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.group_off_rounded,
+                              size: 64, color: Colors.grey.shade300),
+                          const SizedBox(height: 16),
+                          const Text(
+                            "No users found",
+                            style: TextStyle(
+                                color: Colors.grey,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                );
-              }
-
-              return const SizedBox();
+                    ),
+                ],
+              );
             },
           ),
         ],
@@ -106,7 +115,7 @@ class UserListPage extends StatelessWidget {
     );
   }
 
-  Widget _neoModernUserCard(BuildContext context, dynamic user) {
+  Widget _neoModernUserCard(BuildContext context, UserCubit userCubit, dynamic user) {
     final String roleId = user.roleId;
     String roleName = "Consultant";
     Color roleColor = AppColors.kPrimaryColor;
@@ -143,7 +152,7 @@ class UserListPage extends StatelessWidget {
               showDialog(
                 context: context,
                 builder: (_) => BlocProvider.value(
-                  value: context.read<UserCubit>(),
+                  value: userCubit,
                   child: AddUserDialog(user: user),
                 ),
               );
@@ -289,7 +298,7 @@ class UserListPage extends StatelessWidget {
                           showDialog(
                             context: context,
                             builder: (_) => BlocProvider.value(
-                              value: context.read<UserCubit>(),
+                              value: userCubit,
                               child: AddUserDialog(user: user),
                             ),
                           );

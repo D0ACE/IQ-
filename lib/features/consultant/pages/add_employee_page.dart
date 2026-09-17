@@ -151,7 +151,7 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
                   textFieldController: _phoneCtrl,
                   isRequired: true,
                   keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  inputFormatters: AppValidation.phoneNumberFormatters(),
                   validator: AppValidation.phoneNumberValidator,
                 ),
                 verticalSpace15,

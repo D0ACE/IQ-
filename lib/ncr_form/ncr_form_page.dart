@@ -116,6 +116,31 @@ class _NCRFormPageState extends State<NCRFormPage> {
     }
   }
 
+  @override
+  void dispose() {
+    docNoCtrl.dispose();
+    revNoCtrl.dispose();
+    issueDateCtrl.dispose();
+    pageCtrl.dispose();
+    processCtrl.dispose();
+    iqaCtrl.dispose();
+    clauseCtrl.dispose();
+    ncrNoCtrl.dispose();
+    statementCtrl.dispose();
+    evidenceCtrl.dispose();
+    classificationCtrl.dispose();
+    dueDateCtrl.dispose();
+    correctionCtrl.dispose();
+    plannedDateCtrl.dispose();
+    actualDateCtrl.dispose();
+    rootCauseCtrl.dispose();
+    correctiveCtrl.dispose();
+    verificationCtrl.dispose();
+    auditorCtrl.dispose();
+    approvedCtrl.dispose();
+    super.dispose();
+  }
+
   Future<void> fetchCustomer() async {
     final doc = await getIt<FirebaseFirestore>()
         .collection('customers')
@@ -156,18 +181,37 @@ class _NCRFormPageState extends State<NCRFormPage> {
   }
 
   /// 🔹 Date Picker
-  Future<void> pickDate(TextEditingController controller) async {
-    if (isReview) return; // Prevent editing in review mode
+  Future<void> pickDate(TextEditingController controller, {DateTime? firstDate, String? errorMessage}) async {
+    if (isReview && !isEditable) return; 
+
+    // Helper to parse dd-MM-yyyy
+    DateTime? initial;
+    try {
+      if (controller.text.isNotEmpty) {
+        initial = DateFormat('dd-MM-yyyy').parse(controller.text);
+      }
+    } catch (_) {}
+
     final picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.tryParse(controller.text) ?? DateTime.now(),
-      firstDate: DateTime(2000),
+      initialDate: initial ?? (firstDate ?? DateTime.now()),
+      firstDate: firstDate ?? DateTime(2000),
       lastDate: DateTime(2100),
     );
 
     if (picked != null) {
       controller.text = DateFormat('dd-MM-yyyy').format(picked);
     }
+  }
+
+  void _showPlannedDateFirstError() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Please select a Planned Completion Date first."),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: Colors.orange,
+      ),
+    );
   }
 
   /// 🔹 Logo picker
@@ -274,7 +318,7 @@ class _NCRFormPageState extends State<NCRFormPage> {
                           hintText: "Issue Date",
                           textFieldController: issueDateCtrl,
                           readOnly: true,
-                          onTap: () => pickDate(issueDateCtrl),
+                          onTap: () => isEditable ? pickDate(issueDateCtrl) : null,
                         ),
                         const SizedBox(height: 6),
                         AppTextFieldWidget(
@@ -494,7 +538,21 @@ class _NCRFormPageState extends State<NCRFormPage> {
                     hintText: "Planned Completion Date",
                     textFieldController: plannedDateCtrl,
                     readOnly: true,
-                    onTap: () => isEditable ? pickDate(plannedDateCtrl) : null,
+                    onTap: () {
+                      if (!isEditable) return;
+                      pickDate(plannedDateCtrl).then((_) {
+                        // Optional: Clear actual date if it's now invalid
+                        if (actualDateCtrl.text.isNotEmpty && plannedDateCtrl.text.isNotEmpty) {
+                          try {
+                            final p = DateFormat('dd-MM-yyyy').parse(plannedDateCtrl.text);
+                            final a = DateFormat('dd-MM-yyyy').parse(actualDateCtrl.text);
+                            if (a.isBefore(p)) {
+                              actualDateCtrl.clear();
+                            }
+                          } catch (_) {}
+                        }
+                      });
+                    },
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -503,7 +561,22 @@ class _NCRFormPageState extends State<NCRFormPage> {
                     hintText: "Actual Completion Date",
                     textFieldController: actualDateCtrl,
                     readOnly: true,
-                    onTap: () => isEditable ? pickDate(actualDateCtrl) : null,
+                    onTap: () {
+                      if (!isEditable) return;
+                      
+                      DateTime? planned;
+                      try {
+                        if (plannedDateCtrl.text.isNotEmpty) {
+                          planned = DateFormat('dd-MM-yyyy').parse(plannedDateCtrl.text);
+                        }
+                      } catch (_) {}
+
+                      if (planned == null) {
+                        _showPlannedDateFirstError();
+                      } else {
+                        pickDate(actualDateCtrl, firstDate: planned);
+                      }
+                    },
                   ),
                 ),
               ],

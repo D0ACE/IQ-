@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:iq_plus/features/auth/model/customer_model.dart';
 import 'package:iq_plus/features/auth/model/user_model.dart';
 import 'package:iq_plus/features/dashboard/page/visit_summary/pages/widgets/visitor_summary_pdf.dart';
+import 'package:iq_plus/common/utility/utility.dart';
 
 class BrevoEmailService {
   // 🚀 Firebase Function URL (Option 1: Fixed Backend Proxy)
@@ -14,8 +15,7 @@ class BrevoEmailService {
   /// 🔹 Basic Email Validation
   static bool _isValidEmail(String email) {
     if (email.isEmpty) return false;
-    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-    return emailRegex.hasMatch(email);
+    return !Utility.emailValidationPattern(value: email);
   }
 
   /// 🔹 Helper to dispatch email via Firebase Cloud Function

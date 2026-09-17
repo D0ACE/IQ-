@@ -473,7 +473,7 @@ class _CustomerOnboardingPageState extends State<CustomerOnboardingPage> with Ti
             isRequired: true,
             keyboardType: TextInputType.number,
             validator: AppValidation.phoneNumberValidator,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)],
+            inputFormatters: AppValidation.phoneNumberFormatters(),
           ),
           _buildModernField(
             hintText: "Email",
@@ -758,7 +758,7 @@ class _CustomerOnboardingPageState extends State<CustomerOnboardingPage> with Ti
             const SizedBox(height: 20),
             _buildModernField(hintText: "Name", controller: nameController, icon: Icons.person_rounded, isRequired: true),
             _buildModernField(hintText: "Email", controller: emailController, icon: Icons.email_rounded, keyboardType: TextInputType.emailAddress, validator: AppValidation.checkEmailValidation),
-            _buildModernField(hintText: "Mobile Number", controller: mobileController, icon: Icons.phone_rounded, keyboardType: TextInputType.number, validator: AppValidation.phoneNumberValidator, inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)]),
+            _buildModernField(hintText: "Mobile Number", controller: mobileController, icon: Icons.phone_rounded, keyboardType: TextInputType.number, validator: AppValidation.phoneNumberValidator, inputFormatters: AppValidation.phoneNumberFormatters()),
           ],
         ),
       ),

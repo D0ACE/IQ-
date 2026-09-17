@@ -206,6 +206,15 @@ class UserRepository {
     return snapshot.count ?? 0;
   }
 
+  Future<int> getTotalSystemUserCount() async {
+    final snapshot = await firestore
+        .collection('users')
+        .where('roleId', whereIn: [AppConst.adminRole, AppConst.consultantRole])
+        .count()
+        .get();
+    return snapshot.count ?? 0;
+  }
+
   Future<int> getTotalActiveUserCount() async {
     try {
       final users = await firestore.collection('users').where('blockStatus', isEqualTo: false).count().get();

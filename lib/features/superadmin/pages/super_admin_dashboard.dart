@@ -635,31 +635,16 @@ class _SuperadminDashboardPageState extends State<SuperadminDashboardPage>
         ),
         const SizedBox(height: 16),
         FutureBuilder<int>(
-          future: userRepository.getTotalConsultantCount(),
+          future: userRepository.getTotalSystemUserCount(),
           builder: (context, snapshot) {
             return _statCard(
-              'Verified Consultants',
+              'Total Users',
               snapshot.connectionState == ConnectionState.waiting
                   ? '...'
                   : '${snapshot.data ?? 0}',
               AppColors.blue,
               Icons.badge_rounded,
               () => context.push(AppRoutes.employeeList),
-            );
-          },
-        ),
-        const SizedBox(height: 16),
-        FutureBuilder<int>(
-          future: userRepository.getTotalAdminCount(),
-          builder: (context, snapshot) {
-            return _statCard(
-              'System Administrators',
-              snapshot.connectionState == ConnectionState.waiting
-                  ? '...'
-                  : '${snapshot.data ?? 0}',
-              AppColors.paid,
-              Icons.admin_panel_settings_rounded,
-              () => context.push(AppRoutes.adminList),
             );
           },
         ),

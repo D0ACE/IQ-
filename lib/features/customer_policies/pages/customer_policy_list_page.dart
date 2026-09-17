@@ -69,7 +69,16 @@ class _CustomerPolicyListPageState extends State<CustomerPolicyListPage> {
                 return Center(child: Text(state.message));
               }
               if (state is DocumentLoaded) {
-                final docs = state.documents;
+                final hive = getIt<HiveService>();
+                final user = hive.getUser();
+                final customer = hive.getCustomer();
+                final String? roleId = user?.roleId ?? customer?.roleId;
+                final bool isEmployee = Utility.isEmployee(roleId);
+
+                final docs = isEmployee 
+                    ? state.documents.where((doc) => doc.status == 'active').toList() 
+                    : state.documents;
+
                 if (docs.isEmpty) {
                   return Center(
                     child: Column(
@@ -77,7 +86,10 @@ class _CustomerPolicyListPageState extends State<CustomerPolicyListPage> {
                       children: [
                         Icon(Icons.policy_outlined, size: 64, color: Colors.grey.shade400),
                         const SizedBox(height: 16),
-                        Text('No policies assigned yet', style: TextStyle(color: Colors.grey.shade600, fontSize: 16)),
+                        Text(
+                          isEmployee ? 'No active policies found' : 'No policies assigned yet', 
+                          style: TextStyle(color: Colors.grey.shade600, fontSize: 16)
+                        ),
                       ],
                     ),
                   );
@@ -364,11 +376,20 @@ class _CustomerPolicyListPageState extends State<CustomerPolicyListPage> {
               if (snapshot.hasError) {
                 return Center(child: Text("Error: ${snapshot.error}"));
               }
-              final history = snapshot.data ?? [];
+              final hive = getIt<HiveService>();
+              final user = hive.getUser();
+              final customer = hive.getCustomer();
+              final String? roleId = user?.roleId ?? customer?.roleId;
+              final bool isEmployee = Utility.isEmployee(roleId);
+
+              final history = isEmployee 
+                  ? (snapshot.data ?? []).where((v) => v.status == 'active').toList() 
+                  : (snapshot.data ?? []);
+
               if (history.isEmpty) {
-                return const SizedBox(
+                return SizedBox(
                   height: 100,
-                  child: Center(child: Text("No history found")),
+                  child: Center(child: Text(isEmployee ? "No active history found" : "No history found")),
                 );
               }
 
