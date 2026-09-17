@@ -8,8 +8,6 @@ import 'package:go_router/go_router.dart';
 import 'package:iq_plus/common/app_widget/app_text_field_widget.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
 import 'package:iq_plus/common/widgets/common_app_bar.dart';
-import 'package:iq_plus/features/admin/consultants/cubit/consultant_cubit.dart';
-import 'package:iq_plus/features/admin/consultants/cubit/consultant_state.dart';
 import 'package:iq_plus/common/utility/utility.dart';
 import 'package:iq_plus/core/local_storage/hive_service.dart';
 import 'package:iq_plus/di/service_locator.dart';
@@ -43,8 +41,6 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
   final ScrollController _scrollController = ScrollController();
   bool _isLoading = false;
   String? selectedCustomerId;
-  String? selectedReviewerId;
-  String? selectedReviewerName;
   final _currentUser = getIt<HiveService>().getUser();
 
   // 🔄 Re-upload support
@@ -69,15 +65,10 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
     // Initialize with a safe default
     _controller = QuillController.basic();
     
-    // Fetch reviewers for dropdown
-    context.read<ConsultantCubit>().fetchConsultants();
-
     if (widget.document != null) {
       _initialTitle = widget.document.title ?? '';
       titleCtrl.text = _initialTitle!;
       selectedCustomerId = widget.document.customerId;
-      selectedReviewerId = widget.document.assignedReviewerId;
-      selectedReviewerName = widget.document.assignedReviewerName;
       _loadDocumentContent();
     } else {
       _initialTitle = '';
@@ -235,43 +226,6 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
                                 setState(() {
                                   selectedCustomerId = customer?.customerId;
                                 });
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          // 👨‍💼 Reviewer Dropdown
-                          Expanded(
-                            child: BlocBuilder<ConsultantCubit, ConsultantState>(
-                              builder: (context, consultantState) {
-                                if (consultantState is ConsultantLoaded) {
-                                  return DropdownButtonFormField<String>(
-                                    initialValue: selectedReviewerId, // 🚀 Pre-select assigned consultant
-                                    decoration: InputDecoration(
-                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                                      labelText: "Assign Reviewer",
-                                      labelStyle: const TextStyle(color: AppColors.purple),
-                                      fillColor: Colors.white,
-                                      filled: true,
-                                    ),
-                                    hint: const Text("Assign Reviewer"),
-                                    items: consultantState.consultants.map((c) {
-                                      return DropdownMenuItem(
-                                        value: c.id,
-                                        child: Text(c.userName),
-                                      );
-                                    }).toList(),
-                                    onChanged: (val) {
-                                      setState(() {
-                                        selectedReviewerId = val;
-                                        selectedReviewerName = consultantState.consultants
-                                            .firstWhere((c) => c.id == val)
-                                            .userName;
-                                      });
-                                    },
-                                  );
-                                }
-                                return const LinearProgressIndicator();
                               },
                             ),
                           ),
@@ -462,8 +416,6 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
             newFileName: selectedFileName,
             currentFilePath: widget.document.filePath,
             customerId: selectedCustomerId,
-            assignedReviewerId: selectedReviewerId,
-            assignedReviewerName: selectedReviewerName,
             changeDescription: changeDescriptionCtrl.text.trim(),
           );
     } else {
@@ -477,8 +429,6 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
             title: title,
             content: jsonContent,
             customerId: selectedCustomerId,
-            assignedReviewerId: selectedReviewerId,
-            assignedReviewerName: selectedReviewerName,
             changeDescription: changeDescriptionCtrl.text.trim(),
           );
     }

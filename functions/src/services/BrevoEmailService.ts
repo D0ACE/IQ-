@@ -6,14 +6,14 @@ import {BREVO_API_URL} from "../config/brevo";
  */
 export class BrevoEmailService {
   /**
-   * Sends a document review request email to the assigned reviewer.
-   * @param {string} to Reviewer email
-   * @param {string} reviewerName Reviewer name
+   * Sends a document review request email to the recipient (Customer).
+   * @param {string} to Recipient email
+   * @param {string} recipientName Recipient name
    * @param {string} docTitle Document title
    */
   static async sendReviewRequest(
     to: string,
-    reviewerName: string,
+    recipientName: string,
     docTitle: string
   ) {
     const subject = `Annual Review Required: ${docTitle}`;
@@ -21,9 +21,9 @@ export class BrevoEmailService {
       <html>
         <body>
           <h2>Policy & Procedure Annual Review</h2>
-          <p>Hello ${reviewerName},</p>
+          <p>Hello ${recipientName},</p>
           <p>The document <strong>"${docTitle}"</strong> has reached
-             its annual anniversary and requires your review.</p>
+             its annual anniversary and requires your review and approval.</p>
           <p>Please log in to the IQ Plus portal to review this document.</p>
           <p>Thank you,<br>System Administrator</p>
         </body>

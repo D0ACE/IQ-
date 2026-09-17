@@ -18,8 +18,6 @@ class DocumentModel {
   final DateTime? reviewedDate;
   final String? content; // JSON Delta for rich text
   final String? customerId; // Linked customer ID
-  final String? assignedReviewerId; // Assigned Consultant ID
-  final String? assignedReviewerName; // Assigned Consultant Name
 
   DocumentModel({
     required this.docId,
@@ -38,8 +36,6 @@ class DocumentModel {
     this.reviewedDate,
     this.content,
     this.customerId,
-    this.assignedReviewerId,
-    this.assignedReviewerName,
     required this.currentVersion,
   });
 
@@ -63,8 +59,6 @@ class DocumentModel {
       reviewedDate: (data['reviewed_date'] as Timestamp?)?.toDate(),
       content: data['content'],
       customerId: data['customer_id'],
-      assignedReviewerId: data['assigned_reviewer_id'],
-      assignedReviewerName: data['assigned_reviewer_name'],
     );
   }
 
@@ -86,8 +80,6 @@ class DocumentModel {
       'reviewed_date': reviewedDate != null ? Timestamp.fromDate(reviewedDate!) : null,
       'content': content,
       'customer_id': customerId,
-      'assigned_reviewer_id': assignedReviewerId,
-      'assigned_reviewer_name': assignedReviewerName,
     };
   }
 }

@@ -65,11 +65,16 @@ class _DocumentListPageState extends State<DocumentListPage> {
                 final isRichDoc = doc.content != null;
                 final isDocx = doc.fileName.toLowerCase().endsWith('.docx');
 
-                final user = getIt<HiveService>().getUser();
-                final bool isCreator = doc.createdByUserId == user?.userId;
-                final bool isSystemAdmin = Utility.isSuperAdmin(user?.roleId) || Utility.isAdmin(user?.roleId);
-                final bool isConsultant = Utility.isConsultant(user?.roleId);
-                final bool isAssignedReviewer = doc.assignedReviewerId == user?.userId;
+                final hive = getIt<HiveService>();
+                final user = hive.getUser();
+                final customer = hive.getCustomer();
+                final String? currentUserId = user?.userId ?? customer?.customerId;
+                final String? roleId = user?.roleId ?? customer?.roleId;
+
+                final bool isCreator = doc.createdByUserId == currentUserId;
+                final bool isSystemAdmin = Utility.isSuperAdmin(roleId) || Utility.isAdmin(roleId);
+                final bool isConsultant = Utility.isConsultant(roleId);
+                final bool isCustomer = Utility.isCustomer(roleId);
 
                 return Card(
                   margin: const EdgeInsets.only(bottom: 16),
@@ -115,7 +120,7 @@ class _DocumentListPageState extends State<DocumentListPage> {
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            if (isSystemAdmin || isConsultant || isAssignedReviewer)
+                            if (isSystemAdmin || isConsultant || isCreator || isCustomer)
                               IconButton(
                                 tooltip: 'View Details',
                                 icon: const Icon(Icons.visibility, color: Colors.blueAccent),
@@ -136,21 +141,14 @@ class _DocumentListPageState extends State<DocumentListPage> {
                                   }
                                 },
                               ),
-                            IconButton(
-                              tooltip: 'Status',
-                              icon: Icon(
-                                doc.status == 'active' ? Icons.task_alt : Icons.pending,
-                                color: doc.status == 'active' ? Colors.green : Colors.orange,
-                              ),
-                              onPressed: () {
-                                // Allow status change if user is Admin/SuperAdmin OR created the doc OR is assigned reviewer
-                                final user = getIt<HiveService>().getUser();
-                                final isAllowed = Utility.isSuperAdmin(user?.roleId) || 
-                                                 Utility.isAdmin(user?.roleId) ||
-                                                 doc.createdByUserId == user?.userId ||
-                                                 doc.assignedReviewerId == user?.userId;
-                                
-                                if (isAllowed) {
+                            if (isCustomer && doc.customerId == currentUserId)
+                              IconButton(
+                                tooltip: 'Status',
+                                icon: Icon(
+                                  doc.status == 'active' ? Icons.task_alt : Icons.pending,
+                                  color: doc.status == 'active' ? Colors.green : Colors.orange,
+                                ),
+                                onPressed: () {
                                   if (doc.status == 'active') {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(content: Text("This policy is already Active.")),
@@ -158,13 +156,8 @@ class _DocumentListPageState extends State<DocumentListPage> {
                                   } else {
                                     _showStatusDialog(context, doc.docId, doc.status);
                                   }
-                                } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text("You are not authorized to change this policy status.")),
-                                  );
-                                }
-                              },
-                            ),
+                                },
+                              ),
                             IconButton(
                               tooltip: 'Version History',
                               icon: const Icon(Icons.history, color: Colors.blueGrey),
@@ -193,14 +186,13 @@ class _DocumentListPageState extends State<DocumentListPage> {
                             const SizedBox(height: 8),
                             Row(
                               children: [
-                                Expanded(child: _auditItem("Reviewer Assigned", doc.assignedReviewerName ?? "Not Assigned")),
                                 Expanded(child: _auditItem("Reviewed By", doc.reviewedBy ?? "N/A")),
+                                Expanded(child: _auditItem("Reviewed Date", doc.reviewedDate != null ? DateFormat('dd MMM yyyy').format(doc.reviewedDate!) : "N/A")),
                               ],
                             ),
                             const SizedBox(height: 8),
                             Row(
                               children: [
-                                Expanded(child: _auditItem("Reviewed Date", doc.reviewedDate != null ? DateFormat('dd MMM yyyy').format(doc.reviewedDate!) : "N/A")),
                                 Expanded(
                                   child: Align(
                                     alignment: Alignment.centerLeft,
@@ -221,6 +213,7 @@ class _DocumentListPageState extends State<DocumentListPage> {
                                     ),
                                   ),
                                 ),
+                                const Spacer(),
                               ],
                             ),
                           ],
@@ -371,12 +364,6 @@ class _DocumentListPageState extends State<DocumentListPage> {
                       const SizedBox(height: 4),
                       Text("Performed By: ${v.performedBy} on ${DateFormat('dd MMM yyyy').format(v.performedDate)}", 
                            style: const TextStyle(fontSize: 11, fontStyle: FontStyle.italic)),
-                      if (v.status == 'draft' && v.assignedReviewerName != null)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 2),
-                          child: Text("Pending Review by: ${v.assignedReviewerName} on ${DateFormat('dd MMM yyyy').format(v.performedDate)}",
-                               style: const TextStyle(fontSize: 11, color: Colors.blueGrey, fontWeight: FontWeight.bold)),
-                        ),
                       if (v.status == 'active' && v.approvedBy != null)
                         Padding(
                           padding: const EdgeInsets.only(top: 2),

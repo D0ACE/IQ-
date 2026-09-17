@@ -10,8 +10,6 @@ class VersionHistoryModel {
   final String? approvedBy;
   final DateTime? approvedDate;
   final String status;
-  final String? assignedReviewerName;
-  final String? assignedReviewerEmail;
   final String? docTitle; // 👈 Added for global listing
 
   VersionHistoryModel({
@@ -24,8 +22,6 @@ class VersionHistoryModel {
     this.approvedBy,
     this.approvedDate,
     required this.status,
-    this.assignedReviewerName,
-    this.assignedReviewerEmail,
     this.docTitle,
   });
 
@@ -41,8 +37,6 @@ class VersionHistoryModel {
       approvedBy: data['approvedBy'],
       approvedDate: (data['approvedDate'] as Timestamp?)?.toDate(),
       status: data['status'] ?? 'draft',
-      assignedReviewerName: data['assignedReviewerName'],
-      assignedReviewerEmail: data['assignedReviewerEmail'],
       docTitle: docTitle ?? data['docTitle'],
     );
   }
@@ -57,8 +51,6 @@ class VersionHistoryModel {
       'approvedBy': approvedBy,
       'approvedDate': approvedDate != null ? Timestamp.fromDate(approvedDate!) : null,
       'status': status,
-      'assignedReviewerName': assignedReviewerName,
-      'assignedReviewerEmail': assignedReviewerEmail,
       'docTitle': docTitle,
     };
   }

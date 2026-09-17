@@ -5,8 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:iq_plus/common/app_widget/app_text_field_widget.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
 import 'package:iq_plus/common/widgets/common_app_bar.dart';
-import 'package:iq_plus/features/admin/consultants/cubit/consultant_cubit.dart';
-import 'package:iq_plus/features/admin/consultants/cubit/consultant_state.dart';
 import 'package:iq_plus/common/utility/utility.dart';
 import 'package:iq_plus/core/local_storage/hive_service.dart';
 import 'package:iq_plus/di/service_locator.dart';
@@ -38,8 +36,6 @@ class _ExcelEditorPageState extends State<ExcelEditorPage> {
   final titleCtrl = TextEditingController();
   final changeDescriptionCtrl = TextEditingController();
   String? selectedCustomerId;
-  String? selectedReviewerId;
-  String? selectedReviewerName;
   bool _isGridDirty = false; // 👈 Track content changes
   final _currentUser = getIt<HiveService>().getUser();
 
@@ -51,13 +47,10 @@ class _ExcelEditorPageState extends State<ExcelEditorPage> {
   void initState() {
     super.initState();
     // context.read<CustomerListCubit>().fetchCustomers(); // Managed by widget
-    context.read<ConsultantCubit>().fetchConsultants();
     
     if (widget.document != null) {
       titleCtrl.text = widget.document!.title;
       selectedCustomerId = widget.document!.customerId;
-      selectedReviewerId = widget.document!.assignedReviewerId;
-      selectedReviewerName = widget.document!.assignedReviewerName;
       _loadExcelData();
     } else {
       _initEmptyGrid();
@@ -256,8 +249,6 @@ class _ExcelEditorPageState extends State<ExcelEditorPage> {
         bytes: finalBytes ?? Uint8List(0), // Repository handles null/empty if docId exists
         customerId: selectedCustomerId,
         currentFilePath: widget.document?.filePath,
-        assignedReviewerId: selectedReviewerId,
-        assignedReviewerName: selectedReviewerName,
         changeDescription: changeDescriptionCtrl.text.trim(),
         isContentChanged: selectedFileBytes != null || _isGridDirty,
       );
@@ -342,43 +333,6 @@ class _ExcelEditorPageState extends State<ExcelEditorPage> {
                                 setState(() {
                                   selectedCustomerId = customer?.customerId;
                                 });
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          // 👨‍💼 Reviewer Dropdown
-                          Expanded(
-                            child: BlocBuilder<ConsultantCubit, ConsultantState>(
-                              builder: (context, consultantState) {
-                                if (consultantState is ConsultantLoaded) {
-                                  return DropdownButtonFormField<String>(
-                                    initialValue: selectedReviewerId, // 🚀 Pre-select assigned consultant
-                                    decoration: InputDecoration(
-                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                                      labelText: "Assign Reviewer",
-                                      labelStyle: const TextStyle(color: AppColors.purple),
-                                      fillColor: Colors.white,
-                                      filled: true,
-                                    ),
-                                    hint: const Text("Assign Reviewer"),
-                                    items: consultantState.consultants.map((c) {
-                                      return DropdownMenuItem(
-                                        value: c.id,
-                                        child: Text(c.userName),
-                                      );
-                                    }).toList(),
-                                    onChanged: (val) {
-                                      setState(() {
-                                        selectedReviewerId = val;
-                                        selectedReviewerName = consultantState.consultants
-                                            .firstWhere((c) => c.id == val)
-                                            .userName;
-                                      });
-                                    },
-                                  );
-                                }
-                                return const LinearProgressIndicator();
                               },
                             ),
                           ),

@@ -8,8 +8,6 @@ import 'package:iq_plus/common/routes/go_route.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
 import 'package:iq_plus/common/themes/app_const.dart';
 import 'package:iq_plus/common/widgets/common_app_bar.dart';
-import 'package:iq_plus/features/admin/consultants/cubit/consultant_cubit.dart';
-import 'package:iq_plus/features/admin/consultants/cubit/consultant_state.dart';
 import 'package:iq_plus/common/utility/utility.dart';
 import 'package:iq_plus/core/local_storage/hive_service.dart';
 import 'package:iq_plus/di/service_locator.dart';
@@ -35,8 +33,6 @@ class _DocumentAddEditPageState extends State<DocumentAddEditPage> {
   String? selectedFileName;
   String? existingFileName;
   String? selectedCustomerId;
-  String? selectedReviewerId;
-  String? selectedReviewerName;
   final _currentUser = getIt<HiveService>().getUser();
 
   bool get isEdit => widget.document != null;
@@ -45,14 +41,11 @@ class _DocumentAddEditPageState extends State<DocumentAddEditPage> {
   void initState() {
     super.initState();
     // context.read<CustomerListCubit>().fetchCustomers(); // Managed by widget now
-    context.read<ConsultantCubit>().fetchConsultants();
     
     if (isEdit) {
       titleCtrl.text = widget.document!.title;
       existingFileName = widget.document!.fileName;
       selectedCustomerId = widget.document!.customerId;
-      selectedReviewerId = widget.document!.assignedReviewerId;
-      selectedReviewerName = widget.document!.assignedReviewerName;
     }
   }
 
@@ -158,40 +151,6 @@ class _DocumentAddEditPageState extends State<DocumentAddEditPage> {
 
                   const SizedBox(height: 20),
 
-                  // 👨‍💼 Reviewer Dropdown
-                  const Text("Assign Reviewer", style: TextStyle(fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 8),
-                  BlocBuilder<ConsultantCubit, ConsultantState>(
-                    builder: (context, consultantState) {
-                      if (consultantState is ConsultantLoaded) {
-                        return DropdownButtonFormField<String>(
-                          initialValue: selectedReviewerId, // 🚀 Pre-select assigned consultant
-                          decoration: InputDecoration(
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                          ),
-                          hint: const Text("Select Reviewer"),
-                          items: consultantState.consultants.map((c) {
-                            return DropdownMenuItem(
-                              value: c.id,
-                              child: Text(c.userName),
-                            );
-                          }).toList(),
-                          onChanged: (val) {
-                            setState(() {
-                              selectedReviewerId = val;
-                              selectedReviewerName = consultantState.consultants
-                                  .firstWhere((c) => c.id == val)
-                                  .userName;
-                            });
-                          },
-                        );
-                      }
-                      return const Center(child: CircularProgressIndicator());
-                    },
-                  ),
-                  
-                  const SizedBox(height: 20),
                   const Text("Policy File", style: TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
                   InkWell(
@@ -296,8 +255,6 @@ class _DocumentAddEditPageState extends State<DocumentAddEditPage> {
             newFileName: selectedFileName,
             currentFilePath: widget.document!.filePath,
             customerId: selectedCustomerId,
-            assignedReviewerId: selectedReviewerId,
-            assignedReviewerName: selectedReviewerName,
             changeDescription: changeDescriptionCtrl.text.trim(),
           );
     } else {
@@ -306,8 +263,6 @@ class _DocumentAddEditPageState extends State<DocumentAddEditPage> {
             bytes: selectedFileBytes!,
             fileName: selectedFileName!,
             customerId: selectedCustomerId,
-            assignedReviewerId: selectedReviewerId,
-            assignedReviewerName: selectedReviewerName,
           );
     }
   }

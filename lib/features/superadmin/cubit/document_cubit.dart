@@ -43,8 +43,6 @@ class DocumentCubit extends Cubit<DocumentState> {
     required Uint8List bytes,
     required String fileName,
     String? customerId,
-    String? assignedReviewerId,
-    String? assignedReviewerName,
   }) async {
     emit(DocumentLoading());
     try {
@@ -54,8 +52,6 @@ class DocumentCubit extends Cubit<DocumentState> {
         bytes: bytes,
         fileName: fileName,
         customerId: customerId,
-        assignedReviewerId: assignedReviewerId,
-        assignedReviewerName: assignedReviewerName,
       );
       emit(DocumentOperationSuccess("Policy uploaded successfully"));
       _refresh();
@@ -70,8 +66,6 @@ class DocumentCubit extends Cubit<DocumentState> {
     required String title,
     required String content,
     String? customerId,
-    String? assignedReviewerId,
-    String? assignedReviewerName,
     String? changeDescription,
   }) async {
     emit(DocumentLoading());
@@ -82,8 +76,6 @@ class DocumentCubit extends Cubit<DocumentState> {
         title: title,
         content: content,
         customerId: customerId,
-        assignedReviewerId: assignedReviewerId,
-        assignedReviewerName: assignedReviewerName,
         changeDescription: changeDescription,
       );
       emit(DocumentOperationSuccess("Rich policy saved successfully"));
@@ -100,8 +92,6 @@ class DocumentCubit extends Cubit<DocumentState> {
     required Uint8List bytes,
     String? customerId,
     String? currentFilePath,
-    String? assignedReviewerId,
-    String? assignedReviewerName,
     String? changeDescription,
     bool isContentChanged = true, // 👈 New parameter
   }) async {
@@ -113,8 +103,6 @@ class DocumentCubit extends Cubit<DocumentState> {
         bytes: bytes,
         customerId: customerId,
         currentFilePath: currentFilePath,
-        assignedReviewerId: assignedReviewerId,
-        assignedReviewerName: assignedReviewerName,
         changeDescription: changeDescription,
         isContentChanged: isContentChanged,
       );
@@ -132,8 +120,6 @@ class DocumentCubit extends Cubit<DocumentState> {
     String? newFileName,
     String? currentFilePath,
     String? customerId,
-    String? assignedReviewerId,
-    String? assignedReviewerName,
     String? changeDescription,
   }) async {
     emit(DocumentLoading());
@@ -146,8 +132,6 @@ class DocumentCubit extends Cubit<DocumentState> {
         newFileName: newFileName,
         currentFilePath: currentFilePath,
         customerId: customerId,
-        assignedReviewerId: assignedReviewerId,
-        assignedReviewerName: assignedReviewerName,
         changeDescription: changeDescription,
       );
       emit(DocumentOperationSuccess("Policy updated successfully"));

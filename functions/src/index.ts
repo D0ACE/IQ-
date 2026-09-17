@@ -127,7 +127,6 @@ export const annualDocumentReviewTask = onSchedule(
           performedBy: "System (Auto-Review)",
           performedDate: admin.firestore.FieldValue.serverTimestamp(),
           status: data.status,
-          assignedReviewerName: data.assigned_reviewer_name || "System",
           docTitle: data.title || "Untitled Document",
         });
 
@@ -138,15 +137,15 @@ export const annualDocumentReviewTask = onSchedule(
         });
 
         // 5. Send Notification
-        if (data.assigned_reviewer_id) {
-          const userDoc = await db.collection("users")
-            .doc(data.assigned_reviewer_id)
+        if (data.customer_id) {
+          const customerDoc = await db.collection("customers")
+            .doc(data.customer_id)
             .get();
-          const userData = userDoc.data();
-          if (userData && userData.email) {
+          const customerData = customerDoc.data();
+          if (customerData && customerData.email) {
             await BrevoEmailService.sendReviewRequest(
-              userData.email,
-              userData.userName || "Consultant",
+              customerData.email,
+              customerData.companyName || "Customer",
               data.title || "Untitled Document"
             );
           }

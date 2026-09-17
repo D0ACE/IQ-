@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:iq_plus/common/routes/go_route.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
+import 'package:iq_plus/common/utility/utility.dart';
 import 'package:iq_plus/common/widgets/common_app_bar.dart';
 import 'package:iq_plus/core/local_storage/hive_service.dart';
 import 'package:iq_plus/di/service_locator.dart';
@@ -38,6 +39,11 @@ class _CustomerPolicyListPageState extends State<CustomerPolicyListPage> {
 
   @override
   Widget build(BuildContext context) {
+    final hive = getIt<HiveService>();
+    final user = hive.getUser();
+    final customer = hive.getCustomer();
+    final String? roleId = user?.roleId ?? customer?.roleId;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: const CommonAppBar(title: 'My Policies & Procedures'),
@@ -98,6 +104,11 @@ class _CustomerPolicyListPageState extends State<CustomerPolicyListPage> {
   }
 
   Widget _neoModernPolicyCard(dynamic doc) {
+    final hive = getIt<HiveService>();
+    final user = hive.getUser();
+    final customer = hive.getCustomer();
+    final String? roleId = user?.roleId ?? customer?.roleId;
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -135,14 +146,35 @@ class _CustomerPolicyListPageState extends State<CustomerPolicyListPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            doc.title,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w900,
-                              fontSize: 18,
-                              color: AppColors.titleText,
-                              letterSpacing: -0.5,
-                            ),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  doc.title,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 18,
+                                    color: AppColors.titleText,
+                                    letterSpacing: -0.5,
+                                  ),
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: (doc.status == 'active' ? Colors.green : Colors.orange).withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  doc.status.toUpperCase(),
+                                  style: TextStyle(
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w900,
+                                    color: doc.status == 'active' ? Colors.green : Colors.orange,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 4),
                           Row(
@@ -192,10 +224,68 @@ class _CustomerPolicyListPageState extends State<CustomerPolicyListPage> {
                     Expanded(child: _auditItemModern("Reviewed By", doc.reviewedBy ?? "N/A", Icons.rate_review_rounded)),
                   ],
                 ),
+                if (doc.status == 'draft' && Utility.isCustomer(roleId)) ...[
+                  const SizedBox(height: 20),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: ElevatedButton.icon(
+                      onPressed: () => _showStatusDialog(context, doc.docId),
+                      icon: const Icon(Icons.check_circle_outline, size: 18),
+                      label: const Text(
+                        "APPROVE POLICY",
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 0,
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  void _showStatusDialog(BuildContext context, String docId) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
+        title: const Text(
+          'Approve & Activate Policy?',
+          style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.titleText),
+        ),
+        content: const Text(
+          'Are you sure you want to mark this policy as ACTIVE? This confirms you have reviewed and accepted the policy content.',
+          style: TextStyle(color: AppColors.subText),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel', style: TextStyle(color: AppColors.subText, fontWeight: FontWeight.bold)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              context.read<DocumentCubit>().updateStatus(docId, 'active');
+              Navigator.pop(ctx);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('Approve', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
       ),
     );
   }

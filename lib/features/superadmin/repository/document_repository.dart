@@ -1,6 +1,7 @@
 import 'dart:developer' as developer;
 import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:iq_plus/common/utility/utility.dart';
 import 'package:iq_plus/core/local_storage/hive_service.dart';
 import 'package:iq_plus/di/service_locator.dart';
 import 'package:iq_plus/features/superadmin/models/document_model.dart';
@@ -17,14 +18,9 @@ class DocumentRepository {
     Query query = _firestore.collection('documents');
 
     if (isConsultant && userId != null) {
-      query = query.where(
-        Filter.or(
-          Filter('created_by_user_id', isEqualTo: userId),
-          Filter('assigned_reviewer_id', isEqualTo: userId),
-        ),
-      );
+      query = query.where('created_by_user_id', isEqualTo: userId);
     } else if (customerId != null) {
-      query = query.where('customer_id', isEqualTo: customerId).where('status', isEqualTo: 'active');
+      query = query.where('customer_id', isEqualTo: customerId);
     }
 
     final snapshot = await query.orderBy('created_at', descending: true).get();
@@ -102,8 +98,6 @@ class DocumentRepository {
     String? approvedBy,
     DateTime? approvedDate,
     required String status,
-    String? assignedReviewerName,
-    String? assignedReviewerEmail,
     String? docTitle,
   }) async {
     final historyRef = _firestore.collection('documents').doc(docId).collection('version_history');
@@ -116,8 +110,6 @@ class DocumentRepository {
       'approvedBy': approvedBy,
       'approvedDate': approvedDate != null ? Timestamp.fromDate(approvedDate) : null,
       'status': status,
-      'assignedReviewerName': assignedReviewerName,
-      'assignedReviewerEmail': assignedReviewerEmail,
       'docTitle': docTitle,
     });
   }
@@ -127,9 +119,6 @@ class DocumentRepository {
     required Uint8List bytes,
     required String fileName,
     String? customerId,
-    String? assignedReviewerId,
-    String? assignedReviewerName,
-    String? assignedReviewerEmail,
   }) async {
     final extension = p.extension(fileName);
     final user = getIt<HiveService>().getUser();
@@ -168,9 +157,6 @@ class DocumentRepository {
       'version': 'V1', 
       'current_version': 'V1', 
       'customer_id': customerId,
-      'assigned_reviewer_id': assignedReviewerId,
-      'assigned_reviewer_name': assignedReviewerName,
-      'assigned_reviewer_email': assignedReviewerEmail,
       'last_change_description': 'Initial document upload',
       'last_updated_by': userEmail,
     });
@@ -181,9 +167,6 @@ class DocumentRepository {
     required String title,
     required String content,
     String? customerId,
-    String? assignedReviewerId,
-    String? assignedReviewerName,
-    String? assignedReviewerEmail,
     String? changeDescription,
   }) async {
     final user = getIt<HiveService>().getUser();
@@ -195,9 +178,6 @@ class DocumentRepository {
         'title': title,
         'content': content,
         'customer_id': customerId,
-        'assigned_reviewer_id': assignedReviewerId,
-        'assigned_reviewer_name': assignedReviewerName,
-        'assigned_reviewer_email': assignedReviewerEmail,
         'status': 'draft', 
         'last_change_description': changeDescription ?? 'Rich text updated',
         'last_updated_by': userEmail,
@@ -220,9 +200,6 @@ class DocumentRepository {
         'version': 'V1',
         'current_version': 'V1',
         'customer_id': customerId,
-        'assigned_reviewer_id': assignedReviewerId,
-        'assigned_reviewer_name': assignedReviewerName,
-        'assigned_reviewer_email': assignedReviewerEmail,
         'last_change_description': 'Initial rich text creation',
         'last_updated_by': userEmail,
       });
@@ -235,9 +212,6 @@ class DocumentRepository {
     required Uint8List bytes,
     String? customerId,
     String? currentFilePath,
-    String? assignedReviewerId,
-    String? assignedReviewerName,
-    String? assignedReviewerEmail,
     String? changeDescription,
     bool isContentChanged = true,
   }) async {
@@ -281,9 +255,6 @@ class DocumentRepository {
         'file_name': fileName,
         'file_path': supabasePath,
         'customer_id': customerId,
-        'assigned_reviewer_id': assignedReviewerId,
-        'assigned_reviewer_name': assignedReviewerName,
-        'assigned_reviewer_email': assignedReviewerEmail,
         'status': 'draft', 
         'last_change_description': changeDescription ?? 'Spreadsheet updated',
         'last_updated_by': userEmail,
@@ -305,9 +276,6 @@ class DocumentRepository {
         'version': 'V1',
         'current_version': 'V1',
         'customer_id': customerId,
-        'assigned_reviewer_id': assignedReviewerId,
-        'assigned_reviewer_name': assignedReviewerName,
-        'assigned_reviewer_email': assignedReviewerEmail,
         'last_change_description': 'Initial excel creation',
         'last_updated_by': userEmail,
       });
@@ -321,9 +289,6 @@ class DocumentRepository {
     String? newFileName,
     String? currentFilePath,
     String? customerId,
-    String? assignedReviewerId,
-    String? assignedReviewerName,
-    String? assignedReviewerEmail,
     String? changeDescription,
   }) async {
     final user = getIt<HiveService>().getUser();
@@ -331,9 +296,6 @@ class DocumentRepository {
     Map<String, dynamic> updateData = {
       'title': title,
       'customer_id': customerId,
-      'assigned_reviewer_id': assignedReviewerId,
-      'assigned_reviewer_name': assignedReviewerName,
-      'assigned_reviewer_email': assignedReviewerEmail,
       'status': 'draft', 
       'last_change_description': changeDescription ?? 'Document updated',
       'last_updated_by': userEmail,
@@ -385,8 +347,13 @@ class DocumentRepository {
   }
 
   Future<void> updateStatus(String docId, String status) async {
-    final user = getIt<HiveService>().getUser();
-    final userEmail = user?.email ?? 'unknown';
+    final hive = getIt<HiveService>();
+    final user = hive.getUser();
+    final customer = hive.getCustomer();
+    
+    final String userEmail = user?.email ?? customer?.email ?? 'unknown';
+    final String? roleId = user?.roleId ?? customer?.roleId;
+    final String? currentUserId = user?.userId ?? customer?.customerId;
 
     if (status == 'active') {
       // 🚀 Version change and history entry ONLY on activation
@@ -394,9 +361,15 @@ class DocumentRepository {
       final data = docSnapshot.data();
       if (data == null) return;
 
+      // 🚀 Authorization check: Only the assigned Customer can approve
+      final String? assignedCustomerId = data['customer_id'];
+      final bool isAssignedCustomer = Utility.isCustomer(roleId) && assignedCustomerId == currentUserId;
+
+      if (!isAssignedCustomer) {
+        throw Exception("Only the assigned customer is authorized to approve this policy.");
+      }
+
       final docTitle = data['title'];
-      final currentReviewerName = data['assigned_reviewer_name'];
-      final currentReviewerEmail = data['assigned_reviewer_email'];
       final changeDescription = data['last_change_description'] ?? 'Approved and Activated';
       final lastUpdatedBy = data['last_updated_by'] ?? 'System';
 
@@ -422,8 +395,6 @@ class DocumentRepository {
         approvedBy: userEmail, 
         approvedDate: DateTime.now(),
         status: 'active',
-        assignedReviewerName: currentReviewerName,
-        assignedReviewerEmail: currentReviewerEmail,
         docTitle: docTitle,
       );
     } else {
