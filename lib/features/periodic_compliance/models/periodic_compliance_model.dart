@@ -6,6 +6,12 @@ class PeriodicComplianceTask {
   final String description;
   final String assignedCustomerId;
   final String assignedCustomerName;
+  final String assignedCustomerLowLevelName;
+  final String assignedCustomerLowLevelEmail;
+  final String assignedCustomerLowLevelMobile;
+  final String assignedCustomerMediumLevelName;
+  final String assignedCustomerMediumLevelEmail;
+  final String assignedCustomerMediumLevelMobile;
   final DateTime dueDate;
   final String status; // 'pending', 'completed'
   final DateTime createdAt;
@@ -18,6 +24,12 @@ class PeriodicComplianceTask {
     required this.description,
     required this.assignedCustomerId,
     required this.assignedCustomerName,
+    this.assignedCustomerLowLevelName = '',
+    this.assignedCustomerLowLevelEmail = '',
+    this.assignedCustomerLowLevelMobile = '',
+    this.assignedCustomerMediumLevelName = '',
+    this.assignedCustomerMediumLevelEmail = '',
+    this.assignedCustomerMediumLevelMobile = '',
     required this.dueDate,
     required this.status,
     required this.createdAt,
@@ -31,6 +43,12 @@ class PeriodicComplianceTask {
       'description': description,
       'assignedCustomerId': assignedCustomerId,
       'assignedCustomerName': assignedCustomerName,
+      'assignedCustomerLowLevelName': assignedCustomerLowLevelName,
+      'assignedCustomerLowLevelEmail': assignedCustomerLowLevelEmail,
+      'assignedCustomerLowLevelMobile': assignedCustomerLowLevelMobile,
+      'assignedCustomerMediumLevelName': assignedCustomerMediumLevelName,
+      'assignedCustomerMediumLevelEmail': assignedCustomerMediumLevelEmail,
+      'assignedCustomerMediumLevelMobile': assignedCustomerMediumLevelMobile,
       'dueDate': Timestamp.fromDate(dueDate),
       'status': status,
       'createdAt': Timestamp.fromDate(createdAt),
@@ -46,6 +64,12 @@ class PeriodicComplianceTask {
       description: json['description'] ?? '',
       assignedCustomerId: json['assignedCustomerId'] ?? '',
       assignedCustomerName: json['assignedCustomerName'] ?? '',
+      assignedCustomerLowLevelName: json['assignedCustomerLowLevelName'] ?? json['assignedCustomerLowName'] ?? '',
+      assignedCustomerLowLevelEmail: json['assignedCustomerLowLevelEmail'] ?? json['assignedCustomerLowEmail'] ?? '',
+      assignedCustomerLowLevelMobile: json['assignedCustomerLowLevelMobile'] ?? json['assignedCustomerLowMobile'] ?? '',
+      assignedCustomerMediumLevelName: json['assignedCustomerMediumLevelName'] ?? json['assignedCustomerMediumName'] ?? '',
+      assignedCustomerMediumLevelEmail: json['assignedCustomerMediumLevelEmail'] ?? json['assignedCustomerMediumEmail'] ?? '',
+      assignedCustomerMediumLevelMobile: json['assignedCustomerMediumLevelMobile'] ?? json['assignedCustomerMediumMobile'] ?? '',
       dueDate: json['dueDate'] != null
           ? (json['dueDate'] as Timestamp).toDate()
           : DateTime.now(),
@@ -63,6 +87,12 @@ class PeriodicComplianceTask {
     String? description,
     String? assignedCustomerId,
     String? assignedCustomerName,
+    String? assignedCustomerLowLevelName,
+    String? assignedCustomerLowLevelEmail,
+    String? assignedCustomerLowLevelMobile,
+    String? assignedCustomerMediumLevelName,
+    String? assignedCustomerMediumLevelEmail,
+    String? assignedCustomerMediumLevelMobile,
     DateTime? dueDate,
     String? status,
   }) {
@@ -72,6 +102,12 @@ class PeriodicComplianceTask {
       description: description ?? this.description,
       assignedCustomerId: assignedCustomerId ?? this.assignedCustomerId,
       assignedCustomerName: assignedCustomerName ?? this.assignedCustomerName,
+      assignedCustomerLowLevelName: assignedCustomerLowLevelName ?? this.assignedCustomerLowLevelName,
+      assignedCustomerLowLevelEmail: assignedCustomerLowLevelEmail ?? this.assignedCustomerLowLevelEmail,
+      assignedCustomerLowLevelMobile: assignedCustomerLowLevelMobile ?? this.assignedCustomerLowLevelMobile,
+      assignedCustomerMediumLevelName: assignedCustomerMediumLevelName ?? this.assignedCustomerMediumLevelName,
+      assignedCustomerMediumLevelEmail: assignedCustomerMediumLevelEmail ?? this.assignedCustomerMediumLevelEmail,
+      assignedCustomerMediumLevelMobile: assignedCustomerMediumLevelMobile ?? this.assignedCustomerMediumLevelMobile,
       dueDate: dueDate ?? this.dueDate,
       status: status ?? this.status,
       createdAt: createdAt,

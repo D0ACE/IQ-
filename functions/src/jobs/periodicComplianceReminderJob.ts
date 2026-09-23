@@ -38,13 +38,45 @@ export async function runPeriodicComplianceReminderJob() {
 
       const recipients: string[] = [];
 
-      // 1. Get Customer Email
+      // 1. Get Lower & Medium Person Emails of Customer
+      let lowerPersonEmail = task.assignedCustomerLowLevelEmail;
+      let mediumPersonEmail = task.assignedCustomerMediumLevelEmail;
+
       if (task.assignedCustomerId) {
         const customerSnap = await db.collection("customers").doc(task.assignedCustomerId).get();
         if (customerSnap.exists) {
           const customerData = customerSnap.data();
-          if (customerData?.email) recipients.push(customerData.email);
+
+          // Lower Person Email
+          const custLowEmail = customerData?.lowLevelEmail ||
+            customerData?.low_level_email ||
+            customerData?.lowLevelDepartment?.email;
+
+          if (custLowEmail) {
+            lowerPersonEmail = custLowEmail;
+          } else if (!lowerPersonEmail && customerData?.email) {
+            // Fallback to main customer email if lower person email is not available
+            lowerPersonEmail = customerData.email;
+          }
+
+          // Medium Person Email
+          const custMedEmail = customerData?.mediumLevelEmail ||
+            customerData?.medium_level_email ||
+            customerData?.mediumLevelDepartment?.email;
+
+          if (custMedEmail) {
+            mediumPersonEmail = custMedEmail;
+          }
         }
+      }
+
+      if (lowerPersonEmail) {
+        recipients.push(lowerPersonEmail);
+      }
+
+      // On due date (diff === 0), send reminder email to medium person as well
+      if (diff === 0 && mediumPersonEmail) {
+        recipients.push(mediumPersonEmail);
       }
 
       // 2. Get Creator Email

@@ -139,19 +139,26 @@ class _PeriodicComplianceFormPageState extends State<PeriodicComplianceFormPage>
                         }
                       }
 
-                      return DropdownButtonFormField<CustomerModel>(
-                        initialValue: _selectedCustomer,
-                        decoration: _inputDecoration('Assign Customer', 'Select a customer'),
-                        items: customers.map((c) {
-                          return DropdownMenuItem(
-                            value: c,
-                            child: Text(c.companyName),
-                          );
-                        }).toList(),
-                        onChanged: widget.task != null
-                            ? null // Disable changing customer on edit if desired, or keep enabled
-                            : (val) => setState(() => _selectedCustomer = val),
-                        validator: (v) => v == null ? 'Please select a customer' : null,
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          DropdownButtonFormField<CustomerModel>(
+                            initialValue: _selectedCustomer,
+                            decoration: _inputDecoration('Assign Customer', 'Select a customer'),
+                            items: customers.map((c) {
+                              return DropdownMenuItem(
+                                value: c,
+                                child: Text(c.companyName),
+                              );
+                            }).toList(),
+                            onChanged: widget.task != null
+                                ? null // Disable changing customer on edit if desired, or keep enabled
+                                : (val) => setState(() => _selectedCustomer = val),
+                            validator: (v) => v == null ? 'Please select a customer' : null,
+                          ),
+                          if (_selectedCustomer != null || (widget.task != null && widget.task!.assignedCustomerId.isNotEmpty))
+                            _buildLowerPersonDetails(),
+                        ],
                       );
                     },
                   ),
@@ -192,6 +199,12 @@ class _PeriodicComplianceFormPageState extends State<PeriodicComplianceFormPage>
                               description: _descriptionController.text.trim(),
                               assignedCustomerId: _selectedCustomer!.customerId,
                               assignedCustomerName: _selectedCustomer!.companyName,
+                              assignedCustomerLowLevelName: _selectedCustomer?.lowLevelName ?? widget.task?.assignedCustomerLowLevelName ?? '',
+                              assignedCustomerLowLevelEmail: _selectedCustomer?.lowLevelEmail ?? widget.task?.assignedCustomerLowLevelEmail ?? '',
+                              assignedCustomerLowLevelMobile: _selectedCustomer?.lowLevelMobile ?? widget.task?.assignedCustomerLowLevelMobile ?? '',
+                              assignedCustomerMediumLevelName: _selectedCustomer?.mediumLevelName ?? widget.task?.assignedCustomerMediumLevelName ?? '',
+                              assignedCustomerMediumLevelEmail: _selectedCustomer?.mediumLevelEmail ?? widget.task?.assignedCustomerMediumLevelEmail ?? '',
+                              assignedCustomerMediumLevelMobile: _selectedCustomer?.mediumLevelMobile ?? widget.task?.assignedCustomerMediumLevelMobile ?? '',
                               dueDate: _selectedDueDate!,
                               status: widget.task?.status ?? 'pending',
                               createdAt: widget.task?.createdAt ?? DateTime.now(),
@@ -219,6 +232,60 @@ class _PeriodicComplianceFormPageState extends State<PeriodicComplianceFormPage>
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildLowerPersonDetails() {
+    final name = _selectedCustomer?.lowLevelName ?? widget.task?.assignedCustomerLowLevelName ?? '';
+    final email = _selectedCustomer?.lowLevelEmail ?? widget.task?.assignedCustomerLowLevelEmail ?? '';
+    final phone = _selectedCustomer?.lowLevelMobile ?? widget.task?.assignedCustomerLowLevelMobile ?? '';
+
+    return Container(
+      margin: const EdgeInsets.only(top: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.blue.shade50.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.blue.shade100),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Lower Person Details',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: AppColors.primary,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _lowerPersonInfoRow(Icons.person_outline, 'Name', name.isNotEmpty ? name : 'N/A'),
+          const SizedBox(height: 8),
+          _lowerPersonInfoRow(Icons.email_outlined, 'Email', email.isNotEmpty ? email : 'N/A'),
+          const SizedBox(height: 8),
+          _lowerPersonInfoRow(Icons.phone_outlined, 'Phone', phone.isNotEmpty ? phone : 'N/A'),
+        ],
+      ),
+    );
+  }
+
+  Widget _lowerPersonInfoRow(IconData icon, String label, String value) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: AppColors.primary),
+        const SizedBox(width: 8),
+        Text(
+          '$label: ',
+          style: TextStyle(fontSize: 13, color: Colors.grey.shade600, fontWeight: FontWeight.w500),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.titleText),
+          ),
+        ),
+      ],
     );
   }
 

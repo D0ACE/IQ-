@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
+import 'package:iq_plus/di/service_locator.dart';
+import 'package:iq_plus/features/auth/model/customer_model.dart';
+import 'package:iq_plus/features/auth/repository/auth_repository.dart';
 import '../models/periodic_compliance_model.dart';
 
 class PeriodicComplianceDetailsPage extends StatelessWidget {
@@ -79,6 +82,7 @@ class PeriodicComplianceDetailsPage extends StatelessWidget {
                   const Divider(),
                   const SizedBox(height: 24),
                   _infoRow(Icons.business_rounded, 'Assigned To', task.assignedCustomerName),
+                  _buildLowerPersonSection(),
                   const SizedBox(height: 16),
                   _infoRow(Icons.person_rounded, 'Created By', task.createdByName),
                   const SizedBox(height: 16),
@@ -89,6 +93,51 @@ class PeriodicComplianceDetailsPage extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildLowerPersonSection() {
+    if (task.assignedCustomerLowLevelName.isNotEmpty ||
+        task.assignedCustomerLowLevelEmail.isNotEmpty ||
+        task.assignedCustomerLowLevelMobile.isNotEmpty) {
+      return _lowerPersonCard(
+        task.assignedCustomerLowLevelName,
+        task.assignedCustomerLowLevelEmail,
+        task.assignedCustomerLowLevelMobile,
+      );
+    }
+
+    if (task.assignedCustomerId.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return FutureBuilder<CustomerModel?>(
+      future: getIt<AuthRepository>().getCustomerById(task.assignedCustomerId),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData || snapshot.data == null) {
+          return const SizedBox.shrink();
+        }
+        final customer = snapshot.data!;
+        return _lowerPersonCard(
+          customer.lowLevelName,
+          customer.lowLevelEmail,
+          customer.lowLevelMobile,
+        );
+      },
+    );
+  }
+
+  Widget _lowerPersonCard(String name, String email, String mobile) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 16),
+        _infoRow(Icons.person_outline_rounded, 'Lower Person Name', name.isNotEmpty ? name : 'N/A'),
+        const SizedBox(height: 16),
+        _infoRow(Icons.email_outlined, 'Lower Person Email', email.isNotEmpty ? email : 'N/A'),
+        const SizedBox(height: 16),
+        _infoRow(Icons.phone_android_rounded, 'Lower Person Phone', mobile.isNotEmpty ? mobile : 'N/A'),
+      ],
     );
   }
 
