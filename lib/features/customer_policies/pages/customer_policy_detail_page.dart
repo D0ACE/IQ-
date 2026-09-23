@@ -319,7 +319,7 @@ class _CustomerPolicyDetailPageState extends State<CustomerPolicyDetailPage> {
                           focusNode: _focusNode,
                           scrollController: _scrollController,
                           config: const QuillEditorConfig(
-                            expands: true,
+                            expands: false,
                             padding: EdgeInsets.zero,
                           ),
                         )

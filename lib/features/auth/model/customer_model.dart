@@ -277,9 +277,10 @@ static String _getVal(Map<String, dynamic> json, List<String> flatKeys, String n
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-          other is CustomerModel &&
-              runtimeType == other.runtimeType &&
-              customerId == other.customerId;
+      (other is CustomerModel &&
+          runtimeType == other.runtimeType &&
+          customerId.isNotEmpty &&
+          customerId == other.customerId);
 
   @override
   int get hashCode => customerId.hashCode;

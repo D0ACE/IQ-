@@ -201,8 +201,9 @@ class _ExcelEditorPageState extends State<ExcelEditorPage> {
       return;
     }
     
-    if (stateManager == null) {
+    if (widget.document == null && selectedFileBytes == null && stateManager == null) {
       developer.log("⚠️ Error: Grid StateManager is null.");
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Grid is not initialized")));
       return;
     }
 

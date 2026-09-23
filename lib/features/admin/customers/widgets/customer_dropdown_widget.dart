@@ -33,8 +33,18 @@ class CustomerDropdownWidget extends StatelessWidget {
           }
 
           if (state is CustomerListLoaded) {
+            CustomerModel? matchedCustomer;
+            if (selectedCustomer != null && selectedCustomer!.customerId.isNotEmpty) {
+              final matches = state.customers.where(
+                (c) => c.customerId == selectedCustomer!.customerId,
+              );
+              if (matches.length == 1) {
+                matchedCustomer = matches.first;
+              }
+            }
+
             return DropdownButtonFormField<CustomerModel>(
-              initialValue: selectedCustomer,
+              value: matchedCustomer,
               isExpanded: true,
               hint: Text(hint),
               decoration: InputDecoration(
@@ -76,7 +86,6 @@ class CustomerDropdownWidget extends StatelessWidget {
               }).toList(),
               onChanged: (readOnly ?? false) ? null : onChanged,
             );
-
           }
 
           if (state is CustomerListError) {

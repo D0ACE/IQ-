@@ -10,15 +10,21 @@ class PeriodicComplianceCubit extends Cubit<PeriodicComplianceState> {
 
   PeriodicComplianceCubit(this._repository) : super(PeriodicComplianceInitial());
 
+  void safeEmit(PeriodicComplianceState state) {
+    if (!isClosed) {
+      emit(state);
+    }
+  }
+
   void loadTasks({String? customerId, String? createdBy}) {
-    emit(PeriodicComplianceLoading());
+    safeEmit(PeriodicComplianceLoading());
     _subscription?.cancel();
     _subscription = _repository.getTasksStream(customerId: customerId, createdBy: createdBy).listen(
       (tasks) {
-        emit(PeriodicComplianceLoaded(tasks));
+        safeEmit(PeriodicComplianceLoaded(tasks));
       },
       onError: (error) {
-        emit(PeriodicComplianceError(error.toString()));
+        safeEmit(PeriodicComplianceError(error.toString()));
       },
     );
   }
@@ -26,36 +32,36 @@ class PeriodicComplianceCubit extends Cubit<PeriodicComplianceState> {
   Future<void> addTask(PeriodicComplianceTask task) async {
     try {
       await _repository.createTask(task);
-      emit(const PeriodicComplianceActionSuccess('Task created successfully'));
+      safeEmit(const PeriodicComplianceActionSuccess('Task created successfully'));
     } catch (e) {
-      emit(PeriodicComplianceError(e.toString()));
+      safeEmit(PeriodicComplianceError(e.toString()));
     }
   }
 
   Future<void> updateTask(PeriodicComplianceTask task) async {
     try {
       await _repository.updateTask(task);
-      emit(const PeriodicComplianceActionSuccess('Task updated successfully'));
+      safeEmit(const PeriodicComplianceActionSuccess('Task updated successfully'));
     } catch (e) {
-      emit(PeriodicComplianceError(e.toString()));
+      safeEmit(PeriodicComplianceError(e.toString()));
     }
   }
 
   Future<void> deleteTask(String taskId) async {
     try {
       await _repository.deleteTask(taskId);
-      emit(const PeriodicComplianceActionSuccess('Task deleted successfully'));
+      safeEmit(const PeriodicComplianceActionSuccess('Task deleted successfully'));
     } catch (e) {
-      emit(PeriodicComplianceError(e.toString()));
+      safeEmit(PeriodicComplianceError(e.toString()));
     }
   }
 
   Future<void> markAsCompleted(String taskId) async {
     try {
       await _repository.completeTask(taskId);
-      emit(const PeriodicComplianceActionSuccess('Task completed successfully'));
+      safeEmit(const PeriodicComplianceActionSuccess('Task completed successfully'));
     } catch (e) {
-      emit(PeriodicComplianceError(e.toString()));
+      safeEmit(PeriodicComplianceError(e.toString()));
     }
   }
 

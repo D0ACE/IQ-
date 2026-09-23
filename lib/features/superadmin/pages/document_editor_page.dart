@@ -351,7 +351,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
                         config: QuillEditorConfig(
                           placeholder: 'Start typing policy content...',
                           autoFocus: false,
-                          expands: true,
+                          expands: false,
                           padding: EdgeInsets.zero,
                           embedBuilders: _editorEmbedBuilders,
                         ),

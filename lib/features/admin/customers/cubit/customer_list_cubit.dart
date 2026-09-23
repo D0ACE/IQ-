@@ -13,41 +13,47 @@ class CustomerListCubit extends Cubit<CustomerListState> {
   // 🔄 Memory for refreshing the correct list
   Future<void> Function()? _lastFetchAction;
 
+  void safeEmit(CustomerListState state) {
+    if (!isClosed) {
+      emit(state);
+    }
+  }
+
   Future<void> fetchCustomers() async {
     _lastFetchAction = () => fetchCustomers();
-    emit(CustomerListLoading());
+    safeEmit(CustomerListLoading());
     try {
       final customers = await repo.getAllCustomers();
-      emit(CustomerListLoaded(customers));
+      safeEmit(CustomerListLoaded(customers));
     } catch (e) {
-      emit(CustomerListError(e.toString()));
+      safeEmit(CustomerListError(e.toString()));
     }
   }
 
   Future<void> fetchAssignCustomers(String consultantId) async {
     _lastFetchAction = () => fetchAssignCustomers(consultantId);
-    emit(CustomerListLoading());
+    safeEmit(CustomerListLoading());
     try {
       final customers = await repo.getFetchAssignCustomers(consultantId);
-      emit(CustomerListLoaded(customers));
+      safeEmit(CustomerListLoaded(customers));
     } catch (e) {
-      emit(CustomerListError(e.toString()));
+      safeEmit(CustomerListError(e.toString()));
     }
   }
 
   Future<void> fetchApprovedCustomers(String? consultantId) async {
     _lastFetchAction = () => fetchApprovedCustomers(consultantId);
-    emit(CustomerListLoading());
+    safeEmit(CustomerListLoading());
     try {
       if ((consultantId ?? '').isNotEmpty) {
         final customers = await repo.getFetchConsultantCustomers(consultantId!);
-        emit(CustomerListLoaded(customers));
+        safeEmit(CustomerListLoaded(customers));
       } else {
         final customers = await repo.getFetchAllApprovedCustomers();
-        emit(CustomerListLoaded(customers));
+        safeEmit(CustomerListLoaded(customers));
       }
     } catch (e) {
-      emit(CustomerListError(e.toString()));
+      safeEmit(CustomerListError(e.toString()));
     }
   }
 
@@ -67,17 +73,17 @@ class CustomerListCubit extends Cubit<CustomerListState> {
     required String consultantId,
   }) async {
     try {
-      emit(CustomerListLoading());
+      safeEmit(CustomerListLoading());
       await repo.approveCustomer(
         customerId: customerId,
         companyName: companyName,
         customerEmail: customerEmail,
         consultantId: consultantId,
       );
-      emit(CustomerListOperationSuccess("Customer approved successfully"));
+      safeEmit(CustomerListOperationSuccess("Customer approved successfully"));
       await refresh();
     } catch (e) {
-      emit(CustomerListError(e.toString()));
+      safeEmit(CustomerListError(e.toString()));
     }
   }
 
@@ -87,12 +93,12 @@ class CustomerListCubit extends Cubit<CustomerListState> {
     required String nextVisitDate,
   }) async {
     try {
-      emit(CustomerListLoading());
+      safeEmit(CustomerListLoading());
       await repo.updateCustomerNextVisitDate(
         customerId: customer.customerId,
         nextVisitDate: nextVisitDate,
       );
-      emit(CustomerListOperationSuccess("Visit date updated successfully"));
+      safeEmit(CustomerListOperationSuccess("Visit date updated successfully"));
       await refresh();
       await BrevoEmailService.sendNextVisitDateAssignedMail(
         customer: customer,
@@ -100,14 +106,14 @@ class CustomerListCubit extends Cubit<CustomerListState> {
         nextVisitDate: nextVisitDate,
       );
     } catch (e) {
-      emit(CustomerListError("Failed to update visit date: ${e.toString()}"));
+      safeEmit(CustomerListError("Failed to update visit date: ${e.toString()}"));
     }
   }
 
   /// ➕ CREATE CUSTOMER
   Future<void> createCustomer(CustomerModel customer) async {
     try {
-      emit(CustomerListLoading());
+      safeEmit(CustomerListLoading());
       await repo.createCustomer(customer);
 
       // 📧 If direct approval is active, send credentials email
@@ -119,34 +125,34 @@ class CustomerListCubit extends Cubit<CustomerListState> {
         );
       }
 
-      emit(CustomerListOperationSuccess("Customer created successfully"));
+      safeEmit(CustomerListOperationSuccess("Customer created successfully"));
       await refresh();
     } catch (e) {
-      emit(CustomerListError(e.toString()));
+      safeEmit(CustomerListError(e.toString()));
     }
   }
 
   /// 🔁 UPDATE CUSTOMER
   Future<void> updateCustomer(CustomerModel customer) async {
     try {
-      emit(CustomerListLoading());
+      safeEmit(CustomerListLoading());
       await repo.updateCustomer(customer);
-      emit(CustomerListOperationSuccess("Customer updated successfully"));
+      safeEmit(CustomerListOperationSuccess("Customer updated successfully"));
       await refresh();
     } catch (e) {
-      emit(CustomerListError(e.toString()));
+      safeEmit(CustomerListError(e.toString()));
     }
   }
 
   /// ❌ DELETE CUSTOMER
   Future<void> deleteCustomer(String customerId) async {
     try {
-      emit(CustomerListLoading());
+      safeEmit(CustomerListLoading());
       await repo.deleteCustomer(customerId);
-      emit(CustomerListOperationSuccess("Customer deleted successfully"));
+      safeEmit(CustomerListOperationSuccess("Customer deleted successfully"));
       await refresh();
     } catch (e) {
-      emit(CustomerListError(e.toString()));
+      safeEmit(CustomerListError(e.toString()));
     }
   }
 }

@@ -128,6 +128,7 @@ class _PeriodicComplianceFormPageState extends State<PeriodicComplianceFormPage>
                   BlocBuilder<CustomerListCubit, CustomerListState>(
                     builder: (context, state) {
                       List<CustomerModel> customers = [];
+                      CustomerModel? matchedCustomer;
                       if (state is CustomerListLoaded) {
                         customers = state.customers;
                         if (widget.task != null && _selectedCustomer == null) {
@@ -139,11 +140,20 @@ class _PeriodicComplianceFormPageState extends State<PeriodicComplianceFormPage>
                         }
                       }
 
+                      if (_selectedCustomer != null && _selectedCustomer!.customerId.isNotEmpty) {
+                        final matches = customers.where((c) => c.customerId == _selectedCustomer!.customerId);
+                        if (matches.length == 1) {
+                          matchedCustomer = matches.first;
+                        } else {
+                          matchedCustomer = _selectedCustomer;
+                        }
+                      }
+
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           DropdownButtonFormField<CustomerModel>(
-                            initialValue: _selectedCustomer,
+                            value: matchedCustomer,
                             decoration: _inputDecoration('Assign Customer', 'Select a customer'),
                             items: customers.map((c) {
                               return DropdownMenuItem(
