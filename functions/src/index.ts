@@ -9,6 +9,7 @@ import cors from "cors";
    LAZY INITIALIZATION HELPERS
 ============================================================================= */
 
+/*
 let AWS: any;
 const getAwsSdk = () => {
   if (!AWS) {
@@ -29,6 +30,7 @@ const getCloudFront = () => new (getAwsSdk().CloudFront)();
 const getCostExplorer = () => new (getAwsSdk().CostExplorer)({
   region: "us-east-1",
 });
+*/
 
 const corsHandler = cors({origin: true});
 
@@ -156,8 +158,9 @@ export const annualDocumentReviewTask = onSchedule(
 );
 
 /* =======================
-   LIST ALL AWS RESOURCES
+   LIST ALL AWS RESOURCES (COMMENTED OUT)
 ======================= */
+/*
 export const listAllAwsResources = onRequest((req, res) => {
   corsHandler(req, res, async () => {
     try {
@@ -230,10 +233,12 @@ export const listAllAwsResources = onRequest((req, res) => {
     }
   });
 });
+*/
 
 /* =======================
-   DAILY BILLING SCHEDULER
+   DAILY BILLING SCHEDULER (COMMENTED OUT)
 ======================= */
+/*
 export const storeAwsBillingDaily = onSchedule(
   {
     schedule: "every day 01:00",
@@ -278,6 +283,7 @@ export const storeAwsBillingDaily = onSchedule(
     }
   }
 );
+*/
 
 /* =============================================================================
    BREVO EMAIL DISPATCHER (Option 1: Firebase Proxy)

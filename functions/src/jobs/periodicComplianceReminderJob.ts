@@ -91,7 +91,11 @@ export async function runPeriodicComplianceReminderJob() {
       // Deduplicate emails
       const uniqueRecipients = Array.from(new Set(recipients));
 
-      const {subject, htmlContent} = complianceReminderTemplate(task.title, dueDateString);
+      const {subject, htmlContent} = complianceReminderTemplate(
+        task.title,
+        dueDateString,
+        task.description
+      );
 
       for (const email of uniqueRecipients) {
         try {

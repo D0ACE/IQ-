@@ -3,7 +3,15 @@ export type EmailTemplate = {
   htmlContent: string;
 };
 
-export function complianceReminderTemplate(taskTitle: string, dueDate: string): EmailTemplate {
+export function complianceReminderTemplate(
+  taskTitle: string,
+  dueDate: string,
+  description?: string
+): EmailTemplate {
+  const descriptionHtml = description && description.trim().length > 0
+    ? `<p><strong>Description:</strong> ${description}</p>`
+    : "";
+
   return {
     subject: `Reminder: Compliance Task - ${taskTitle}`,
     htmlContent: `
@@ -14,6 +22,7 @@ export function complianceReminderTemplate(taskTitle: string, dueDate: string): 
       </p>
 
       <p><strong>Title:</strong> ${taskTitle}</p>
+      ${descriptionHtml}
       <p><strong>Due Date:</strong> ${dueDate}</p>
 
       <p>
