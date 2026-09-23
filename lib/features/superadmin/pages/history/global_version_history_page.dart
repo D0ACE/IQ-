@@ -63,6 +63,13 @@ class _GlobalVersionHistoryPageState extends State<GlobalVersionHistoryPage> {
               separatorBuilder: (_, _) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
                 final v = history[index];
+                final isRejected = v.status == 'rejected' || v.status == 'reject';
+                final statusColor = v.status == 'active'
+                    ? Colors.green
+                    : isRejected
+                        ? Colors.red
+                        : Colors.orange;
+
                 return Card(
                   elevation: 2,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -84,12 +91,12 @@ class _GlobalVersionHistoryPageState extends State<GlobalVersionHistoryPage> {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
-                                color: (v.status == 'active' ? Colors.green : Colors.orange).withValues(alpha: 0.1),
+                                color: statusColor.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
                                 v.status.toUpperCase(),
-                                style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: v.status == 'active' ? Colors.green : Colors.orange),
+                                style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: statusColor),
                               ),
                             ),
                           ],
@@ -122,6 +129,32 @@ class _GlobalVersionHistoryPageState extends State<GlobalVersionHistoryPage> {
                             child: Text(
                               "Approved by: ${v.approvedBy} on ${v.approvedDate != null ? DateFormat('dd MMM yyyy').format(v.approvedDate!) : 'N/A'}",
                               style: const TextStyle(fontSize: 11, color: Colors.green, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        if (isRejected && (v.rejectionReason != null || v.rejectedBy != null))
+                          Container(
+                            margin: const EdgeInsets.only(top: 8),
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: Colors.red.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "Rejected by: ${v.rejectedBy ?? v.performedBy}",
+                                  style: const TextStyle(fontSize: 11, color: Colors.red, fontWeight: FontWeight.bold),
+                                ),
+                                if (v.rejectionReason != null && v.rejectionReason!.isNotEmpty) ...[
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    "Reason: ${v.rejectionReason}",
+                                    style: TextStyle(fontSize: 11, color: Colors.red.shade900, fontWeight: FontWeight.w600),
+                                  ),
+                                ],
+                              ],
                             ),
                           ),
                       ],

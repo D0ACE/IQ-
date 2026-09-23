@@ -155,10 +155,10 @@ class DocumentCubit extends Cubit<DocumentState> {
     }
   }
 
-  Future<void> updateStatus(String docId, String status) async {
+  Future<void> updateStatus(String docId, String status, {String? rejectionReason}) async {
     emit(DocumentLoading());
     try {
-      await _repository.updateStatus(docId, status);
+      await _repository.updateStatus(docId, status, rejectionReason: rejectionReason);
       _refresh();
     } catch (e) {
       emit(DocumentError(e.toString()));

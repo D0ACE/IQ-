@@ -9,6 +9,9 @@ class VersionHistoryModel {
   final DateTime performedDate;
   final String? approvedBy;
   final DateTime? approvedDate;
+  final String? rejectionReason;
+  final String? rejectedBy;
+  final DateTime? rejectedDate;
   final String status;
   final String? docTitle; // 👈 Added for global listing
 
@@ -21,6 +24,9 @@ class VersionHistoryModel {
     required this.performedDate,
     this.approvedBy,
     this.approvedDate,
+    this.rejectionReason,
+    this.rejectedBy,
+    this.rejectedDate,
     required this.status,
     this.docTitle,
   });
@@ -36,6 +42,9 @@ class VersionHistoryModel {
       performedDate: (data['performedDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
       approvedBy: data['approvedBy'],
       approvedDate: (data['approvedDate'] as Timestamp?)?.toDate(),
+      rejectionReason: data['rejectionReason'] ?? data['rejection_reason'],
+      rejectedBy: data['rejectedBy'] ?? data['rejected_by'],
+      rejectedDate: (data['rejectedDate'] as Timestamp?)?.toDate() ?? (data['rejected_date'] as Timestamp?)?.toDate(),
       status: data['status'] ?? 'draft',
       docTitle: docTitle ?? data['docTitle'],
     );
@@ -50,6 +59,9 @@ class VersionHistoryModel {
       'performedDate': FieldValue.serverTimestamp(),
       'approvedBy': approvedBy,
       'approvedDate': approvedDate != null ? Timestamp.fromDate(approvedDate!) : null,
+      'rejectionReason': rejectionReason,
+      'rejectedBy': rejectedBy,
+      'rejectedDate': rejectedDate != null ? Timestamp.fromDate(rejectedDate!) : null,
       'status': status,
       'docTitle': docTitle,
     };

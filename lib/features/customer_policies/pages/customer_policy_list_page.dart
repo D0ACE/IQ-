@@ -39,11 +39,6 @@ class _CustomerPolicyListPageState extends State<CustomerPolicyListPage> {
 
   @override
   Widget build(BuildContext context) {
-    final hive = getIt<HiveService>();
-    final user = hive.getUser();
-    final customer = hive.getCustomer();
-    final String? roleId = user?.roleId ?? customer?.roleId;
-
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: const CommonAppBar(title: 'My Policies & Procedures'),
@@ -174,7 +169,12 @@ class _CustomerPolicyListPageState extends State<CustomerPolicyListPage> {
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: (doc.status == 'active' ? Colors.green : Colors.orange).withValues(alpha: 0.1),
+                                  color: (doc.status == 'active'
+                                          ? Colors.green
+                                          : (doc.status == 'rejected' || doc.status == 'reject')
+                                              ? Colors.red
+                                              : Colors.orange)
+                                      .withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Text(
@@ -182,7 +182,11 @@ class _CustomerPolicyListPageState extends State<CustomerPolicyListPage> {
                                   style: TextStyle(
                                     fontSize: 9,
                                     fontWeight: FontWeight.w900,
-                                    color: doc.status == 'active' ? Colors.green : Colors.orange,
+                                    color: doc.status == 'active'
+                                        ? Colors.green
+                                        : (doc.status == 'rejected' || doc.status == 'reject')
+                                            ? Colors.red
+                                            : Colors.orange,
                                   ),
                                 ),
                               ),
@@ -236,25 +240,98 @@ class _CustomerPolicyListPageState extends State<CustomerPolicyListPage> {
                     Expanded(child: _auditItemModern("Reviewed By", doc.reviewedBy ?? "N/A", Icons.rate_review_rounded)),
                   ],
                 ),
+                if ((doc.status == 'rejected' || doc.status == 'reject') &&
+                    doc.rejectionReason != null &&
+                    doc.rejectionReason!.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.red.withValues(alpha: 0.2)),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.cancel_outlined, color: Colors.red, size: 20),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                "REJECTION REASON",
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w900,
+                                  color: Colors.red,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                doc.rejectionReason!,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.red.shade900,
+                                ),
+                              ),
+                              if (doc.rejectedBy != null) ...[
+                                const SizedBox(height: 2),
+                                Text(
+                                  "By: ${doc.rejectedBy}",
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontStyle: FontStyle.italic,
+                                    color: Colors.red.shade700,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 if (doc.status == 'draft' && Utility.isCustomer(roleId)) ...[
                   const SizedBox(height: 20),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: ElevatedButton.icon(
-                      onPressed: () => _showStatusDialog(context, doc.docId),
-                      icon: const Icon(Icons.check_circle_outline, size: 18),
-                      label: const Text(
-                        "APPROVE POLICY",
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: () => _showRejectDialog(context, doc.docId),
+                        icon: const Icon(Icons.cancel_outlined, size: 18, color: Colors.red),
+                        label: const Text(
+                          "REJECT POLICY",
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.red),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Colors.red),
+                          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
                       ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        elevation: 0,
+                      const SizedBox(width: 12),
+                      ElevatedButton.icon(
+                        onPressed: () => _showStatusDialog(context, doc.docId),
+                        icon: const Icon(Icons.check_circle_outline, size: 18),
+                        label: const Text(
+                          "APPROVE POLICY",
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          elevation: 0,
+                        ),
                       ),
-                    ),
+                    ],
                   ),
                 ],
               ],
@@ -296,6 +373,80 @@ class _CustomerPolicyListPageState extends State<CustomerPolicyListPage> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             child: const Text('Approve', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showRejectDialog(BuildContext context, String docId) {
+    final TextEditingController reasonController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
+        title: const Text(
+          'Reject Policy',
+          style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.titleText),
+        ),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Please enter the reason for rejecting this policy:',
+                style: TextStyle(color: AppColors.subText, fontSize: 13),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: reasonController,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText: 'Enter rejection reason...',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(color: Colors.red),
+                  ),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Rejection reason is required';
+                  }
+                  return null;
+                },
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel', style: TextStyle(color: AppColors.subText, fontWeight: FontWeight.bold)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (formKey.currentState!.validate()) {
+                context.read<DocumentCubit>().updateStatus(
+                      docId,
+                      'rejected',
+                      rejectionReason: reasonController.text.trim(),
+                    );
+                Navigator.pop(ctx);
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('Reject', style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -401,6 +552,13 @@ class _CustomerPolicyListPageState extends State<CustomerPolicyListPage> {
                 itemBuilder: (ctx, index) {
                   final v = history[index];
                   final isActive = v.status == 'active';
+                  final isRejected = v.status == 'rejected' || v.status == 'reject';
+                  final statusColor = isActive
+                      ? Colors.green
+                      : isRejected
+                          ? Colors.red
+                          : Colors.orange;
+
                   return Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -434,7 +592,7 @@ class _CustomerPolicyListPageState extends State<CustomerPolicyListPage> {
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                   decoration: BoxDecoration(
-                                    color: (isActive ? Colors.green : Colors.orange).withValues(alpha: 0.1),
+                                    color: statusColor.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Text(
@@ -442,7 +600,7 @@ class _CustomerPolicyListPageState extends State<CustomerPolicyListPage> {
                                     style: TextStyle(
                                       fontSize: 9,
                                       fontWeight: FontWeight.w900,
-                                      color: isActive ? Colors.green : Colors.orange,
+                                      color: statusColor,
                                     ),
                                   ),
                                 ),
@@ -498,6 +656,48 @@ class _CustomerPolicyListPageState extends State<CustomerPolicyListPage> {
                                     ),
                                   ),
                                 ),
+                              ],
+                            ),
+                          ),
+                        if (isRejected && (v.rejectionReason != null || v.rejectedBy != null))
+                          Container(
+                            margin: const EdgeInsets.only(top: 10),
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: Colors.red.withValues(alpha: 0.05),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.red.withValues(alpha: 0.2)),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    const Icon(Icons.cancel_outlined, color: Colors.red, size: 14),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        "Rejected by ${v.rejectedBy ?? v.performedBy}",
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          color: Colors.red,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                if (v.rejectionReason != null && v.rejectionReason!.isNotEmpty) ...[
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    "Reason: ${v.rejectionReason}",
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.red.shade900,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
                               ],
                             ),
                           ),

@@ -605,10 +605,13 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage>
               '$count',
               AppColors.purple,
               Icons.business_center_rounded,
-              () {
-                GoRouter.of(
+              () async {
+                await GoRouter.of(
                   context,
                 ).push(AppRoutes.assignCustomers, extra: user?.userId);
+                if (context.mounted) {
+                  context.read<CustomerListCubit>().fetchApprovedCustomers(user?.userId);
+                }
               },
             );
           },

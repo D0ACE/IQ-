@@ -97,6 +97,9 @@ class DocumentRepository {
     required String performedBy,
     String? approvedBy,
     DateTime? approvedDate,
+    String? rejectionReason,
+    String? rejectedBy,
+    DateTime? rejectedDate,
     required String status,
     String? docTitle,
   }) async {
@@ -109,6 +112,9 @@ class DocumentRepository {
       'performedDate': FieldValue.serverTimestamp(),
       'approvedBy': approvedBy,
       'approvedDate': approvedDate != null ? Timestamp.fromDate(approvedDate) : null,
+      'rejectionReason': rejectionReason,
+      'rejectedBy': rejectedBy,
+      'rejectedDate': rejectedDate != null ? Timestamp.fromDate(rejectedDate) : null,
       'status': status,
       'docTitle': docTitle,
     });
@@ -346,7 +352,7 @@ class DocumentRepository {
     await _firestore.collection('documents').doc(docId).delete();
   }
 
-  Future<void> updateStatus(String docId, String status) async {
+  Future<void> updateStatus(String docId, String status, {String? rejectionReason}) async {
     final hive = getIt<HiveService>();
     final user = hive.getUser();
     final customer = hive.getCustomer();
@@ -355,16 +361,15 @@ class DocumentRepository {
     final String? roleId = user?.roleId ?? customer?.roleId;
     final String? currentUserId = user?.userId ?? customer?.customerId;
 
+    final docSnapshot = await _firestore.collection('documents').doc(docId).get();
+    final data = docSnapshot.data();
+    if (data == null) return;
+
+    final String? assignedCustomerId = data['customer_id'];
+    final bool isAssignedCustomer = Utility.isCustomer(roleId) && assignedCustomerId == currentUserId;
+
     if (status == 'active') {
-      // 🚀 Version change and history entry ONLY on activation
-      final docSnapshot = await _firestore.collection('documents').doc(docId).get();
-      final data = docSnapshot.data();
-      if (data == null) return;
-
       // 🚀 Authorization check: Only the assigned Customer can approve
-      final String? assignedCustomerId = data['customer_id'];
-      final bool isAssignedCustomer = Utility.isCustomer(roleId) && assignedCustomerId == currentUserId;
-
       if (!isAssignedCustomer) {
         throw Exception("Only the assigned customer is authorized to approve this policy.");
       }
@@ -395,6 +400,38 @@ class DocumentRepository {
         approvedBy: userEmail, 
         approvedDate: DateTime.now(),
         status: 'active',
+        docTitle: docTitle,
+      );
+    } else if (status == 'rejected' || status == 'reject') {
+      // 🚀 Authorization check: Only the assigned Customer can reject
+      if (!isAssignedCustomer) {
+        throw Exception("Only the assigned customer is authorized to reject this policy.");
+      }
+
+      final docTitle = data['title'];
+      final currentVersion = data['current_version'] ?? 'V1';
+      final String reasonText = rejectionReason ?? 'Policy rejected by customer';
+
+      Map<String, dynamic> updateData = {
+        'status': 'rejected',
+        'rejection_reason': reasonText,
+        'rejected_by': userEmail,
+        'rejected_date': FieldValue.serverTimestamp(),
+        'updated_at': FieldValue.serverTimestamp(),
+      };
+
+      await _firestore.collection('documents').doc(docId).update(updateData);
+
+      // Log the rejection in history
+      await _addVersionHistory(
+        docId: docId,
+        versionNo: currentVersion,
+        changeDescription: 'Rejected: $reasonText',
+        performedBy: userEmail,
+        rejectionReason: reasonText,
+        rejectedBy: userEmail,
+        rejectedDate: DateTime.now(),
+        status: 'rejected',
         docTitle: docTitle,
       );
     } else {

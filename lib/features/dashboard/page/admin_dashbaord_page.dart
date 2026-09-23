@@ -10,6 +10,8 @@ import 'package:iq_plus/common/utility/utility.dart';
 import 'package:iq_plus/common/widgets/common_app_bar.dart';
 import 'package:iq_plus/core/local_storage/hive_service.dart';
 import 'package:iq_plus/di/service_locator.dart';
+import 'package:iq_plus/features/admin/customers/cubit/customer_list_cubit.dart';
+import 'package:iq_plus/features/admin/customers/cubit/customer_list_state.dart';
 import 'package:iq_plus/features/users/repository/user_repository.dart';
 import 'package:iq_plus/features/periodic_compliance/periodic_compliance_provider.dart';
 
@@ -426,17 +428,24 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
                 _drawerItem(
                   icon: Icons.business_rounded,
                   title: 'Customers',
-                  onTap: () {
+                  onTap: () async {
                     GoRouter.of(context).pop();
-                    context.push(AppRoutes.customerList);
+                    await context.push(AppRoutes.customerList);
+                    if (context.mounted) {
+                      context.read<CustomerListCubit>().fetchCustomers();
+                      setState(() {});
+                    }
                   },
                 ),
                 _drawerItem(
                   icon: Icons.badge_rounded,
                   title: 'Users',
-                  onTap: () {
+                  onTap: () async {
                     GoRouter.of(context).pop();
-                    context.push(AppRoutes.employeeList);
+                    await context.push(AppRoutes.employeeList);
+                    if (context.mounted) {
+                      setState(() {});
+                    }
                   },
                 ),
                 _drawerItem(
@@ -569,47 +578,43 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
       children: [
         _sectionTitle('System Statistics'),
         const SizedBox(height: 14),
-    /*    FutureBuilder<int>(
-          future: userRepository.getTotalActiveUserCount(),
-          builder: (context, snapshot) {
-            return _statCard(
-              'Total Active Users',
-              snapshot.connectionState == ConnectionState.waiting
-                  ? '...'
-                  : '${snapshot.data ?? 0}',
-              AppColors.purple,
-              Icons.people_alt_rounded,
-              () {},
-            );
-          },
-        ),
-        const SizedBox(height: 16),*/
-        FutureBuilder<int>(
-          future: userRepository.getTotalCustomerCount(),
+        StreamBuilder<int>(
+          stream: userRepository.getCustomerCountStream(),
           builder: (context, snapshot) {
             return _statCard(
               'Total Customers',
-              snapshot.connectionState == ConnectionState.waiting
+              snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData
                   ? '...'
                   : '${snapshot.data ?? 0}',
               AppColors.paid,
               Icons.business_center_rounded,
-              () => context.push(AppRoutes.customerList),
+              () async {
+                await context.push(AppRoutes.customerList);
+                if (context.mounted) {
+                  context.read<CustomerListCubit>().fetchCustomers();
+                  setState(() {});
+                }
+              },
             );
           },
         ),
         const SizedBox(height: 16),
-        FutureBuilder<int>(
-          future: userRepository.getTotalConsultantCount(),
+        StreamBuilder<int>(
+          stream: userRepository.getConsultantCountStream(),
           builder: (context, snapshot) {
             return _statCard(
               'Total Users',
-              snapshot.connectionState == ConnectionState.waiting
+              snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData
                   ? '...'
                   : '${snapshot.data ?? 0}',
               AppColors.blue,
               Icons.badge_rounded,
-              () => context.push(AppRoutes.employeeList),
+              () async {
+                await context.push(AppRoutes.employeeList);
+                if (context.mounted) {
+                  setState(() {});
+                }
+              },
             );
           },
         ),
@@ -897,12 +902,23 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
             _clickableCard(
               title: 'Customer Management',
               icon: Icons.business_rounded,
-              onTap: () => context.push(AppRoutes.customerList),
+              onTap: () async {
+                await context.push(AppRoutes.customerList);
+                if (context.mounted) {
+                  context.read<CustomerListCubit>().fetchCustomers();
+                  setState(() {});
+                }
+              },
             ),
             _clickableCard(
               title: 'User Management',
               icon: Icons.badge_rounded,
-              onTap: () => context.push(AppRoutes.employeeList),
+              onTap: () async {
+                await context.push(AppRoutes.employeeList);
+                if (context.mounted) {
+                  setState(() {});
+                }
+              },
             ),
             _clickableCard(
               title: 'Visit Summary',

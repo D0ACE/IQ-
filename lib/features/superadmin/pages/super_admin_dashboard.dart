@@ -483,9 +483,12 @@ class _SuperadminDashboardPageState extends State<SuperadminDashboardPage>
                 _drawerItem(
                   icon: Icons.badge_rounded,
                   title: 'Users',
-                  onTap: () {
+                  onTap: () async {
                     GoRouter.of(context).pop();
-                    context.push(AppRoutes.employeeList);
+                    await context.push(AppRoutes.employeeList);
+                    if (context.mounted) {
+                      setState(() {});
+                    }
                   },
                 ),
 
@@ -619,32 +622,43 @@ class _SuperadminDashboardPageState extends State<SuperadminDashboardPage>
       children: [
         _sectionTitle('Global Statistics'),
         const SizedBox(height: 14),
-        FutureBuilder<int>(
-          future: userRepository.getTotalCustomerCount(),
+        StreamBuilder<int>(
+          stream: userRepository.getCustomerCountStream(),
           builder: (context, snapshot) {
             return _statCard(
               'Total Customers',
-              snapshot.connectionState == ConnectionState.waiting
+              snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData
                   ? '...'
                   : '${snapshot.data ?? 0}',
               AppColors.purple,
               Icons.business_center_rounded,
-              () => context.push(AppRoutes.customerList),
+              () async {
+                await context.push(AppRoutes.customerList);
+                if (context.mounted) {
+                  context.read<CustomerListCubit>().fetchCustomers();
+                  setState(() {});
+                }
+              },
             );
           },
         ),
         const SizedBox(height: 16),
-        FutureBuilder<int>(
-          future: userRepository.getTotalSystemUserCount(),
+        StreamBuilder<int>(
+          stream: userRepository.getSystemUserCountStream(),
           builder: (context, snapshot) {
             return _statCard(
               'Total Users',
-              snapshot.connectionState == ConnectionState.waiting
+              snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData
                   ? '...'
                   : '${snapshot.data ?? 0}',
               AppColors.blue,
               Icons.badge_rounded,
-              () => context.push(AppRoutes.employeeList),
+              () async {
+                await context.push(AppRoutes.employeeList);
+                if (context.mounted) {
+                  setState(() {});
+                }
+              },
             );
           },
         ),
@@ -937,12 +951,23 @@ class _SuperadminDashboardPageState extends State<SuperadminDashboardPage>
             _clickableCard(
               title: 'Customer Management',
               icon: Icons.business_rounded,
-              onTap: () => GoRouter.of(context).push(AppRoutes.customerList),
+              onTap: () async {
+                await GoRouter.of(context).push(AppRoutes.customerList);
+                if (context.mounted) {
+                  context.read<CustomerListCubit>().fetchCustomers();
+                  setState(() {});
+                }
+              },
             ),
             _clickableCard(
               title: 'User Management',
               icon: Icons.badge_rounded,
-              onTap: () => GoRouter.of(context).push(AppRoutes.employeeList),
+              onTap: () async {
+                await GoRouter.of(context).push(AppRoutes.employeeList);
+                if (context.mounted) {
+                  setState(() {});
+                }
+              },
             ),
             _clickableCard(
               title: 'Visit Summary',

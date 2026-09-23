@@ -195,7 +195,11 @@ class _CustomerPolicyDetailPageState extends State<CustomerPolicyDetailPage> {
                               style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w900,
-                                color: _document!.status == 'active' ? Colors.green : Colors.orange,
+                                color: _document!.status == 'active'
+                                    ? Colors.green
+                                    : (_document!.status == 'rejected' || _document!.status == 'reject')
+                                        ? Colors.red
+                                        : Colors.orange,
                               ),
                             ),
                           ),
@@ -215,6 +219,60 @@ class _CustomerPolicyDetailPageState extends State<CustomerPolicyDetailPage> {
                           Expanded(child: _infoBlockModern("Reviewed Date", _document!.reviewedDate != null ? DateFormat('dd MMM yyyy').format(_document!.reviewedDate!) : "N/A", Icons.event_available_rounded, true)),
                         ],
                       ),
+                      if ((_document!.status == 'rejected' || _document!.status == 'reject') &&
+                          _document!.rejectionReason != null &&
+                          _document!.rejectionReason!.isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Row(
+                                children: [
+                                  Icon(Icons.gpp_bad_rounded, color: Colors.white, size: 18),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    "REJECTION REASON",
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w900,
+                                      color: Colors.white,
+                                      letterSpacing: 1.0,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                _document!.rejectionReason!,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              if (_document!.rejectedBy != null) ...[
+                                const SizedBox(height: 4),
+                                Text(
+                                  "Rejected by: ${_document!.rejectedBy}",
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontStyle: FontStyle.italic,
+                                    color: Colors.white.withValues(alpha: 0.8),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),

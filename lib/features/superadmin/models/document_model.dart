@@ -16,6 +16,9 @@ class DocumentModel {
   final String currentVersion; // The series (V1, V2, V3...)
   final String? reviewedBy;
   final DateTime? reviewedDate;
+  final String? rejectionReason;
+  final String? rejectedBy;
+  final DateTime? rejectedDate;
   final String? content; // JSON Delta for rich text
   final String? customerId; // Linked customer ID
 
@@ -34,6 +37,9 @@ class DocumentModel {
     required this.version,
     this.reviewedBy,
     this.reviewedDate,
+    this.rejectionReason,
+    this.rejectedBy,
+    this.rejectedDate,
     this.content,
     this.customerId,
     required this.currentVersion,
@@ -57,6 +63,9 @@ class DocumentModel {
       currentVersion: data['current_version'] ?? 'V1',
       reviewedBy: data['reviewed_by'],
       reviewedDate: (data['reviewed_date'] as Timestamp?)?.toDate(),
+      rejectionReason: data['rejection_reason'] ?? data['rejectionReason'],
+      rejectedBy: data['rejected_by'] ?? data['rejectedBy'],
+      rejectedDate: (data['rejected_date'] as Timestamp?)?.toDate() ?? (data['rejectedDate'] as Timestamp?)?.toDate(),
       content: data['content'],
       customerId: data['customer_id'],
     );
@@ -78,6 +87,9 @@ class DocumentModel {
       'current_version': currentVersion,
       'reviewed_by': reviewedBy,
       'reviewed_date': reviewedDate != null ? Timestamp.fromDate(reviewedDate!) : null,
+      'rejection_reason': rejectionReason,
+      'rejected_by': rejectedBy,
+      'rejected_date': rejectedDate != null ? Timestamp.fromDate(rejectedDate!) : null,
       'content': content,
       'customer_id': customerId,
     };

@@ -215,6 +215,37 @@ class UserRepository {
     return snapshot.count ?? 0;
   }
 
+  // 🔹 Real-time Stream Statistics
+  Stream<int> getCustomerCountStream() {
+    return firestore
+        .collection('customers')
+        .snapshots()
+        .map((snapshot) => snapshot.docs.length);
+  }
+
+  Stream<int> getConsultantCountStream() {
+    return firestore
+        .collection('users')
+        .where('roleId', isEqualTo: AppConst.consultantRole)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.length);
+  }
+
+  Stream<int> getAdminCountStream() {
+    return firestore
+        .collection('admins')
+        .snapshots()
+        .map((snapshot) => snapshot.docs.length);
+  }
+
+  Stream<int> getSystemUserCountStream() {
+    return firestore
+        .collection('users')
+        .where('roleId', whereIn: [AppConst.adminRole, AppConst.consultantRole])
+        .snapshots()
+        .map((snapshot) => snapshot.docs.length);
+  }
+
   Future<int> getTotalActiveUserCount() async {
     try {
       final users = await firestore.collection('users').where('blockStatus', isEqualTo: false).count().get();

@@ -199,7 +199,12 @@ class _DocumentListPageState extends State<DocumentListPage> {
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                       decoration: BoxDecoration(
-                                        color: doc.status == 'active' ? Colors.green.withValues(alpha: 0.1) : Colors.orange.withValues(alpha: 0.1),
+                                        color: (doc.status == 'active'
+                                                ? Colors.green
+                                                : (doc.status == 'rejected' || doc.status == 'reject')
+                                                    ? Colors.red
+                                                    : Colors.orange)
+                                            .withValues(alpha: 0.1),
                                         borderRadius: BorderRadius.circular(4),
                                       ),
                                       child: Text(
@@ -207,7 +212,11 @@ class _DocumentListPageState extends State<DocumentListPage> {
                                         style: TextStyle(
                                           fontSize: 10,
                                           fontWeight: FontWeight.bold,
-                                          color: doc.status == 'active' ? Colors.green : Colors.orange,
+                                          color: doc.status == 'active'
+                                              ? Colors.green
+                                              : (doc.status == 'rejected' || doc.status == 'reject')
+                                                  ? Colors.red
+                                                  : Colors.orange,
                                         ),
                                       ),
                                     ),
@@ -216,6 +225,53 @@ class _DocumentListPageState extends State<DocumentListPage> {
                                 const Spacer(),
                               ],
                             ),
+                            if ((doc.status == 'rejected' || doc.status == 'reject') &&
+                                doc.rejectionReason != null &&
+                                doc.rejectionReason!.isNotEmpty) ...[
+                              const SizedBox(height: 8),
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: Colors.red.withValues(alpha: 0.08),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.cancel_outlined, color: Colors.red, size: 16),
+                                        const SizedBox(width: 6),
+                                        Expanded(
+                                          child: Text(
+                                            "Rejection Reason: ${doc.rejectionReason}",
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.red.shade900,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    if (doc.rejectedBy != null)
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 2, left: 22),
+                                        child: Text(
+                                          "Rejected by: ${doc.rejectedBy}",
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            fontStyle: FontStyle.italic,
+                                            color: Colors.red.shade700,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                       ),
@@ -279,21 +335,89 @@ class _DocumentListPageState extends State<DocumentListPage> {
 
 
   void _showStatusDialog(BuildContext context, String docId, String currentStatus) {
-    if (currentStatus == 'active') return; // Should not reach here based on UI logic
+    if (currentStatus == 'active') return;
 
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Approve & Activate Policy?'),
-        content: const Text('Are you sure you want to mark this policy as ACTIVE? This will increment the version number in history.'),
+        title: const Text('Update Policy Status'),
+        content: const Text('Would you like to approve & activate this policy, or reject it with a reason?'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          TextButton(
+          OutlinedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _showRejectDialog(context, docId);
+            },
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: Colors.red),
+            ),
+            child: const Text('Reject Policy', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+          ),
+          ElevatedButton(
             onPressed: () {
               context.read<DocumentCubit>().updateStatus(docId, 'active');
               Navigator.pop(ctx);
             },
-            child: const Text('Approve', style: TextStyle(fontWeight: FontWeight.bold)),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
+            child: const Text('Approve Policy', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showRejectDialog(BuildContext context, String docId) {
+    final TextEditingController reasonController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Reject Policy'),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Please enter the reason for rejecting this policy:'),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: reasonController,
+                maxLines: 3,
+                decoration: const InputDecoration(
+                  hintText: 'Enter rejection reason...',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Rejection reason is required';
+                  }
+                  return null;
+                },
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (formKey.currentState!.validate()) {
+                context.read<DocumentCubit>().updateStatus(
+                      docId,
+                      'rejected',
+                      rejectionReason: reasonController.text.trim(),
+                    );
+                Navigator.pop(ctx);
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            child: const Text('Reject', style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -333,6 +457,7 @@ class _DocumentListPageState extends State<DocumentListPage> {
                 separatorBuilder: (ctx, index) => const Divider(),
                 itemBuilder: (ctx, index) {
                   final v = history[index];
+                  final isRejected = v.status == 'rejected' || v.status == 'reject';
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -346,12 +471,25 @@ class _DocumentListPageState extends State<DocumentListPage> {
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                 decoration: BoxDecoration(
-                                  color: (v.status == 'active' ? Colors.green : Colors.orange).withValues(alpha: 0.1),
+                                  color: (v.status == 'active'
+                                          ? Colors.green
+                                          : isRejected
+                                              ? Colors.red
+                                              : Colors.orange)
+                                      .withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Text(
                                   v.status.toUpperCase(),
-                                  style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: v.status == 'active' ? Colors.green : Colors.orange),
+                                  style: TextStyle(
+                                    fontSize: 8,
+                                    fontWeight: FontWeight.bold,
+                                    color: v.status == 'active'
+                                        ? Colors.green
+                                        : isRejected
+                                            ? Colors.red
+                                            : Colors.orange,
+                                  ),
                                 ),
                               ),
                             ],
@@ -369,6 +507,14 @@ class _DocumentListPageState extends State<DocumentListPage> {
                           padding: const EdgeInsets.only(top: 2),
                           child: Text("Approved by: ${v.approvedBy} on ${v.approvedDate != null ? DateFormat('dd MMM yyyy').format(v.approvedDate!) : 'N/A'}", 
                                style: const TextStyle(fontSize: 11, color: Colors.green, fontWeight: FontWeight.bold)),
+                        ),
+                      if (isRejected && (v.rejectionReason != null || v.rejectedBy != null))
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text(
+                            "Rejected by: ${v.rejectedBy ?? v.performedBy}${v.rejectionReason != null ? ' - Reason: ${v.rejectionReason}' : ''}",
+                            style: const TextStyle(fontSize: 11, color: Colors.red, fontWeight: FontWeight.bold),
+                          ),
                         ),
                     ],
                   );
