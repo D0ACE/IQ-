@@ -17,6 +17,8 @@ import 'package:iq_plus/di/service_locator.dart';
 import 'package:iq_plus/features/admin/customers/widgets/customer_dropdown_widget.dart';
 import 'package:iq_plus/features/auth/model/customer_model.dart';
 import 'package:iq_plus/features/auth/model/user_model.dart';
+import 'package:provider/provider.dart';
+import 'package:iq_plus/ncr_form/ncr_provider.dart';
 import 'package:iq_plus/ncr_form/ncr/model/ncr_form_model.dart';
 import 'package:iq_plus/ncr_form/ncr/repository/ncr_repository.dart';
 
@@ -69,6 +71,7 @@ class _NCRFormPageState extends State<NCRFormPage> {
   /// Current status
   String currentStatus = AppConst.openNCRStatusKey;
   bool isRoleLoaded = false;
+  bool isStatusUpdating = false;
 
   CustomerModel? selectedCustomer;
   final UserModel? userLoginDetails = getIt<HiveService>().getUser();
@@ -104,7 +107,7 @@ class _NCRFormPageState extends State<NCRFormPage> {
       verificationCtrl.text = ncr['verification'] ?? '';
       auditorCtrl.text = ncr['auditor'] ?? '';
       approvedCtrl.text = ncr['approvedBy'] ?? '';
-      currentStatus = ncr['status'];
+      currentStatus = ncr['status'] ?? AppConst.openNCRStatusKey;
 
       fetchCustomer();
 
@@ -142,17 +145,27 @@ class _NCRFormPageState extends State<NCRFormPage> {
   }
 
   Future<void> fetchCustomer() async {
-    final doc = await getIt<FirebaseFirestore>()
-        .collection('customers')
-        .doc(widget.ncrData?['customerId'] ?? '')
-        .get();
+    final customerId = widget.ncrData?['customerId'] ?? '';
+    if (customerId.isEmpty) return;
 
-    setState(() {
-      selectedCustomer = CustomerModel.fromJson(
-        doc.data()!,
-        customerId: widget.ncrData?['customerId'] ?? '',
-      );
-    });
+    try {
+      final doc = await getIt<FirebaseFirestore>()
+          .collection('customers')
+          .doc(customerId)
+          .get();
+
+      if (doc.exists && doc.data() != null) {
+        if (!mounted) return;
+        setState(() {
+          selectedCustomer = CustomerModel.fromJson(
+            doc.data()!,
+            customerId: customerId,
+          );
+        });
+      }
+    } catch (e) {
+      debugPrint('Error fetching customer: $e');
+    }
   }
 
   void fetchUserRole() {
@@ -166,18 +179,49 @@ class _NCRFormPageState extends State<NCRFormPage> {
 
   Future<void> _updateStatus(String newStatus) async {
     final docId = widget.ncrData?['id'];
-    if (docId == null) return;
+    if (docId == null || isStatusUpdating) return;
 
-    await _ncrRepository.updateNcrStatus(docId, newStatus);
-
-    if (!mounted) return;
     setState(() {
-      currentStatus = newStatus;
+      isStatusUpdating = true;
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Status updated to ${newStatus.toUpperCase()}")),
-    );
+    try {
+      if (widget.ncrData != null) {
+        widget.ncrData!['status'] = newStatus;
+      }
+      await context.read<NcrProvider>().updateStatus(docId, newStatus);
+
+      if (!mounted) return;
+      setState(() {
+        currentStatus = newStatus;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            "Status updated to ${Utility.getNCRStatus(newStatus)}",
+          ),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Failed to update status: $e"),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          isStatusUpdating = false;
+        });
+      }
+    }
   }
 
   /// 🔹 Date Picker
@@ -263,23 +307,28 @@ class _NCRFormPageState extends State<NCRFormPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   /// LOGO
-                  GestureDetector(
-                    onTap: pickLogo,
-                    child: Container(
-                      height: 80,
-                      width: 80,
-                      decoration: BoxDecoration(
-                        border: Border.all(color: AppColors.greyBorderColor),
-                      ),
-                      child: logo == null
-                          ? const Center(
-                              child: Text(
-                                "Upload\nLogo",
-                                textAlign: TextAlign.center,
-                              ),
-                            )
-                          : Image.file(logo!, fit: BoxFit.contain),
-                    ),
+                  Builder(
+                    builder: (context) {
+                      final logoFile = logo;
+                      return GestureDetector(
+                        onTap: pickLogo,
+                        child: Container(
+                          height: 80,
+                          width: 80,
+                          decoration: BoxDecoration(
+                            border: Border.all(color: AppColors.greyBorderColor),
+                          ),
+                          child: logoFile == null
+                              ? const Center(
+                                  child: Text(
+                                    "Upload\nLogo",
+                                    textAlign: TextAlign.center,
+                                  ),
+                                )
+                              : Image.file(logoFile, fit: BoxFit.contain),
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(width: 8),
 
@@ -335,87 +384,172 @@ class _NCRFormPageState extends State<NCRFormPage> {
 
             const SizedBox(height: 12),
 
-            /// 🔹 STATUS DISPLAY
+            /// 🔹 STATUS DISPLAY & COMPACT ACTIONS
             Container(
               margin: const EdgeInsets.only(top: 10),
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
                 color: currentStatus == AppConst.openNCRStatusKey
-                    ? AppColors.orange.withValues(alpha: 0.2)
+                    ? AppColors.orange.withValues(alpha: 0.1)
                     : currentStatus == AppConst.inProgressNCRStatusKey
-                    ? AppColors.blue.withValues(alpha: 0.2)
-                    : AppColors.green.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                "Status: ${Utility.getNCRStatus(currentStatus)}",
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
+                    ? AppColors.blue.withValues(alpha: 0.1)
+                    : AppColors.green.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
                   color: currentStatus == AppConst.openNCRStatusKey
-                      ? AppColors.orange
+                      ? AppColors.orange.withValues(alpha: 0.3)
                       : currentStatus == AppConst.inProgressNCRStatusKey
-                      ? AppColors.blue
-                      : AppColors.green,
+                      ? AppColors.blue.withValues(alpha: 0.3)
+                      : AppColors.green.withValues(alpha: 0.3),
                 ),
               ),
-            ),
-
-            /// Status Buttons (Consultant Only)
-            if (isReview && isRoleLoaded && Utility.isConsultant(roleId)) ...[
-              const SizedBox(height: 20),
-
-              Row(
+              child: Column(
                 children: [
-                  // OPEN → IN PROGRESS
-                  if (currentStatus == AppConst.openNCRStatusKey)
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () async {
-                          await _updateStatus(AppConst.inProgressNCRStatusKey);
-                        },
-                        child: const Text('Mark In Progress'),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Utility.getNCRStatusIcons(currentStatus),
+                        color: currentStatus == AppConst.openNCRStatusKey
+                            ? AppColors.orange
+                            : currentStatus == AppConst.inProgressNCRStatusKey
+                            ? AppColors.blue
+                            : AppColors.green,
+                        size: 20,
                       ),
-                    ),
-
-                  // IN PROGRESS → CLOSED
-                  if (currentStatus == AppConst.inProgressNCRStatusKey)
-                    Expanded(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
+                      const SizedBox(width: 8),
+                      Text(
+                        "Status: ${Utility.getNCRStatus(currentStatus)}",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                          color: currentStatus == AppConst.openNCRStatusKey
+                              ? AppColors.orange
+                              : currentStatus == AppConst.inProgressNCRStatusKey
+                              ? AppColors.blue
+                              : AppColors.green,
                         ),
-                        onPressed: () async {
-                          final confirm = await showDialog<bool>(
-                            context: context,
-                            builder: (_) => AlertDialog(
-                              title: const Text("Close NCR"),
-                              content: const Text(
-                                "Are you sure you want to close this NCR?",
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () =>
-                                      Navigator.pop(context, false),
-                                  child: const Text("Cancel"),
-                                ),
-                                ElevatedButton(
-                                  onPressed: () => Navigator.pop(context, true),
-                                  child: const Text("Yes"),
-                                ),
-                              ],
-                            ),
-                          );
-
-                          if (confirm == true) {
-                            await _updateStatus(AppConst.closedNCRStatusKey);
-                          }
-                        },
-                        child: const Text('Close NCR'),
                       ),
-                    ),
+                    ],
+                  ),
+
+                  /// Status Action Buttons (Super Admin / Admin / Consultant)
+                  if (isReview && isRoleLoaded && !Utility.isCustomer(roleId)) ...[
+                    if (currentStatus == AppConst.openNCRStatusKey ||
+                        currentStatus == AppConst.inProgressNCRStatusKey) ...[
+                      const SizedBox(height: 12),
+                      Wrap(
+                        alignment: WrapAlignment.center,
+                        spacing: 12,
+                        runSpacing: 8,
+                        children: [
+                          // OPEN → IN PROGRESS
+                          if (currentStatus == AppConst.openNCRStatusKey)
+                            ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.blue,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 10,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                elevation: 2,
+                              ),
+                              icon: isStatusUpdating
+                                  ? const SizedBox(
+                                      height: 18,
+                                      width: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : const Icon(Icons.play_arrow_rounded, size: 18),
+                              label: Text(
+                                isStatusUpdating ? 'Updating...' : 'Mark In Progress',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              onPressed: isStatusUpdating
+                                  ? null
+                                  : () =>
+                                      _updateStatus(AppConst.inProgressNCRStatusKey),
+                            ),
+
+                          // IN PROGRESS → CLOSE
+                          if (currentStatus == AppConst.inProgressNCRStatusKey)
+                            ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.redAccent,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 10,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                elevation: 2,
+                              ),
+                              icon: isStatusUpdating
+                                  ? const SizedBox(
+                                      height: 18,
+                                      width: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : const Icon(Icons.check_circle_outline, size: 18),
+                              label: Text(
+                                isStatusUpdating ? 'Updating...' : 'Close NCR',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              onPressed: isStatusUpdating
+                                  ? null
+                                  : () async {
+                                      final confirm = await showDialog<bool>(
+                                        context: context,
+                                        builder: (_) => AlertDialog(
+                                          title: const Text("Close NCR"),
+                                          content: const Text(
+                                            "Are you sure you want to close this NCR?",
+                                          ),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Navigator.pop(context, false),
+                                              child: const Text("Cancel"),
+                                            ),
+                                            ElevatedButton(
+                                              onPressed: () =>
+                                                  Navigator.pop(context, true),
+                                              child: const Text("Yes"),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+
+                                      if (confirm == true) {
+                                        await _updateStatus(AppConst.closedNCRStatusKey);
+                                      }
+                                    },
+                            ),
+                        ],
+                      ),
+                    ],
+                  ],
                 ],
               ),
-            ],
+            ),
 
             const SizedBox(height: 15),
 
@@ -725,6 +859,7 @@ class _NCRFormPageState extends State<NCRFormPage> {
                         'auditor': auditorCtrl.text,
                         'approvedBy': approvedCtrl.text,
                         'customerId': selectedCustomer?.customerId ?? '',
+                        'companyName': selectedCustomer?.companyName ?? '',
                         'status': currentStatus,
                       };
 
@@ -737,7 +872,7 @@ class _NCRFormPageState extends State<NCRFormPage> {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text("NCR Updated Successfully")),
                             );
-                            GoRouter.of(context).pop();
+                            Navigator.pop(context);
                           }
                         }
                       } else {

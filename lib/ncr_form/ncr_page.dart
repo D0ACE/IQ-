@@ -82,13 +82,16 @@ class _NcrPageState extends State<NcrPage> {
                 return NcrListCard(
                   ncr: ncr,
                   roleId: roleId,
-                  onTap: () {
-                    Navigator.push(
+                  onTap: () async {
+                    await Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (_) => NCRFormPage(ncrData: ncr, forceEdit: false),
                       ),
                     );
+                    if (mounted) {
+                      setState(() {});
+                    }
                   },
                 );
               },
@@ -100,10 +103,10 @@ class _NcrPageState extends State<NcrPage> {
   }
 }
 
-class NcrListCard extends StatefulWidget {
+class NcrListCard extends StatelessWidget {
   final Map<String, dynamic> ncr;
   final VoidCallback onTap;
-  final String roleId; // 👈 Use enum
+  final String roleId;
 
   const NcrListCard({
     super.key,
@@ -112,17 +115,89 @@ class NcrListCard extends StatefulWidget {
     required this.roleId,
   });
 
-  @override
-  State<NcrListCard> createState() => _NcrListCardState();
-}
+  String get status => ncr['status'] ?? AppConst.openNCRStatusKey;
 
-class _NcrListCardState extends State<NcrListCard> {
-  late String status;
+  static final Map<String, String> _companyNameCache = {};
 
-  @override
-  void initState() {
-    super.initState();
-    status = widget.ncr['status'] ?? AppConst.openNCRStatusKey;
+  Future<String> _getCompanyName(String customerId) async {
+    if (customerId.isEmpty) return '';
+    if (_companyNameCache.containsKey(customerId)) {
+      return _companyNameCache[customerId]!;
+    }
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('customers')
+          .doc(customerId)
+          .get();
+      if (doc.exists && doc.data() != null) {
+        final name = doc.data()?['companyName']?.toString() ?? '';
+        _companyNameCache[customerId] = name;
+        return name;
+      }
+    } catch (_) {}
+    return '';
+  }
+
+  Widget _buildCompanyWidget() {
+    final directName = (ncr['companyName'] ?? ncr['company'] ?? '').toString();
+    final customerId = (ncr['customerId'] ?? ncr['companyId'] ?? '').toString();
+
+    if (directName.isNotEmpty) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 2, bottom: 2),
+        child: Row(
+          children: [
+            const Icon(Icons.business_rounded, size: 14, color: AppColors.greyTextColor),
+            const SizedBox(width: 4),
+            Expanded(
+              child: Text(
+                directName,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.blackTextColor,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (customerId.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return FutureBuilder<String>(
+      future: _getCompanyName(customerId),
+      builder: (context, snapshot) {
+        final name = snapshot.data ?? '';
+        if (name.isEmpty) return const SizedBox.shrink();
+        return Padding(
+          padding: const EdgeInsets.only(top: 2, bottom: 2),
+          child: Row(
+            children: [
+              const Icon(Icons.business_rounded, size: 14, color: AppColors.greyTextColor),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  name,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.blackTextColor,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   void _showDeleteDialog(BuildContext context) {
@@ -138,7 +213,7 @@ class _NcrListCardState extends State<NcrListCard> {
           ),
           TextButton(
             onPressed: () {
-              context.read<NcrProvider>().deleteNcr(widget.ncr['id']);
+              context.read<NcrProvider>().deleteNcr(ncr['id']);
               Navigator.pop(ctx);
             },
             child: const Text("Delete", style: TextStyle(color: Colors.red)),
@@ -148,20 +223,6 @@ class _NcrListCardState extends State<NcrListCard> {
     );
   }
 
-  // List<String> allowedStatusChanges() {
-  //   switch (widget.userRole) {
-  //     case UserRole.consultant:
-  //       return status == AppConst.openNCRStatusKey ? [AppConst.inProgressNCRStatusKey] : [];
-  //     case UserRole.admin:
-  //     case UserRole.superAdmin:
-  //       if (status == AppConst.openNCRStatusKey) return [AppConst.inProgressNCRStatusKey, AppConst.closedNCRStatusKey];
-  //       if (status == AppConst.inProgressNCRStatusKey) return [AppConst.closedNCRStatusKey];
-  //       return [];
-  //     case UserRole.customer:
-  //     default:
-  //       return [];
-  //   }
-  // }
   /// Status tag widget
   Widget _statusTag() {
     return Container(
@@ -180,24 +241,12 @@ class _NcrListCardState extends State<NcrListCard> {
       ),
     );
   }
-  
-
-  // Future<void> _updateStatus(String newStatus) async {
-  //   final docId = widget.ncr['id'];
-  //   if (docId == null) return;
-
-  //   await FirebaseFirestore.instance.collection('ncr').doc(docId).update({'status': newStatus});
-
-  //   setState(() {
-  //     status = newStatus;
-  //   });
-  // }
 
   @override
   Widget build(BuildContext context) {
-    final process = widget.ncr['process'] ?? 'N/A';
-    final createdAt = widget.ncr['createdAt'] != null
-        ? (widget.ncr['createdAt'] as Timestamp).toDate()
+    final process = ncr['process'] ?? 'N/A';
+    final createdAt = ncr['createdAt'] != null
+        ? (ncr['createdAt'] as Timestamp).toDate()
         : null;
 
     return Card(
@@ -207,7 +256,7 @@ class _NcrListCardState extends State<NcrListCard> {
       margin: const EdgeInsets.symmetric(vertical: 8),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        onTap: widget.onTap,
+        onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
@@ -217,7 +266,7 @@ class _NcrListCardState extends State<NcrListCard> {
                 height: 50,
                 width: 50,
                 decoration: BoxDecoration(
-                  color: Utility.getNCRStatusColor(status).withValues(alpha:0.2),
+                  color: Utility.getNCRStatusColor(status).withValues(alpha: 0.2),
                   shape: BoxShape.circle,
                 ),
                 child: Center(
@@ -229,7 +278,7 @@ class _NcrListCardState extends State<NcrListCard> {
               ),
               const SizedBox(width: 12),
 
-              /// Middle: process + date
+              /// Middle: process + company + date
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -242,7 +291,7 @@ class _NcrListCardState extends State<NcrListCard> {
                         color: AppColors.titleText,
                       ),
                     ),
-                    if (createdAt != null) const SizedBox(height: 4),
+                    _buildCompanyWidget(),
                     if (createdAt != null)
                       Text(
                         "Created: ${DateFormat('dd MMM yyyy').format(createdAt)}",
@@ -254,52 +303,12 @@ class _NcrListCardState extends State<NcrListCard> {
                   ],
                 ),
               ),
-              // Padding(
-              //   padding: const EdgeInsets.only(left: 8),
-              //   child: widget.userRole == UserRole.consultant
-              //       ? Row(
-              //           mainAxisSize: MainAxisSize.min,
-              //           children: [AppConst.openNCRStatusKey, AppConst.inProgressNCRStatusKey, AppConst.closedNCRStatusKey].map((s) {
-              //             return Padding(
-              //               padding: const EdgeInsets.only(left: 6),
-              //               child: ElevatedButton(
-              //                 style: ElevatedButton.styleFrom(
-              //                   backgroundColor: Utility.getNCRStatusColor(s),
-              //                   minimumSize: const Size(36, 36),
-              //                   padding: const EdgeInsets.symmetric(
-              //                     horizontal: 8,
-              //                   ),
-              //                 ),
-              //                 onPressed: () async {
-              //                   final docId = widget.ncr['id'];
-              //                   if (docId == null) return;
-
-              //                   await FirebaseFirestore.instance
-              //                       .collection('ncr')
-              //                       .doc(docId)
-              //                       .update({'status': s});
-
-              //                   setState(() => status = s);
-              //                 },
-              //                 child: Text(
-              //                   _statusText(s),
-              //                   style: const TextStyle(
-              //                     fontSize: 11,
-              //                     color: Colors.white,
-              //                   ),
-              //                 ),
-              //               ),
-              //             );
-              //           }).toList(),
-              //         )
-              //       : _statusTag(),
-              // ),
 
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4.0),
                 child: _statusTag(),
               ),
-              if (!Utility.isCustomer(widget.roleId)) ...[
+              if (!Utility.isCustomer(roleId)) ...[
                 IconButton(
                   icon: const Icon(Icons.edit, color: AppColors.primary),
                   onPressed: () {
@@ -307,7 +316,7 @@ class _NcrListCardState extends State<NcrListCard> {
                       context,
                       MaterialPageRoute(
                         builder: (_) =>
-                            NCRFormPage(ncrData: widget.ncr, forceEdit: true),
+                            NCRFormPage(ncrData: ncr, forceEdit: true),
                       ),
                     );
                   },
@@ -317,14 +326,6 @@ class _NcrListCardState extends State<NcrListCard> {
                   onPressed: () => _showDeleteDialog(context),
                 ),
               ],
-              //           backgroundColor: Utility.getNCRStatusColor(s),
-              //         ),
-              //         onPressed: () => _updateStatus(s),
-              //         child: Text(_statusText(s), style: const TextStyle(color: Colors.white)),
-              //       ),
-              //     );
-              //   }).toList(),
-              // ),
             ],
           ),
         ),
