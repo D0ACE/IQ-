@@ -424,7 +424,7 @@ class AppRouter {
         path: AppRoutes.videoUpload,
         builder: (context, state) => BlocProvider(
           create: (_) => VideoCubit(getIt<VideoRepository>()),
-          child: const VideoUploadPage(),
+          child: VideoUploadPage(video: state.extra as AwarenessVideoModel?),
         ),
       ),
       GoRoute(

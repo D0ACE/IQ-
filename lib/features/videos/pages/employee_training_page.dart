@@ -21,11 +21,19 @@ class EmployeeTrainingPage extends StatefulWidget {
 
 class _EmployeeTrainingPageState extends State<EmployeeTrainingPage> {
   final _user = getIt<HiveService>().getUser();
+  final TextEditingController searchController = TextEditingController();
+  String searchQuery = '';
 
   @override
   void initState() {
     super.initState();
     _loadData();
+  }
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
   }
 
   void _loadData() {
@@ -123,6 +131,14 @@ class _EmployeeTrainingPageState extends State<EmployeeTrainingPage> {
             final videosList = state.videos;
             final hasCompletedTraining = cubit.enrollments.any((e) => e.status == 'completed');
 
+            final filteredVideosList = searchQuery.isEmpty
+                ? videosList
+                : videosList.where((v) {
+                    final q = searchQuery.toLowerCase().trim();
+                    return v.title.toLowerCase().contains(q) ||
+                        v.fileName.toLowerCase().contains(q);
+                  }).toList();
+
             if (videosList.isEmpty && !hasCompletedTraining) {
               return const Center(child: Text('No trainings available for you at this moment.'));
             }
@@ -135,6 +151,46 @@ class _EmployeeTrainingPageState extends State<EmployeeTrainingPage> {
                   _resultsCompactTile(),
                   const SizedBox(height: 24),
                 ],
+
+                /// 🔍 SEARCH BAR
+                TextField(
+                  controller: searchController,
+                  decoration: InputDecoration(
+                    hintText: "Search course by title...",
+                    hintStyle: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                    prefixIcon: const Icon(Icons.search, color: AppColors.purple),
+                    suffixIcon: searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear, color: Colors.grey),
+                            onPressed: () {
+                              searchController.clear();
+                              setState(() {
+                                searchQuery = '';
+                              });
+                            },
+                          )
+                        : null,
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(30),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(30),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                  ),
+                  onChanged: (val) {
+                    setState(() {
+                      searchQuery = val;
+                    });
+                  },
+                ),
+                const SizedBox(height: 16),
+
                 const Text(
                   "Assigned Courses",
                   style: TextStyle(
@@ -144,17 +200,28 @@ class _EmployeeTrainingPageState extends State<EmployeeTrainingPage> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                ...videosList.map((video) {
-                  VideoEnrollmentModel? enrollment;
-                  try {
-                    enrollment = cubit.enrollments.firstWhere((e) => e.videoId == video.videoId);
-                  } catch (_) {}
+                if (filteredVideosList.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 24),
+                    child: Center(
+                      child: Text(
+                        "No matching courses found",
+                        style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+                      ),
+                    ),
+                  )
+                else
+                  ...filteredVideosList.map((video) {
+                    VideoEnrollmentModel? enrollment;
+                    try {
+                      enrollment = cubit.enrollments.firstWhere((e) => e.videoId == video.videoId);
+                    } catch (_) {}
 
-                  final bool isEnrolled = enrollment != null;
-                  final bool isCompleted = enrollment?.status == 'completed';
+                    final bool isEnrolled = enrollment != null;
+                    final bool isCompleted = enrollment?.status == 'completed';
 
-                  return _trainingCard(video, enrollment, isEnrolled, isCompleted);
-                }),
+                    return _trainingCard(video, enrollment, isEnrolled, isCompleted);
+                  }),
               ],
             );
           }

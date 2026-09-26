@@ -17,10 +17,30 @@ class DocumentRepository {
   Future<List<DocumentModel>> getDocuments({String? userId, bool isConsultant = false, String? customerId}) async {
     Query query = _firestore.collection('documents');
 
-    if (isConsultant && userId != null) {
-      query = query.where('created_by_user_id', isEqualTo: userId);
-    } else if (customerId != null) {
+    if (customerId != null && customerId.isNotEmpty) {
       query = query.where('customer_id', isEqualTo: customerId);
+    } else if (isConsultant && userId != null && userId.isNotEmpty) {
+      // 🚀 For consultants, fetch customers assigned to this consultant
+      final custSnapshot = await _firestore
+          .collection('customers')
+          .where('consultantId', isEqualTo: userId)
+          .get();
+      final assignedCustomerIds =
+          custSnapshot.docs.map((doc) => doc.id).toSet();
+
+      final snapshot = await query.orderBy('created_at', descending: true).get();
+      final allDocs = snapshot.docs
+          .map((doc) => DocumentModel.fromFirestore(doc))
+          .toList();
+
+      return allDocs.where((doc) {
+        final isCreatedByMe = doc.createdByUserId == userId;
+        final isPublic = doc.customerId == null || doc.customerId!.isEmpty;
+        final isMyCustomerDoc = doc.customerId != null &&
+            assignedCustomerIds.contains(doc.customerId);
+
+        return isCreatedByMe || isPublic || isMyCustomerDoc;
+      }).toList();
     }
 
     final snapshot = await query.orderBy('created_at', descending: true).get();
@@ -471,49 +491,61 @@ class DocumentRepository {
     String? customerId,
   }) async {
     try {
-      // 🚀 Collection Group query to fetch history from ALL documents at once
-      Query query = _firestore.collectionGroup('version_history');
+      Set<String>? allowedDocIds;
 
-      if (isConsultant && userId != null) {
-        final docs = await getDocuments(userId: userId, isConsultant: true);
-        final docIds = docs.map((d) => d.docId).toList();
-        if (docIds.isEmpty) return [];
-        query = query.where('docId', whereIn: docIds);
-      } else if (customerId != null) {
-        final docs = await getDocuments(customerId: customerId);
-        final docIds = docs.map((d) => d.docId).toList();
-        if (docIds.isEmpty) return [];
-        query = query.where('docId', whereIn: docIds);
+      if ((isConsultant && userId != null) || customerId != null) {
+        final docs = await getDocuments(
+          userId: userId,
+          isConsultant: isConsultant,
+          customerId: customerId,
+        );
+        allowedDocIds = docs.map((d) => d.docId).toSet();
+        if (allowedDocIds.isEmpty) return [];
       }
 
-      final snapshot = await query.orderBy('performedDate', descending: true).get();
-      
+      final snapshot = await _firestore
+          .collectionGroup('version_history')
+          .orderBy('performedDate', descending: true)
+          .get();
+
       List<VersionHistoryModel> history = [];
-      
-      // Map to cache document titles to avoid repeated DB hits
-      Map<String, String> titleCache = {};
+
+      // Map to cache document info to avoid repeated DB hits
+      Map<String, Map<String, String>> docCache = {};
 
       for (var doc in snapshot.docs) {
         final data = doc.data() as Map<String, dynamic>;
-        String? title = data['docTitle'];
         final String dId = data['docId'] ?? '';
 
-        // If title is missing in history entry, fetch from parent document
-        if ((title == null || title.isEmpty) && dId.isNotEmpty) {
-          if (titleCache.containsKey(dId)) {
-            title = titleCache[dId];
+        if (allowedDocIds != null && !allowedDocIds.contains(dId)) {
+          continue;
+        }
+
+        String? title = data['docTitle'];
+        String? custId = data['customerId'] ?? data['customer_id'];
+
+        // If title or customerId is missing in history entry, fetch from parent document
+        if ((title == null || title.isEmpty || custId == null || custId.isEmpty) && dId.isNotEmpty) {
+          if (docCache.containsKey(dId)) {
+            title = docCache[dId]?['title'];
+            custId = docCache[dId]?['customerId'];
           } else {
             try {
               final parentDoc = await _firestore.collection('documents').doc(dId).get();
-              title = parentDoc.data()?['title'] ?? 'Unknown Policy';
-              titleCache[dId] = title!;
+              final parentData = parentDoc.data();
+              title = parentData?['title'] ?? 'Unknown Policy';
+              custId = parentData?['customer_id'] ?? parentData?['customerId'];
+              docCache[dId] = {
+                'title': title!,
+                'customerId': custId ?? '',
+              };
             } catch (e) {
               title = 'Unknown Policy';
             }
           }
         }
 
-        history.add(VersionHistoryModel.fromFirestore(doc, docTitle: title));
+        history.add(VersionHistoryModel.fromFirestore(doc, docTitle: title, customerId: custId));
       }
 
       return history;

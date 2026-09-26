@@ -12,10 +12,23 @@ import 'package:iq_plus/features/admin/customers/widgets/assign_next_visit_dialo
 import 'package:iq_plus/features/auth/model/customer_model.dart';
 import 'package:go_router/go_router.dart';
 
-class AssignCustomersPage extends StatelessWidget {
-
+class AssignCustomersPage extends StatefulWidget {
   final String consultantId;
-  const AssignCustomersPage({super.key,required this.consultantId});
+  const AssignCustomersPage({super.key, required this.consultantId});
+
+  @override
+  State<AssignCustomersPage> createState() => _AssignCustomersPageState();
+}
+
+class _AssignCustomersPageState extends State<AssignCustomersPage> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,46 +37,115 @@ class AssignCustomersPage extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Assigned Customers'),
         backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
       ),
-      body: BlocBuilder<CustomerListCubit, CustomerListState>(
-        builder: (c, state) {
-          if (state is CustomerListLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
+      body: Column(
+        children: [
+          // 🔍 Search Bar
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            child: Container(
+              height: 48,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: TextField(
+                controller: _searchController,
+                onChanged: (val) {
+                  setState(() {
+                    _searchQuery = val;
+                  });
+                },
+                decoration: InputDecoration(
+                  hintText: 'Search assigned customers...',
+                  hintStyle: TextStyle(
+                    color: Colors.grey.shade500,
+                    fontSize: 14,
+                  ),
+                  prefixIcon: const Icon(
+                    Icons.search_rounded,
+                    color: AppColors.primary,
+                    size: 22,
+                  ),
+                  suffixIcon: _searchQuery.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.close_rounded, size: 20),
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() {
+                              _searchQuery = '';
+                            });
+                          },
+                        )
+                      : null,
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+              ),
+            ),
+          ),
 
-          if (state is CustomerListLoaded) {
-            // Filter only approved customers
-            final assignedCustomers = state.customers
-                .where((customer) => customer.isProfileApproved)
-                .toList();
+          Expanded(
+            child: BlocBuilder<CustomerListCubit, CustomerListState>(
+              builder: (c, state) {
+                if (state is CustomerListLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-            if (assignedCustomers.isEmpty) {
-              return const Center(child: Text('No customers assigned'));
-            }
+                if (state is CustomerListLoaded) {
+                  // Filter only approved customers
+                  var assignedCustomers = state.customers
+                      .where((customer) => customer.isProfileApproved)
+                      .toList();
 
-            return ListView.separated(
-              padding: const EdgeInsets.all(appHorizontalPadding15),
-              itemCount: assignedCustomers.length,
-              separatorBuilder: (_, _) =>
-                  const SizedBox(height: 20), // vertical spacing
-              itemBuilder: (cc, index) {
-                return _CustomerCard(
-                  context: context,
-                  consultantId: consultantId,
-                  customer: assignedCustomers[index],
-                  onTap: () {
-                    GoRouter.of(context).push(
-                      AppRoutes.customerDetail,
-                      extra: assignedCustomers[index],
+                  if (_searchQuery.isNotEmpty) {
+                    final q = _searchQuery.toLowerCase().trim();
+                    assignedCustomers = assignedCustomers.where((customer) {
+                      final matchName = customer.companyName.toLowerCase().contains(q);
+                      final matchEmail = customer.email.toLowerCase().contains(q);
+                      final matchVisit = (customer.nextVisitDate ?? '').toLowerCase().contains(q);
+                      final matchPhone = customer.phoneNumber.toLowerCase().contains(q);
+                      return matchName || matchEmail || matchVisit || matchPhone;
+                    }).toList();
+                  }
+
+                  if (assignedCustomers.isEmpty) {
+                    return Center(
+                      child: Text(
+                        _searchQuery.isNotEmpty
+                            ? 'No assigned customers match your search'
+                            : 'No customers assigned',
+                        style: TextStyle(color: Colors.grey.shade600, fontSize: 15),
+                      ),
                     );
-                  },
-                );
-              },
-            );
-          }
+                  }
 
-          return const Center(child: Text('No customers assigned'));
-        },
+                  return ListView.separated(
+                    padding: const EdgeInsets.all(appHorizontalPadding15),
+                    itemCount: assignedCustomers.length,
+                    separatorBuilder: (_, _) => const SizedBox(height: 20),
+                    itemBuilder: (cc, index) {
+                      return _CustomerCard(
+                        context: context,
+                        consultantId: widget.consultantId,
+                        customer: assignedCustomers[index],
+                        onTap: () {
+                          GoRouter.of(context).push(
+                            AppRoutes.customerDetail,
+                            extra: assignedCustomers[index],
+                          );
+                        },
+                      );
+                    },
+                  );
+                }
+
+                return const Center(child: Text('No customers assigned'));
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -78,7 +160,12 @@ class _CustomerCard extends StatelessWidget {
   final VoidCallback onTap;
   final BuildContext context;
 
-  const _CustomerCard({required this.customer,required this.consultantId, required this.onTap,required this.context});
+  const _CustomerCard({
+    required this.customer,
+    required this.consultantId,
+    required this.onTap,
+    required this.context,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -95,7 +182,7 @@ class _CustomerCard extends StatelessWidget {
               /// Avatar
               CircleAvatar(
                 radius: 26,
-                backgroundColor: AppColors.primary.withValues(alpha:0.15),
+                backgroundColor: AppColors.primary.withValues(alpha: 0.15),
                 child: Text(
                   customer.companyName.isNotEmpty
                       ? customer.companyName[0].toUpperCase()
@@ -132,10 +219,10 @@ class _CustomerCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      'Next Visit Date: ${customer.nextVisitDate??"N/A"}',
+                      'Next Visit Date: ${customer.nextVisitDate ?? "N/A"}',
                       style: AppThemeData.textFieldTextStyle.copyWith(
                         fontSize: 13,
-                        color: AppColors.grey70TextColor
+                        color: AppColors.grey70TextColor,
                       ),
                     ),
                   ],
@@ -148,9 +235,8 @@ class _CustomerCard extends StatelessWidget {
                   horizontal: 10,
                   vertical: 6,
                 ),
-
                 child: TextButton(
-                  onPressed: () async{
+                  onPressed: () async {
                     final String? nextVisitDate = await showDialog<String>(
                       context: context,
                       builder: (_) => AssignNextVisitDialog(customer: customer),
@@ -158,7 +244,11 @@ class _CustomerCard extends StatelessWidget {
 
                     if (nextVisitDate != null) {
                       if (!context.mounted) return;
-                      context.read<CustomerListCubit>().updateCustomerNextVisitDate(customer: customer, consultant: getIt<HiveService>().getUser(), nextVisitDate: nextVisitDate);
+                      context.read<CustomerListCubit>().updateCustomerNextVisitDate(
+                            customer: customer,
+                            consultant: getIt<HiveService>().getUser(),
+                            nextVisitDate: nextVisitDate,
+                          );
                     }
                   },
                   style: TextButton.styleFrom(
@@ -167,7 +257,8 @@ class _CustomerCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  child: Text('Add/Edit Next Visit Date',
+                  child: const Text(
+                    'Add/Edit Next Visit Date',
                     style: TextStyle(
                       color: AppColors.kPrimaryColor,
                       fontSize: 12,

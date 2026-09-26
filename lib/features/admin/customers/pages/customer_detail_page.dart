@@ -103,8 +103,11 @@ class _CustomerDetailViewState extends State<CustomerDetailPage> {
                               }
 
                               if (state is ConsultantLoaded) {
+                                final bool hasSelectedConsultant = state.consultants.any((c) => c.id == selectedConsultantId);
+                                final String? initialConsultantValue = hasSelectedConsultant ? selectedConsultantId : null;
+
                                 return DropdownButtonFormField<String>(
-                                  initialValue: selectedConsultantId,
+                                  initialValue: initialConsultantValue,
                                   decoration: InputDecoration(
                                     labelText: 'Designated Consultant',
                                     labelStyle: TextStyle(color: Colors.grey.shade500, fontSize: 12),

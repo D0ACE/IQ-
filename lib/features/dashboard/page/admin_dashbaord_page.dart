@@ -11,7 +11,6 @@ import 'package:iq_plus/common/widgets/common_app_bar.dart';
 import 'package:iq_plus/core/local_storage/hive_service.dart';
 import 'package:iq_plus/di/service_locator.dart';
 import 'package:iq_plus/features/admin/customers/cubit/customer_list_cubit.dart';
-import 'package:iq_plus/features/admin/customers/cubit/customer_list_state.dart';
 import 'package:iq_plus/features/users/repository/user_repository.dart';
 import 'package:iq_plus/features/periodic_compliance/periodic_compliance_provider.dart';
 
@@ -429,10 +428,12 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
                   icon: Icons.business_rounded,
                   title: 'Customers',
                   onTap: () async {
-                    GoRouter.of(context).pop();
-                    await context.push(AppRoutes.customerList);
-                    if (context.mounted) {
-                      context.read<CustomerListCubit>().fetchCustomers();
+                    final router = GoRouter.of(context);
+                    final cubit = context.read<CustomerListCubit>();
+                    router.pop();
+                    await router.push(AppRoutes.customerList);
+                    if (mounted) {
+                      cubit.fetchCustomers();
                       setState(() {});
                     }
                   },
@@ -441,9 +442,10 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
                   icon: Icons.badge_rounded,
                   title: 'Users',
                   onTap: () async {
-                    GoRouter.of(context).pop();
-                    await context.push(AppRoutes.employeeList);
-                    if (context.mounted) {
+                    final router = GoRouter.of(context);
+                    router.pop();
+                    await router.push(AppRoutes.employeeList);
+                    if (mounted) {
                       setState(() {});
                     }
                   },

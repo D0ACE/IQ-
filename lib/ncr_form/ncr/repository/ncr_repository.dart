@@ -40,18 +40,12 @@ class NcrRepository {
 
 
 
-  /// Stream NCRs (optionally filtered by consultantId)
+  /// Stream NCRs (optionally filtered by customerId)
   Stream<QuerySnapshot<Map<String, dynamic>>> getNcrStream() {
-    final UserModel? userLoginDetails = getIt<HiveService>().getUser();
     final CustomerModel? customerLoginDetails = getIt<HiveService>().getCustomer();
     if ((customerLoginDetails?.customerId??"").isNotEmpty) {
       return ncrCollection
           .where('customerId', isEqualTo: customerLoginDetails?.customerId)
-          .snapshots()
-          .map((snapshot) => snapshot as QuerySnapshot<Map<String, dynamic>>);
-    }else  if ((userLoginDetails?.userId??"").isNotEmpty && Utility.isConsultant(userLoginDetails?.roleId??"")) {
-      return ncrCollection
-          .where('consultantId', isEqualTo: userLoginDetails?.userId)
           .snapshots()
           .map((snapshot) => snapshot as QuerySnapshot<Map<String, dynamic>>);
     } else {
@@ -62,7 +56,33 @@ class NcrRepository {
   }
 
   Future<int> getNCRCountOnce() async {
-    final snapshot = await getNcrStream().first;
-    return snapshot.docs.length;
+    final UserModel? userLoginDetails = getIt<HiveService>().getUser();
+    final CustomerModel? customerLoginDetails = getIt<HiveService>().getCustomer();
+    if ((customerLoginDetails?.customerId ?? "").isNotEmpty) {
+      final snapshot = await ncrCollection
+          .where('customerId', isEqualTo: customerLoginDetails?.customerId)
+          .get();
+      return snapshot.docs.length;
+    } else if ((userLoginDetails?.userId ?? "").isNotEmpty &&
+        Utility.isConsultant(userLoginDetails?.roleId ?? "")) {
+      final consultantId = userLoginDetails!.userId;
+      final custSnapshot = await FirebaseFirestore.instance
+          .collection('customers')
+          .where('consultantId', isEqualTo: consultantId)
+          .get();
+      final assignedCustomerIds = custSnapshot.docs.map((doc) => doc.id).toSet();
+
+      final snapshot = await ncrCollection.get();
+      final count = snapshot.docs.where((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        final ncrConsultantId = (data['consultantId'] ?? '').toString();
+        final ncrCustomerId = (data['customerId'] ?? data['companyId'] ?? '').toString();
+        return ncrConsultantId == consultantId || assignedCustomerIds.contains(ncrCustomerId);
+      }).length;
+      return count;
+    } else {
+      final snapshot = await ncrCollection.get();
+      return snapshot.docs.length;
+    }
   }
 }

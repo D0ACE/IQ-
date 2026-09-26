@@ -58,7 +58,10 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage>
     context.read<VisitorSummaryCubit>().loadVisitorSummaries();
     // 🚀 Start listening to NCR data for the graph
     context.read<NcrProvider>().listenToNcrs();
-    context.read<PeriodicComplianceProvider>().listenToTasks(createdBy: user?.userId);
+    context.read<PeriodicComplianceProvider>().listenToTasks(
+          createdBy: user?.userId,
+          isConsultant: true,
+        );
     
     // 🚀 Fetch only assigned customers for this consultant
     if ((user?.userId ?? '').isNotEmpty) {
@@ -606,11 +609,11 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage>
               AppColors.purple,
               Icons.business_center_rounded,
               () async {
-                await GoRouter.of(
-                  context,
-                ).push(AppRoutes.assignCustomers, extra: user?.userId);
-                if (context.mounted) {
-                  context.read<CustomerListCubit>().fetchApprovedCustomers(user?.userId);
+                final cubit = context.read<CustomerListCubit>();
+                final router = GoRouter.of(context);
+                await router.push(AppRoutes.assignCustomers, extra: user?.userId);
+                if (mounted) {
+                  cubit.fetchApprovedCustomers(user?.userId);
                 }
               },
             );

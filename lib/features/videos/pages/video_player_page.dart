@@ -323,7 +323,7 @@ class _CustomVideoControlsState
 
                     // Responsive breakpoints
                     final bool isMobile = width < 450;
-                    final bool isVerySmall = width < 360;
+                   // final bool isVerySmall = width < 360;
 
                     return Row(
                       children: [

@@ -44,6 +44,7 @@ class CustomerDropdownWidget extends StatelessWidget {
             }
 
             return DropdownButtonFormField<CustomerModel>(
+              // ignore: deprecated_member_use
               value: matchedCustomer,
               isExpanded: true,
               hint: Text(hint),

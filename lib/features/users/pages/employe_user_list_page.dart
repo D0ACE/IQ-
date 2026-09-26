@@ -4,10 +4,69 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
 import 'package:iq_plus/features/users/cubit/employee_user_cubit.dart';
 import 'package:iq_plus/features/users/cubit/employee_user_state.dart';
+import 'package:iq_plus/features/users/models/employe_user.dart';
 import 'package:iq_plus/features/users/pages/add_user_dialog.dart';
 
-class UserListPage extends StatelessWidget {
+class UserListPage extends StatefulWidget {
   const UserListPage({super.key});
+
+  @override
+  State<UserListPage> createState() => _UserListPageState();
+}
+
+class _UserListPageState extends State<UserListPage> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  String _statusFilter = 'all'; // 'all', 'active', 'blocked'
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  bool get _hasActiveFilters => _searchQuery.isNotEmpty || _statusFilter != 'all';
+
+  void _clearAllFilters() {
+    setState(() {
+      _searchController.clear();
+      _searchQuery = '';
+      _statusFilter = 'all';
+    });
+  }
+
+  List<dynamic> _getFilteredUsers(List<dynamic> users) {
+    return users.where((user) {
+      // 1. Search Query
+      if (_searchQuery.isNotEmpty) {
+        final q = _searchQuery.toLowerCase().trim();
+        final userName = (user.userName ?? '').toString().toLowerCase();
+        final email = (user.email ?? '').toString().toLowerCase();
+        final phone = (user.phoneNumber ?? '').toString().toLowerCase();
+        final designation = (user is EmployeeUserModel && user.designation != null)
+            ? user.designation!.toLowerCase()
+            : '';
+
+        final matches = userName.contains(q) ||
+            email.contains(q) ||
+            phone.contains(q) ||
+            designation.contains(q);
+
+        if (!matches) return false;
+      }
+
+      // 2. Active / Blocked Status Filter
+      final bool isBlocked = (user.blockStatus ?? false) == true;
+      if (_statusFilter == 'active' && isBlocked) {
+        return false;
+      }
+      if (_statusFilter == 'blocked' && !isBlocked) {
+        return false;
+      }
+
+      return true;
+    }).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -69,43 +128,205 @@ class UserListPage extends StatelessWidget {
                 return const Center(child: CircularProgressIndicator());
               }
 
-              final users = cubit.users;
+              final allUsers = cubit.users;
 
-              return Stack(
+              if (allUsers.isEmpty && state is UserLoaded) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.group_off_rounded, size: 64, color: Colors.grey.shade300),
+                      const SizedBox(height: 16),
+                      const Text(
+                        "No users found",
+                        style: TextStyle(color: Colors.grey, fontSize: 16, fontWeight: FontWeight.w500),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              final filteredUsers = _getFilteredUsers(allUsers);
+              final int totalCount = allUsers.length;
+              final int activeCount = allUsers.where((u) => u.blockStatus != true).length;
+              final int blockedCount = allUsers.where((u) => u.blockStatus == true).length;
+
+              return Column(
                 children: [
                   if (state is UserLoading)
                     const LinearProgressIndicator(minHeight: 2),
-                  if (users.isNotEmpty)
-                    ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
-                      physics: const BouncingScrollPhysics(),
-                      itemCount: users.length,
-                      itemBuilder: (context, index) {
-                        final user = users[index];
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 16),
-                          child: _neoModernUserCard(context, cubit, user),
-                        );
-                      },
-                    )
-                  else if (state is UserLoaded && users.isEmpty)
-                    Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
+
+                  // 🔍 Search Bar & Filter Header Section
+                  Container(
+                    color: Colors.white,
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                    child: Column(
+                      children: [
+                        // Search Field
+                        Container(
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: TextField(
+                            controller: _searchController,
+                            onChanged: (val) {
+                              setState(() {
+                                _searchQuery = val;
+                              });
+                            },
+                            decoration: InputDecoration(
+                              hintText: 'Search by name, email, phone...',
+                              hintStyle: TextStyle(
+                                color: Colors.grey.shade500,
+                                fontSize: 14,
+                              ),
+                              prefixIcon: const Icon(
+                                Icons.search_rounded,
+                                color: AppColors.kPrimaryColor,
+                                size: 22,
+                              ),
+                              suffixIcon: _searchQuery.isNotEmpty
+                                  ? IconButton(
+                                      icon: const Icon(Icons.close_rounded, size: 20),
+                                      onPressed: () {
+                                        _searchController.clear();
+                                        setState(() {
+                                          _searchQuery = '';
+                                        });
+                                      },
+                                    )
+                                  : null,
+                              border: InputBorder.none,
+                              contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+
+                        // 🟢 Active / Blocked Filter Chips
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          physics: const BouncingScrollPhysics(),
+                          child: Row(
+                            children: [
+                              _buildStatusChip(
+                                label: 'All ($totalCount)',
+                                value: 'all',
+                              ),
+                              const SizedBox(width: 8),
+                              _buildStatusChip(
+                                label: 'Active ($activeCount)',
+                                value: 'active',
+                                activeColor: Colors.green,
+                              ),
+                              const SizedBox(width: 8),
+                              _buildStatusChip(
+                                label: 'Blocked ($blockedCount)',
+                                value: 'blocked',
+                                activeColor: Colors.redAccent,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // 📊 Active Filter Indicator Bar
+                  if (_hasActiveFilters)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                      color: AppColors.kPrimaryColor.withValues(alpha: 0.05),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Icon(Icons.group_off_rounded,
-                              size: 64, color: Colors.grey.shade300),
-                          const SizedBox(height: 16),
-                          const Text(
-                            "No users found",
-                            style: TextStyle(
-                                color: Colors.grey,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500),
+                          Text(
+                            "Showing ${filteredUsers.length} of ${allUsers.length} users",
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.titleText,
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: _clearAllFilters,
+                            child: const Row(
+                              children: [
+                                Icon(Icons.refresh_rounded, size: 14, color: AppColors.kPrimaryColor),
+                                SizedBox(width: 4),
+                                Text(
+                                  "Clear filters",
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.kPrimaryColor,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
                     ),
+
+                  // 📋 Users List / Empty Filtered State
+                  Expanded(
+                    child: filteredUsers.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.person_off_rounded,
+                                  size: 64,
+                                  color: Colors.grey.shade300,
+                                ),
+                                const SizedBox(height: 16),
+                                const Text(
+                                  "No matching users found",
+                                  style: TextStyle(
+                                    color: Colors.grey,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  "Try adjusting your search query or status filter",
+                                  style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
+                                ),
+                                const SizedBox(height: 16),
+                                ElevatedButton.icon(
+                                  onPressed: _clearAllFilters,
+                                  icon: const Icon(Icons.clear_all_rounded, size: 18),
+                                  label: const Text("Reset Filters"),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.kPrimaryColor,
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : ListView.builder(
+                            padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
+                            physics: const BouncingScrollPhysics(),
+                            itemCount: filteredUsers.length,
+                            itemBuilder: (context, index) {
+                              final user = filteredUsers[index];
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 16),
+                                child: _neoModernUserCard(context, cubit, user),
+                              );
+                            },
+                          ),
+                  ),
                 ],
               );
             },
@@ -115,8 +336,44 @@ class UserListPage extends StatelessWidget {
     );
   }
 
+  Widget _buildStatusChip({
+    required String label,
+    required String value,
+    Color? activeColor,
+  }) {
+    final bool isSelected = _statusFilter == value;
+    final Color color = activeColor ?? AppColors.kPrimaryColor;
+
+    return ChoiceChip(
+      label: Text(
+        label,
+        style: TextStyle(
+          color: isSelected ? Colors.white : Colors.grey.shade700,
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+          fontSize: 13,
+        ),
+      ),
+      selected: isSelected,
+      onSelected: (selected) {
+        if (selected) {
+          setState(() {
+            _statusFilter = value;
+          });
+        }
+      },
+      selectedColor: color,
+      backgroundColor: const Color(0xFFF1F5F9),
+      showCheckmark: false,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide.none,
+      ),
+    );
+  }
+
   Widget _neoModernUserCard(BuildContext context, UserCubit userCubit, dynamic user) {
-    final String roleId = user.roleId;
+    final String roleId = user.roleId ?? '';
     String roleName = "Consultant";
     Color roleColor = AppColors.kPrimaryColor;
 
@@ -130,6 +387,8 @@ class UserListPage extends StatelessWidget {
       roleName = 'Consultant';
       roleColor = AppColors.kPrimaryColor;
     }
+
+    final bool isBlocked = (user.blockStatus ?? false) == true;
 
     return Container(
       decoration: BoxDecoration(
@@ -180,7 +439,7 @@ class UserListPage extends StatelessWidget {
                         ),
                         alignment: Alignment.center,
                         child: Text(
-                          user.userName.substring(0, 1).toUpperCase(),
+                          (user.userName ?? 'U').toString().substring(0, 1).toUpperCase(),
                           style: const TextStyle(
                             fontWeight: FontWeight.w900,
                             color: AppColors.kPrimaryColor,
@@ -201,7 +460,7 @@ class UserListPage extends StatelessWidget {
                             height: 12,
                             width: 12,
                             decoration: BoxDecoration(
-                              color: user.blockStatus ? Colors.red : Colors.green,
+                              color: isBlocked ? Colors.red : Colors.green,
                               shape: BoxShape.circle,
                               border: Border.all(color: Colors.white, width: 2),
                             ),
@@ -221,7 +480,7 @@ class UserListPage extends StatelessWidget {
                           children: [
                             Expanded(
                               child: Text(
-                                user.userName,
+                                user.userName ?? '',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
@@ -257,7 +516,7 @@ class UserListPage extends StatelessWidget {
                             const SizedBox(width: 6),
                             Expanded(
                               child: Text(
-                                user.email,
+                                user.email ?? '',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
@@ -275,7 +534,7 @@ class UserListPage extends StatelessWidget {
                             Icon(Icons.phone_iphone_rounded, size: 14, color: Colors.grey.shade400),
                             const SizedBox(width: 6),
                             Text(
-                              user.phoneNumber,
+                              user.phoneNumber ?? '',
                               style: TextStyle(
                                 fontSize: 13,
                                 color: Colors.grey.shade600,

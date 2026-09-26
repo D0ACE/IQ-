@@ -14,6 +14,7 @@ class VersionHistoryModel {
   final DateTime? rejectedDate;
   final String status;
   final String? docTitle; // 👈 Added for global listing
+  final String? customerId; // 👈 Added for customer filtering
 
   VersionHistoryModel({
     required this.id,
@@ -29,9 +30,14 @@ class VersionHistoryModel {
     this.rejectedDate,
     required this.status,
     this.docTitle,
+    this.customerId,
   });
 
-  factory VersionHistoryModel.fromFirestore(DocumentSnapshot doc, {String? docTitle}) {
+  factory VersionHistoryModel.fromFirestore(
+    DocumentSnapshot doc, {
+    String? docTitle,
+    String? customerId,
+  }) {
     final data = doc.data() as Map<String, dynamic>;
     return VersionHistoryModel(
       id: doc.id,
@@ -47,6 +53,7 @@ class VersionHistoryModel {
       rejectedDate: (data['rejectedDate'] as Timestamp?)?.toDate() ?? (data['rejected_date'] as Timestamp?)?.toDate(),
       status: data['status'] ?? 'draft',
       docTitle: docTitle ?? data['docTitle'],
+      customerId: customerId ?? data['customerId'] ?? data['customer_id'],
     );
   }
 
@@ -64,6 +71,7 @@ class VersionHistoryModel {
       'rejectedDate': rejectedDate != null ? Timestamp.fromDate(rejectedDate!) : null,
       'status': status,
       'docTitle': docTitle,
+      'customerId': customerId,
     };
   }
 }

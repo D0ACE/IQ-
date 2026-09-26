@@ -10,16 +10,29 @@ class VideoCubit extends Cubit<VideoState> {
 
   VideoCubit(this._repository) : super(VideoInitial());
 
+  @override
+  void emit(VideoState state) {
+    if (isClosed) return;
+    super.emit(state);
+  }
+
   // Store last filters for consistent refresh
   String? _lastCustomerId;
   String? _lastUserId;
   String? _lastCreatedBy;
+  bool _lastIsConsultant = false;
   List<VideoEnrollmentModel> enrollments = [];
 
-  Future<void> loadVideos({String? customerId, String? userId, String? createdBy}) async {
+  Future<void> loadVideos({
+    String? customerId,
+    String? userId,
+    String? createdBy,
+    bool isConsultant = false,
+  }) async {
     _lastCustomerId = customerId;
     _lastUserId = userId;
     _lastCreatedBy = createdBy;
+    _lastIsConsultant = isConsultant;
 
     emit(VideoLoading());
     try {
@@ -31,7 +44,11 @@ class VideoCubit extends Cubit<VideoState> {
         );
       }
 
-      final videos = await _repository.getVideos(customerId: customerId, createdBy: createdBy);
+      final videos = await _repository.getVideos(
+        customerId: customerId,
+        createdBy: createdBy,
+        isConsultant: isConsultant,
+      );
       emit(VideoLoaded(videos));
     } catch (e) {
       emit(VideoError(e.toString()));
@@ -53,9 +70,10 @@ class VideoCubit extends Cubit<VideoState> {
       emit(VideoOperationSuccess("Enrolled in training successfully"));
       // 🚀 Refresh list using stored context parameters
       await loadVideos(
-        customerId: _lastCustomerId, 
-        userId: _lastUserId, 
-        createdBy: _lastCreatedBy
+        customerId: _lastCustomerId,
+        userId: _lastUserId,
+        createdBy: _lastCreatedBy,
+        isConsultant: _lastIsConsultant,
       );
     } catch (e) {
       emit(VideoError(e.toString()));
@@ -80,9 +98,10 @@ class VideoCubit extends Cubit<VideoState> {
       );
       emit(VideoOperationSuccess("Quiz submitted successfully"));
       await loadVideos(
-        customerId: _lastCustomerId, 
-        userId: _lastUserId, 
-        createdBy: _lastCreatedBy
+        customerId: _lastCustomerId,
+        userId: _lastUserId,
+        createdBy: _lastCreatedBy,
+        isConsultant: _lastIsConsultant,
       );
     } catch (e) {
       emit(VideoError(e.toString()));
@@ -109,9 +128,44 @@ class VideoCubit extends Cubit<VideoState> {
       );
       emit(VideoOperationSuccess("Video uploaded successfully"));
       loadVideos(
-        customerId: _lastCustomerId, 
-        userId: _lastUserId, 
-        createdBy: _lastCreatedBy
+        customerId: _lastCustomerId,
+        userId: _lastUserId,
+        createdBy: _lastCreatedBy,
+        isConsultant: _lastIsConsultant,
+      );
+    } catch (e) {
+      emit(VideoError(e.toString()));
+    }
+  }
+
+  Future<void> updateVideo({
+    required String videoId,
+    required String title,
+    Uint8List? newBytes,
+    String? newFileName,
+    String? oldFilePath,
+    required String userId,
+    String? customerId,
+    required List<AwarenessQuestionModel> questions,
+  }) async {
+    emit(VideoLoading());
+    try {
+      await _repository.updateVideo(
+        videoId: videoId,
+        title: title,
+        newBytes: newBytes,
+        newFileName: newFileName,
+        oldFilePath: oldFilePath,
+        userId: userId,
+        customerId: customerId,
+        questions: questions,
+      );
+      emit(VideoOperationSuccess("Video updated successfully"));
+      loadVideos(
+        customerId: _lastCustomerId,
+        userId: _lastUserId,
+        createdBy: _lastCreatedBy,
+        isConsultant: _lastIsConsultant,
       );
     } catch (e) {
       emit(VideoError(e.toString()));
@@ -124,9 +178,10 @@ class VideoCubit extends Cubit<VideoState> {
       await _repository.deleteVideo(videoId, filePath);
       emit(VideoOperationSuccess("Video deleted successfully"));
       loadVideos(
-        customerId: _lastCustomerId, 
-        userId: _lastUserId, 
-        createdBy: _lastCreatedBy
+        customerId: _lastCustomerId,
+        userId: _lastUserId,
+        createdBy: _lastCreatedBy,
+        isConsultant: _lastIsConsultant,
       );
     } catch (e) {
       emit(VideoError(e.toString()));

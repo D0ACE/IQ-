@@ -7,7 +7,6 @@ import 'package:iq_plus/core/local_storage/hive_service.dart';
 import 'package:iq_plus/di/service_locator.dart';
 import '../repository/user_repository.dart';
 import '../models/employe_user.dart';
-import '../models/system_user_model.dart';
 
 class UserCubit extends Cubit<UserState> {
   final UserRepository repository;
@@ -20,6 +19,7 @@ class UserCubit extends Cubit<UserState> {
   // Track last fetch to refresh correctly
   List<String>? _lastCustomerIds;
   String? _lastCreatedBy;
+  String? _lastConsultantId;
   bool _isEmployeeList = false;
 
   @override
@@ -87,13 +87,22 @@ class UserCubit extends Cubit<UserState> {
   }
 
   /// 🔹 LOAD EMPLOYEES
-  Future<void> loadEmployees({List<String>? customerIds, String? createdBy}) async {
+  Future<void> loadEmployees({
+    List<String>? customerIds,
+    String? createdBy,
+    String? consultantId,
+  }) async {
     try {
       _isEmployeeList = true;
       _lastCustomerIds = customerIds;
       _lastCreatedBy = createdBy;
+      _lastConsultantId = consultantId;
       emit(UserLoading());
-      users = await repository.fetchEmployees(customerIds: customerIds, createdBy: createdBy);
+      users = await repository.fetchEmployees(
+        customerIds: customerIds,
+        createdBy: createdBy,
+        consultantId: consultantId,
+      );
       emit(UserLoaded(users));
     } catch (e) {
       emit(UserError(e.toString()));
@@ -103,7 +112,11 @@ class UserCubit extends Cubit<UserState> {
   /// 🔹 REFRESH Logic
   Future<void> _refresh() async {
     if (_isEmployeeList) {
-      await loadEmployees(customerIds: _lastCustomerIds, createdBy: _lastCreatedBy);
+      await loadEmployees(
+        customerIds: _lastCustomerIds,
+        createdBy: _lastCreatedBy,
+        consultantId: _lastConsultantId,
+      );
     } else {
       await loadUsers();
     }

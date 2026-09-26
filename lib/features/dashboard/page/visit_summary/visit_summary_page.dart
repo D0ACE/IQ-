@@ -27,6 +27,7 @@ class VisitorSummaryPage extends StatefulWidget {
 
 class _VisitorSummaryPageState extends State<VisitorSummaryPage> {
   final _formKey = GlobalKey<FormState>();
+  bool isSubmitting = false;
 
   // ================= VISIT DETAILS CONTROLLERS
   final clientNameCtrl = TextEditingController();
@@ -43,9 +44,13 @@ class _VisitorSummaryPageState extends State<VisitorSummaryPage> {
   UserModel? consultantUserModel;
 
   Map<String, dynamic> _buildPayload() {
+    final assignedConsultantId = (selectedCustomer?.consultantId ?? '').isNotEmpty
+        ? selectedCustomer!.consultantId!
+        : (widget.visitorSummaryModel?.consultantId ?? consultantUserModel?.userId ?? '');
+
     return {
       'customerId': selectedCustomer?.customerId,
-      'consultantId': consultantUserModel?.userId,
+      'consultantId': assignedConsultantId,
       'clientName': clientNameCtrl.text.trim(),
       'location': locationCtrl.text.trim(),
       'visitDate': visitDateCtrl.text,
@@ -212,17 +217,27 @@ class _VisitorSummaryPageState extends State<VisitorSummaryPage> {
   }
 
   Future<void> fetchCustomer() async {
-    final doc = await getIt<FirebaseFirestore>()
-        .collection('customers')
-        .doc(widget.visitorSummaryModel?.customerId ?? '')
-        .get();
+    final customerId = widget.visitorSummaryModel?.customerId ?? '';
+    if (customerId.isEmpty) return;
 
-    setState(() {
-      selectedCustomer = CustomerModel.fromJson(
-        doc.data()!,
-        customerId: widget.visitorSummaryModel?.customerId ?? '',
-      );
-    });
+    try {
+      final doc = await getIt<FirebaseFirestore>()
+          .collection('customers')
+          .doc(customerId)
+          .get();
+
+      if (doc.exists && doc.data() != null) {
+        if (!mounted) return;
+        setState(() {
+          selectedCustomer = CustomerModel.fromJson(
+            doc.data()!,
+            customerId: customerId,
+          );
+        });
+      }
+    } catch (e) {
+      debugPrint('Error fetching customer for visit summary: $e');
+    }
   }
   // ================= DATE & TIME PICKERS
   Future<void> _pickDate(TextEditingController ctrl) async {
@@ -381,18 +396,25 @@ class _VisitorSummaryPageState extends State<VisitorSummaryPage> {
     return BlocConsumer<VisitorSummaryCubit, VisitorSummaryState>(
         listener: (context, state) {
           if (state is VisitorSummarySuccess) {
+            setState(() {
+              isSubmitting = false;
+            });
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(state.message)),
             );
             GoRouter.of(context).pop();
           } else if (state is VisitorSummaryError) {
+            setState(() {
+              isSubmitting = false;
+            });
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(state.error)),
             );
           }
         },
         builder: (context, state) {
-        return Scaffold(
+          final isLoading = state is VisitorSummaryLoading || isSubmitting;
+          return Scaffold(
           backgroundColor: const Color(0xFFF7F9FC),
           appBar: AppBar(title:  Text(widget.visitorSummaryModel!=null?'Update Visitor Summary':'Create Visitor Summary')),
           body: Center(
@@ -728,57 +750,92 @@ class _VisitorSummaryPageState extends State<VisitorSummaryPage> {
 
                       const SizedBox(height: 20),
                       ElevatedButton(
-                        onPressed: () {
-                          if (!_formKey.currentState!.validate()) return;
+                        onPressed: isLoading
+                            ? null
+                            : () {
+                                if (!_formKey.currentState!.validate()) return;
 
-                          if (!isScopeValid()) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Select at least one Scope of Review')),
-                            );
-                            return;
-                          }
+                                if (!isScopeValid()) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                        content: Text('Select at least one Scope of Review')),
+                                  );
+                                  return;
+                                }
 
-                          if (!areTablesValid()) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Please complete all table rows')),
-                            );
-                            return;
-                          }
-                          if ((selectedCustomer?.customerId??'').isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Please select a company first'),
-                                behavior: SnackBarBehavior.floating,
-                                backgroundColor: Colors.redAccent,
-                              ),
-                            );
-                            return;
-                          }else if ((consultantUserModel?.userId??'').isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Please login first'),
-                                behavior: SnackBarBehavior.floating,
-                                backgroundColor: Colors.redAccent,
-                              ),
-                            );
-                            return;
-                          }
+                                if (!areTablesValid()) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                        content: Text('Please complete all table rows')),
+                                  );
+                                  return;
+                                }
+                                if ((selectedCustomer?.customerId ?? '').isEmpty) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Please select a company first'),
+                                      behavior: SnackBarBehavior.floating,
+                                      backgroundColor: Colors.redAccent,
+                                    ),
+                                  );
+                                  return;
+                                } else if ((consultantUserModel?.userId ?? '').isEmpty) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Please login first'),
+                                      behavior: SnackBarBehavior.floating,
+                                      backgroundColor: Colors.redAccent,
+                                    ),
+                                  );
+                                  return;
+                                }
 
-                          if(widget.visitorSummaryModel!=null){
-                            context.read<VisitorSummaryCubit>().updateVisitorSummary(docId: widget.visitorSummaryModel?.id??'', payload:  _buildPayload(),selectedCustomer: selectedCustomer,consultantUserModel: consultantUserModel);
-                          }else {
-                            context.read<VisitorSummaryCubit>().createVisitorSummary(payload: _buildPayload(),selectedCustomer: selectedCustomer,consultantUserModel: consultantUserModel);
-                          }
-                        },
+                                setState(() {
+                                  isSubmitting = true;
+                                });
+
+                                if (widget.visitorSummaryModel != null) {
+                                  context.read<VisitorSummaryCubit>().updateVisitorSummary(
+                                        docId: widget.visitorSummaryModel?.id ?? '',
+                                        payload: _buildPayload(),
+                                        selectedCustomer: selectedCustomer,
+                                        consultantUserModel: consultantUserModel,
+                                      );
+                                } else {
+                                  context.read<VisitorSummaryCubit>().createVisitorSummary(
+                                        payload: _buildPayload(),
+                                        selectedCustomer: selectedCustomer,
+                                        consultantUserModel: consultantUserModel,
+                                      );
+                                }
+                              },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.kPrimaryColor,
+                          disabledBackgroundColor:
+                              AppColors.kPrimaryColor.withValues(alpha: 0.6),
                           minimumSize: const Size(double.infinity, 50),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
                         ),
-                        child: Text(
-                          widget.visitorSummaryModel != null ? 'Update Summary' : 'Submit Summary',
-                          style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
+                        child: isLoading
+                            ? const SizedBox(
+                                height: 22,
+                                width: 22,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : Text(
+                                widget.visitorSummaryModel != null
+                                    ? 'Update Summary'
+                                    : 'Submit Summary',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                       ),
                     ],
                   ),

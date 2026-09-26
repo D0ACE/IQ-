@@ -16,10 +16,18 @@ class PeriodicComplianceCubit extends Cubit<PeriodicComplianceState> {
     }
   }
 
-  void loadTasks({String? customerId, String? createdBy}) {
+  void loadTasks({
+    String? customerId,
+    String? createdBy,
+    bool isConsultant = false,
+  }) {
     safeEmit(PeriodicComplianceLoading());
     _subscription?.cancel();
-    _subscription = _repository.getTasksStream(customerId: customerId, createdBy: createdBy).listen(
+    _subscription = _repository.getTasksStream(
+      customerId: customerId,
+      createdBy: createdBy,
+      isConsultant: isConsultant,
+    ).listen(
       (tasks) {
         safeEmit(PeriodicComplianceLoaded(tasks));
       },

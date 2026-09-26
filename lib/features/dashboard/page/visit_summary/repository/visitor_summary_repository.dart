@@ -40,22 +40,39 @@ class VisitorSummaryRepository {
 
   Future<List<VisitorSummaryModel>> fetchVisitorSummaries() async {
     final user = getIt<HiveService>().getUser();
-    final QuerySnapshot snapshot;
-    
+
     if (user?.roleId == '0' || user?.roleId == '1') {
       // Super Admin and Admin can see all visitor summaries globally
-      snapshot = await firestore.collection('visitor_summaries').get();
+      final snapshot = await firestore.collection('visitor_summaries').get();
+      return snapshot.docs
+          .map((e) => VisitorSummaryModel.fromJson(
+              e.id, e.data()))
+          .toList();
     } else {
-      // Consultants can see only summaries created by them
-      snapshot = await firestore
-          .collection('visitor_summaries')
+      // Consultants can see summaries created by them OR for their assigned customers
+      final custSnapshot = await firestore
+          .collection('customers')
           .where('consultantId', isEqualTo: user?.userId)
           .get();
-    }
+      final assignedCustomerIds =
+          custSnapshot.docs.map((doc) => doc.id).toSet();
 
-    return snapshot.docs
-        .map((e) => VisitorSummaryModel.fromJson(e.id, e.data() as Map<String, dynamic>))
-        .toList();
+      final snapshot = await firestore.collection('visitor_summaries').get();
+
+      return snapshot.docs.where((doc) {
+        final data = doc.data();
+        final consultantId = (data['consultantId'] ?? '').toString();
+        final customerId = (data['customerId'] ?? '').toString();
+
+        final isMyConsultantId =
+            consultantId.isNotEmpty && consultantId == user?.userId;
+        final isMyCustomer =
+            customerId.isNotEmpty && assignedCustomerIds.contains(customerId);
+
+        return isMyConsultantId || isMyCustomer;
+      }).map((e) => VisitorSummaryModel.fromJson(
+          e.id, e.data())).toList();
+    }
   }
 
   Future<List<VisitorSummaryModel>> fetchVisitorSummariesForCustomer() async {
@@ -67,7 +84,7 @@ class VisitorSummaryRepository {
         .get();
 
     return snapshot.docs
-        .map((e) => VisitorSummaryModel.fromJson(e.id, e.data() as Map<String, dynamic>))
+        .map((e) => VisitorSummaryModel.fromJson(e.id, e.data()))
         .toList();
   }
 

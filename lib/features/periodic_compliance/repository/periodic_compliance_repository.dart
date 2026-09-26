@@ -25,18 +25,73 @@ class PeriodicComplianceRepository {
     await _tasksCollection.doc(taskId).update({'status': 'completed'});
   }
 
-  Stream<List<PeriodicComplianceTask>> getTasksStream({String? customerId, String? createdBy}) {
-    Query query = _tasksCollection.orderBy('createdAt', descending: true);
-    
-    if (customerId != null) {
-      query = query.where('assignedCustomerId', isEqualTo: customerId);
+  Stream<List<PeriodicComplianceTask>> getTasksStream({
+    String? customerId,
+    String? createdBy,
+    bool isConsultant = false,
+  }) {
+    if (customerId != null && customerId.isNotEmpty) {
+      return _tasksCollection
+          .where('assignedCustomerId', isEqualTo: customerId)
+          .orderBy('createdAt', descending: true)
+          .snapshots()
+          .map((snapshot) {
+        return snapshot.docs.map((doc) {
+          return PeriodicComplianceTask.fromJson(
+            doc.data() as Map<String, dynamic>,
+            doc.id,
+          );
+        }).toList();
+      });
     }
 
-    if (createdBy != null) {
-      query = query.where('createdBy', isEqualTo: createdBy);
+    if (isConsultant && createdBy != null && createdBy.isNotEmpty) {
+      return _tasksCollection
+          .orderBy('createdAt', descending: true)
+          .snapshots()
+          .asyncMap((tasksSnapshot) async {
+        final custSnapshot = await _firestore
+            .collection('customers')
+            .where('consultantId', isEqualTo: createdBy)
+            .get();
+        final assignedCustomerIds =
+            custSnapshot.docs.map((doc) => doc.id).toSet();
+
+        final allTasks = tasksSnapshot.docs.map((doc) {
+          return PeriodicComplianceTask.fromJson(
+            doc.data() as Map<String, dynamic>,
+            doc.id,
+          );
+        }).toList();
+
+        return allTasks.where((task) {
+          final isMyTask = task.createdBy == createdBy;
+          final isMyCustomerTask =
+              assignedCustomerIds.contains(task.assignedCustomerId);
+          return isMyTask || isMyCustomerTask;
+        }).toList();
+      });
     }
 
-    return query.snapshots().map((snapshot) {
+    if (createdBy != null && createdBy.isNotEmpty) {
+      return _tasksCollection
+          .where('createdBy', isEqualTo: createdBy)
+          .orderBy('createdAt', descending: true)
+          .snapshots()
+          .map((snapshot) {
+        return snapshot.docs.map((doc) {
+          return PeriodicComplianceTask.fromJson(
+            doc.data() as Map<String, dynamic>,
+            doc.id,
+          );
+        }).toList();
+      });
+    }
+
+    return _tasksCollection
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snapshot) {
       return snapshot.docs.map((doc) {
         return PeriodicComplianceTask.fromJson(
           doc.data() as Map<String, dynamic>,

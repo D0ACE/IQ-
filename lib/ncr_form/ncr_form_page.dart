@@ -863,6 +863,15 @@ class _NCRFormPageState extends State<NCRFormPage> {
                         'status': currentStatus,
                       };
 
+                      final hiveService = getIt<HiveService>();
+                      UserModel? consultantUserModel = hiveService.getUser();
+
+                      final assignedConsultantId = (selectedCustomer?.consultantId ?? '').isNotEmpty
+                          ? selectedCustomer!.consultantId!
+                          : (widget.ncrData?['consultantId'] ?? consultantUserModel?.userId ?? "");
+
+                      dataMap['consultantId'] = assignedConsultantId;
+
                       if (isReview) {
                         final docId = widget.ncrData?['id'];
                         if (docId != null) {
@@ -876,8 +885,6 @@ class _NCRFormPageState extends State<NCRFormPage> {
                           }
                         }
                       } else {
-                        final hiveService = getIt<HiveService>();
-                        UserModel? consultantUserModel = hiveService.getUser();
                         if ((consultantUserModel?.userId ?? '').isEmpty) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
@@ -889,7 +896,6 @@ class _NCRFormPageState extends State<NCRFormPage> {
                           return;
                         }
 
-                        dataMap['consultantId'] = consultantUserModel?.userId ?? "";
                         dataMap['createdAt'] = Timestamp.now();
 
                         final model = NcrFormModel(
@@ -901,23 +907,23 @@ class _NCRFormPageState extends State<NCRFormPage> {
                           iqaNo: iqaCtrl.text,
                           clause: clauseCtrl.text,
                           ncrNo: ncrNoCtrl.text,
-                        statement: statementCtrl.text,
-                        evidence: evidenceCtrl.text,
-                        classification: classificationCtrl.text,
-                        dueDate: dueDateCtrl.text,
-                        correction: correctionCtrl.text,
-                        plannedDate: plannedDateCtrl.text,
-                        actualDate: actualDateCtrl.text,
-                        rootCause: rootCauseCtrl.text,
-                        correctiveAction: correctiveCtrl.text,
-                        verification: verificationCtrl.text,
-                        auditor: auditorCtrl.text,
-                        approvedBy: approvedCtrl.text,
-                        consultantId: consultantUserModel?.userId ?? "",
-                        companyId: selectedCustomer?.customerId ?? '',
-                        status: currentStatus,
-                        createdAt: Timestamp.now(),
-                      );
+                          statement: statementCtrl.text,
+                          evidence: evidenceCtrl.text,
+                          classification: classificationCtrl.text,
+                          dueDate: dueDateCtrl.text,
+                          correction: correctionCtrl.text,
+                          plannedDate: plannedDateCtrl.text,
+                          actualDate: actualDateCtrl.text,
+                          rootCause: rootCauseCtrl.text,
+                          correctiveAction: correctiveCtrl.text,
+                          verification: verificationCtrl.text,
+                          auditor: auditorCtrl.text,
+                          approvedBy: approvedCtrl.text,
+                          consultantId: assignedConsultantId,
+                          companyId: selectedCustomer?.customerId ?? '',
+                          status: currentStatus,
+                          createdAt: Timestamp.now(),
+                        );
 
                         await _ncrRepository.saveNcrForm(model);
 

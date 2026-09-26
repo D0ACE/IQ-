@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -12,7 +11,6 @@ import 'package:iq_plus/features/users/models/employe_user.dart';
 import 'package:iq_plus/features/users/models/system_user_model.dart';
 import 'package:iq_plus/core/local_storage/hive_service.dart';
 import 'package:iq_plus/di/service_locator.dart';
-import 'package:iq_plus/common/utility/utility.dart';
 
 class AddUserDialog extends StatefulWidget {
   final dynamic user;
@@ -278,6 +276,7 @@ class _AddUserDialogState extends State<AddUserDialog> {
                   ? null
                   : () async {
                       if (_formKey.currentState!.validate()) {
+                        final navigator = Navigator.of(context);
                         bool success = false;
                         /// 🔁 EDIT MODE
                         if (widget.user != null) {
@@ -342,7 +341,7 @@ class _AddUserDialogState extends State<AddUserDialog> {
                         }
 
                         if (success && mounted) {
-                          Navigator.of(context).pop(true);
+                          navigator.pop(true);
                         }
                       }
                     },

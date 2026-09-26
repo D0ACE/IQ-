@@ -11,9 +11,17 @@ class PeriodicComplianceProvider extends ChangeNotifier {
   List<PeriodicComplianceTask> _taskList = [];
   List<PeriodicComplianceTask> get taskList => _taskList;
 
-  void listenToTasks({String? customerId, String? createdBy}) {
+  void listenToTasks({
+    String? customerId,
+    String? createdBy,
+    bool isConsultant = false,
+  }) {
     _subscription?.cancel();
-    _subscription = _repository.getTasksStream(customerId: customerId, createdBy: createdBy).listen((tasks) {
+    _subscription = _repository.getTasksStream(
+      customerId: customerId,
+      createdBy: createdBy,
+      isConsultant: isConsultant,
+    ).listen((tasks) {
       _taskList = tasks;
       notifyListeners();
     });

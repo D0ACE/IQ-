@@ -27,6 +27,7 @@ class _PeriodicComplianceFormPageState extends State<PeriodicComplianceFormPage>
   late TextEditingController _descriptionController;
   DateTime? _selectedDueDate;
   CustomerModel? _selectedCustomer;
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -78,11 +79,17 @@ class _PeriodicComplianceFormPageState extends State<PeriodicComplianceFormPage>
       child: BlocListener<PeriodicComplianceCubit, PeriodicComplianceState>(
         listener: (context, state) {
           if (state is PeriodicComplianceActionSuccess) {
+            if (mounted) {
+              setState(() => _isSaving = false);
+            }
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(state.message)),
             );
             Navigator.pop(context, true);
           } else if (state is PeriodicComplianceError) {
+            if (mounted) {
+              setState(() => _isSaving = false);
+            }
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(state.message), backgroundColor: Colors.red),
             );
@@ -153,6 +160,7 @@ class _PeriodicComplianceFormPageState extends State<PeriodicComplianceFormPage>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           DropdownButtonFormField<CustomerModel>(
+                            // ignore: deprecated_member_use
                             value: matchedCustomer,
                             decoration: _inputDecoration('Assign Customer', 'Select a customer'),
                             items: customers.map((c) {
@@ -201,38 +209,50 @@ class _PeriodicComplianceFormPageState extends State<PeriodicComplianceFormPage>
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                           elevation: 0,
                         ),
-                        onPressed: () {
-                          if (_formKey.currentState!.validate() && user != null) {
-                            final task = PeriodicComplianceTask(
-                              id: widget.task?.id ?? '',
-                              title: _titleController.text.trim(),
-                              description: _descriptionController.text.trim(),
-                              assignedCustomerId: _selectedCustomer!.customerId,
-                              assignedCustomerName: _selectedCustomer!.companyName,
-                              assignedCustomerLowLevelName: _selectedCustomer?.lowLevelName ?? widget.task?.assignedCustomerLowLevelName ?? '',
-                              assignedCustomerLowLevelEmail: _selectedCustomer?.lowLevelEmail ?? widget.task?.assignedCustomerLowLevelEmail ?? '',
-                              assignedCustomerLowLevelMobile: _selectedCustomer?.lowLevelMobile ?? widget.task?.assignedCustomerLowLevelMobile ?? '',
-                              assignedCustomerMediumLevelName: _selectedCustomer?.mediumLevelName ?? widget.task?.assignedCustomerMediumLevelName ?? '',
-                              assignedCustomerMediumLevelEmail: _selectedCustomer?.mediumLevelEmail ?? widget.task?.assignedCustomerMediumLevelEmail ?? '',
-                              assignedCustomerMediumLevelMobile: _selectedCustomer?.mediumLevelMobile ?? widget.task?.assignedCustomerMediumLevelMobile ?? '',
-                              dueDate: _selectedDueDate!,
-                              status: widget.task?.status ?? 'pending',
-                              createdAt: widget.task?.createdAt ?? DateTime.now(),
-                              createdBy: user.userId,
-                              createdByName: user.userName,
-                            );
+                        onPressed: _isSaving
+                            ? null
+                            : () {
+                                if (_formKey.currentState!.validate() && user != null) {
+                                  setState(() => _isSaving = true);
+                                  final task = PeriodicComplianceTask(
+                                    id: widget.task?.id ?? '',
+                                    title: _titleController.text.trim(),
+                                    description: _descriptionController.text.trim(),
+                                    assignedCustomerId: _selectedCustomer!.customerId,
+                                    assignedCustomerName: _selectedCustomer!.companyName,
+                                    assignedCustomerLowLevelName: _selectedCustomer?.lowLevelName ?? widget.task?.assignedCustomerLowLevelName ?? '',
+                                    assignedCustomerLowLevelEmail: _selectedCustomer?.lowLevelEmail ?? widget.task?.assignedCustomerLowLevelEmail ?? '',
+                                    assignedCustomerLowLevelMobile: _selectedCustomer?.lowLevelMobile ?? widget.task?.assignedCustomerLowLevelMobile ?? '',
+                                    assignedCustomerMediumLevelName: _selectedCustomer?.mediumLevelName ?? widget.task?.assignedCustomerMediumLevelName ?? '',
+                                    assignedCustomerMediumLevelEmail: _selectedCustomer?.mediumLevelEmail ?? widget.task?.assignedCustomerMediumLevelEmail ?? '',
+                                    assignedCustomerMediumLevelMobile: _selectedCustomer?.mediumLevelMobile ?? widget.task?.assignedCustomerMediumLevelMobile ?? '',
+                                    dueDate: _selectedDueDate!,
+                                    status: widget.task?.status ?? 'pending',
+                                    createdAt: widget.task?.createdAt ?? DateTime.now(),
+                                    createdBy: user.userId,
+                                    createdByName: user.userName,
+                                  );
 
-                            if (widget.task == null) {
-                              ctx.read<PeriodicComplianceCubit>().addTask(task);
-                            } else {
-                              ctx.read<PeriodicComplianceCubit>().updateTask(task);
-                            }
-                          }
-                        },
-                        child: Text(
-                          widget.task == null ? 'CREATE TASK' : 'UPDATE TASK',
-                          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, letterSpacing: 1),
-                        ),
+                                  if (widget.task == null) {
+                                    ctx.read<PeriodicComplianceCubit>().addTask(task);
+                                  } else {
+                                    ctx.read<PeriodicComplianceCubit>().updateTask(task);
+                                  }
+                                }
+                              },
+                        child: _isSaving
+                            ? const SizedBox(
+                                height: 22,
+                                width: 22,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : Text(
+                                widget.task == null ? 'CREATE TASK' : 'UPDATE TASK',
+                                style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, letterSpacing: 1),
+                              ),
                       ),
                     ),
                   ),

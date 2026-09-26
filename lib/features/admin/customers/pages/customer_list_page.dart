@@ -3,19 +3,57 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:iq_plus/common/routes/go_route.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
-import 'package:iq_plus/di/service_locator.dart';
 import 'package:iq_plus/features/admin/customers/cubit/customer_list_cubit.dart';
 import 'package:iq_plus/features/admin/customers/cubit/customer_list_state.dart';
 import 'package:iq_plus/features/auth/model/customer_model.dart';
 import 'package:go_router/go_router.dart';
 import 'package:iq_plus/features/admin/customers/widgets/customer_add_edit_dialog.dart';
 
-class CustomerListPage extends StatelessWidget {
+class CustomerListPage extends StatefulWidget {
   const CustomerListPage({super.key});
 
   @override
+  State<CustomerListPage> createState() => _CustomerListPageState();
+}
+
+class _CustomerListPageState extends State<CustomerListPage> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<CustomerModel> _getFilteredCustomers(List<CustomerModel> customers) {
+    if (_searchQuery.isEmpty) return customers;
+    final q = _searchQuery.toLowerCase().trim();
+    return customers.where((customer) {
+      final matchName = customer.companyName.toLowerCase().contains(q);
+      final matchEmail = customer.email.toLowerCase().contains(q);
+      final matchPhone = customer.phoneNumber.toLowerCase().contains(q);
+      final matchAddress = customer.address.toLowerCase().contains(q);
+      final matchStandard = customer.certificateStandard.toLowerCase().contains(q);
+      final matchFunction = customer.companyFunction.toLowerCase().contains(q);
+      final matchTopName = customer.topLevelName.toLowerCase().contains(q);
+      final matchMediumName = customer.mediumLevelName.toLowerCase().contains(q);
+      final matchLowName = customer.lowLevelName.toLowerCase().contains(q);
+
+      return matchName ||
+          matchEmail ||
+          matchPhone ||
+          matchAddress ||
+          matchStandard ||
+          matchFunction ||
+          matchTopName ||
+          matchMediumName ||
+          matchLowName;
+    }).toList();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // 🚀 Using Global CustomerListCubit provided in main.dart
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
@@ -62,62 +100,189 @@ class CustomerListPage extends StatelessWidget {
             },
             child: BlocBuilder<CustomerListCubit, CustomerListState>(
               builder: (context, state) {
-                // 🔄 Only show full screen loader for initial load or manual refresh
                 if (state is CustomerListLoading) {
                   return const Center(child: CircularProgressIndicator());
                 }
 
                 if (state is CustomerListLoaded || state is CustomerListOperationSuccess) {
-                  final customers = state is CustomerListLoaded ? state.customers : <CustomerModel>[];
-                  
-                  // If we are in Success state, we might not have the customers in the state object.
-                  // However, the Cubit will emit Loaded immediately after Success.
-                  // If it's currently Success, we can show a loader or just wait. 
-                  // But since we removed the loader here, it will fall through.
-                  
-                  if (customers.isEmpty && state is CustomerListLoaded) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.business_rounded, size: 64, color: Colors.grey.shade300),
-                          const SizedBox(height: 16),
-                          const Text(
-                            "No customers found",
-                            style: TextStyle(color: Colors.grey, fontSize: 16, fontWeight: FontWeight.w500),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
+                  final allCustomers = state is CustomerListLoaded ? state.customers : <CustomerModel>[];
 
-                  if (customers.isEmpty && state is CustomerListOperationSuccess) {
+                  if (allCustomers.isEmpty && state is CustomerListOperationSuccess) {
                     return const Center(child: CircularProgressIndicator());
                   }
 
-                  return ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
-                    physics: const BouncingScrollPhysics(),
-                    itemCount: customers.length,
-                    itemBuilder: (context, index) {
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 16),
-                        child: _CustomerCard(
-                          customer: customers[index],
-                          onTap: () async {
-                            await GoRouter.of(context).push(
-                              AppRoutes.customerDetail,
-                              extra: customers[index],
-                            );
-                            if (context.mounted) {
-                              context.read<CustomerListCubit>().fetchCustomers();
-                            }
-                          },
-                          onEdit: () => _showAddEditDialog(context, customer: customers[index]),
-                          onDelete: () => _showDeleteConfirm(context, customers[index]),
+                  final filteredCustomers = _getFilteredCustomers(allCustomers);
+
+                  return Column(
+                    children: [
+                      // 🔍 Search Bar Section
+                      Container(
+                        color: Colors.white,
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                        child: Container(
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: TextField(
+                            controller: _searchController,
+                            onChanged: (val) {
+                              setState(() {
+                                _searchQuery = val;
+                              });
+                            },
+                            decoration: InputDecoration(
+                              hintText: 'Search company, email, phone, standard...',
+                              hintStyle: TextStyle(
+                                color: Colors.grey.shade500,
+                                fontSize: 14,
+                              ),
+                              prefixIcon: const Icon(
+                                Icons.search_rounded,
+                                color: AppColors.primary,
+                                size: 22,
+                              ),
+                              suffixIcon: _searchQuery.isNotEmpty
+                                  ? IconButton(
+                                      icon: const Icon(Icons.close_rounded, size: 20),
+                                      onPressed: () {
+                                        _searchController.clear();
+                                        setState(() {
+                                          _searchQuery = '';
+                                        });
+                                      },
+                                    )
+                                  : null,
+                              border: InputBorder.none,
+                              contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                          ),
                         ),
-                      );
-                    },
+                      ),
+
+                      // 📊 Active Search Indicator Bar
+                      if (_searchQuery.isNotEmpty)
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                          color: AppColors.primary.withValues(alpha: 0.05),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                "Showing ${filteredCustomers.length} of ${allCustomers.length} customers",
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.titleText,
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap: () {
+                                  _searchController.clear();
+                                  setState(() {
+                                    _searchQuery = '';
+                                  });
+                                },
+                                child: const Row(
+                                  children: [
+                                    Icon(Icons.close_rounded, size: 14, color: AppColors.primary),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      "Clear search",
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.primary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                      // 📋 Customer List / Empty State
+                      Expanded(
+                        child: filteredCustomers.isEmpty
+                            ? Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      _searchQuery.isNotEmpty
+                                          ? Icons.search_off_rounded
+                                          : Icons.business_rounded,
+                                      size: 64,
+                                      color: Colors.grey.shade300,
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      _searchQuery.isNotEmpty
+                                          ? "No matching customers found"
+                                          : "No customers found",
+                                      style: const TextStyle(
+                                        color: Colors.grey,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    if (_searchQuery.isNotEmpty) ...[
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        "Try searching with a different term",
+                                        style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
+                                      ),
+                                      const SizedBox(height: 16),
+                                      ElevatedButton.icon(
+                                        onPressed: () {
+                                          _searchController.clear();
+                                          setState(() {
+                                            _searchQuery = '';
+                                          });
+                                        },
+                                        icon: const Icon(Icons.clear_rounded, size: 18),
+                                        label: const Text("Clear Search"),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: AppColors.primary,
+                                          foregroundColor: Colors.white,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              )
+                            : ListView.builder(
+                                padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
+                                physics: const BouncingScrollPhysics(),
+                                itemCount: filteredCustomers.length,
+                                itemBuilder: (context, index) {
+                                  return Padding(
+                                    padding: const EdgeInsets.only(bottom: 16),
+                                    child: _CustomerCard(
+                                      customer: filteredCustomers[index],
+                                      onTap: () async {
+                                        await GoRouter.of(context).push(
+                                          AppRoutes.customerDetail,
+                                          extra: filteredCustomers[index],
+                                        );
+                                        if (context.mounted) {
+                                          context.read<CustomerListCubit>().fetchCustomers();
+                                        }
+                                      },
+                                      onEdit: () => _showAddEditDialog(context, customer: filteredCustomers[index]),
+                                      onDelete: () => _showDeleteConfirm(context, filteredCustomers[index]),
+                                    ),
+                                  );
+                                },
+                              ),
+                      ),
+                    ],
                   );
                 }
 
@@ -306,6 +471,25 @@ class _CustomerCard extends StatelessWidget {
                             Expanded(
                               child: Text(
                                 customer.email,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.grey.shade600,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Icon(Icons.phone_rounded, size: 14, color: Colors.grey.shade400),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                customer.phoneNumber.isNotEmpty ? customer.phoneNumber : 'N/A',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(

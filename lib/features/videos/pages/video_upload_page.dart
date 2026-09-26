@@ -17,7 +17,8 @@ import 'package:iq_plus/features/videos/cubit/video_state.dart';
 import 'package:iq_plus/features/videos/models/video_model.dart';
 
 class VideoUploadPage extends StatefulWidget {
-  const VideoUploadPage({super.key});
+  final AwarenessVideoModel? video;
+  const VideoUploadPage({super.key, this.video});
 
   @override
   State<VideoUploadPage> createState() => _VideoUploadPageState();
@@ -34,6 +35,25 @@ class _VideoUploadPageState extends State<VideoUploadPage> {
   final _user = getIt<HiveService>().getUser();
   
   final List<AwarenessQuestionModel> _questions = [];
+
+  bool get _isEditing => widget.video != null;
+
+  @override
+  void initState() {
+    super.initState();
+    if (_isEditing) {
+      final v = widget.video!;
+      _titleCtrl.text = v.title;
+      _selectedFileName = v.fileName;
+      _questions.addAll(v.questions);
+      if (v.customerId != null && v.customerId!.isNotEmpty) {
+        _selectedCustomer = CustomerModel.fromJson(
+          {},
+          customerId: v.customerId!,
+        );
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -70,31 +90,49 @@ class _VideoUploadPageState extends State<VideoUploadPage> {
     }
   }
 
-  void _addQuestionDialog() {
-    final qCtrl = TextEditingController();
-    final opt1 = TextEditingController();
-    final opt2 = TextEditingController();
-    final opt3 = TextEditingController();
-    final opt4 = TextEditingController();
-    int correctIdx = 0;
+  void _showQuestionDialog({int? index}) {
+    final bool isEditingQ = index != null;
+    final existingQ = isEditingQ ? _questions[index] : null;
+
+    final qCtrl = TextEditingController(text: existingQ?.question ?? '');
+    final opt1 = TextEditingController(
+        text: (existingQ?.options.length ?? 0) > 0 ? existingQ!.options[0] : '');
+    final opt2 = TextEditingController(
+        text: (existingQ?.options.length ?? 0) > 1 ? existingQ!.options[1] : '');
+    final opt3 = TextEditingController(
+        text: (existingQ?.options.length ?? 0) > 2 ? existingQ!.options[2] : '');
+    final opt4 = TextEditingController(
+        text: (existingQ?.options.length ?? 0) > 3 ? existingQ!.options[3] : '');
+    int correctIdx = existingQ?.correctOptionIndex ?? 0;
 
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: const Text("Add MCQ Question"),
+          title: Text(isEditingQ ? "Edit MCQ Question" : "Add MCQ Question"),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextField(controller: qCtrl, decoration: const InputDecoration(labelText: "Question")),
+                TextField(
+                    controller: qCtrl,
+                    decoration: const InputDecoration(labelText: "Question")),
                 const SizedBox(height: 10),
-                TextField(controller: opt1, decoration: const InputDecoration(labelText: "Option 1")),
-                TextField(controller: opt2, decoration: const InputDecoration(labelText: "Option 2")),
-                TextField(controller: opt3, decoration: const InputDecoration(labelText: "Option 3")),
-                TextField(controller: opt4, decoration: const InputDecoration(labelText: "Option 4")),
+                TextField(
+                    controller: opt1,
+                    decoration: const InputDecoration(labelText: "Option 1")),
+                TextField(
+                    controller: opt2,
+                    decoration: const InputDecoration(labelText: "Option 2")),
+                TextField(
+                    controller: opt3,
+                    decoration: const InputDecoration(labelText: "Option 3")),
+                TextField(
+                    controller: opt4,
+                    decoration: const InputDecoration(labelText: "Option 4")),
                 const SizedBox(height: 10),
-                const Text("Select Correct Option", style: TextStyle(fontWeight: FontWeight.bold)),
+                const Text("Select Correct Option",
+                    style: TextStyle(fontWeight: FontWeight.bold)),
                 DropdownButton<int>(
                   value: correctIdx,
                   items: const [
@@ -109,20 +147,34 @@ class _VideoUploadPageState extends State<VideoUploadPage> {
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancel")),
+            TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text("Cancel")),
             ElevatedButton(
               onPressed: () {
-                if (qCtrl.text.isEmpty || opt1.text.isEmpty || opt2.text.isEmpty) return;
+                if (qCtrl.text.isEmpty ||
+                    opt1.text.isEmpty ||
+                    opt2.text.isEmpty) return;
+                final updatedQ = AwarenessQuestionModel(
+                  question: qCtrl.text.trim(),
+                  options: [
+                    opt1.text.trim(),
+                    opt2.text.trim(),
+                    opt3.text.trim(),
+                    opt4.text.trim()
+                  ],
+                  correctOptionIndex: correctIdx,
+                );
                 setState(() {
-                  _questions.add(AwarenessQuestionModel(
-                    question: qCtrl.text.trim(),
-                    options: [opt1.text.trim(), opt2.text.trim(), opt3.text.trim(), opt4.text.trim()],
-                    correctOptionIndex: correctIdx,
-                  ));
+                  if (isEditingQ) {
+                    _questions[index] = updatedQ;
+                  } else {
+                    _questions.add(updatedQ);
+                  }
                 });
                 Navigator.pop(ctx);
               },
-              child: const Text("Add"),
+              child: Text(isEditingQ ? "Save" : "Add"),
             ),
           ],
         ),
@@ -130,7 +182,7 @@ class _VideoUploadPageState extends State<VideoUploadPage> {
     );
   }
 
-  void _upload() {
+  void _saveVideo() {
     if (!_formKey.currentState!.validate()) return;
     
     if (_selectedCustomer == null) {
@@ -140,7 +192,7 @@ class _VideoUploadPageState extends State<VideoUploadPage> {
       return;
     }
 
-    if (_selectedFileBytes == null) {
+    if (!_isEditing && _selectedFileBytes == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Please select a video file")),
       );
@@ -157,14 +209,27 @@ class _VideoUploadPageState extends State<VideoUploadPage> {
       return;
     }
 
-    context.read<VideoCubit>().uploadVideo(
-          title: _titleCtrl.text.trim(),
-          bytes: _selectedFileBytes!,
-          fileName: _selectedFileName!,
-          userId: _user?.userId ?? 'unknown',
-          customerId: _selectedCustomer?.customerId,
-          questions: _questions,
-        );
+    if (_isEditing) {
+      context.read<VideoCubit>().updateVideo(
+            videoId: widget.video!.videoId,
+            title: _titleCtrl.text.trim(),
+            newBytes: _selectedFileBytes,
+            newFileName: _selectedFileName,
+            oldFilePath: _selectedFileBytes != null ? widget.video!.filePath : null,
+            userId: _user?.userId ?? 'unknown',
+            customerId: _selectedCustomer?.customerId,
+            questions: _questions,
+          );
+    } else {
+      context.read<VideoCubit>().uploadVideo(
+            title: _titleCtrl.text.trim(),
+            bytes: _selectedFileBytes!,
+            fileName: _selectedFileName!,
+            userId: _user?.userId ?? 'unknown',
+            customerId: _selectedCustomer?.customerId,
+            questions: _questions,
+          );
+    }
   }
 
   @override
@@ -184,7 +249,8 @@ class _VideoUploadPageState extends State<VideoUploadPage> {
       },
       child: Scaffold(
         backgroundColor: AppColors.scaffoldBg,
-        appBar: const CommonAppBar(title: 'Upload Video'),
+        appBar: CommonAppBar(
+            title: _isEditing ? 'Edit Training Video' : 'Upload Video'),
         body: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
           child: Form(
@@ -198,10 +264,14 @@ class _VideoUploadPageState extends State<VideoUploadPage> {
                   isRequired: true,
                 ),
                 const SizedBox(height: 20),
-                const Text("Assign to Customer *", style: TextStyle(fontWeight: FontWeight.bold)),
+                const Text("Assign to Customer *",
+                    style: TextStyle(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
                 CustomerDropdownWidget(
-                  consultantId: Utility.isConsultant(_user?.roleId) ? _user?.userId : null,
+                  selectedCustomer: _selectedCustomer,
+                  consultantId: Utility.isConsultant(_user?.roleId)
+                      ? _user?.userId
+                      : null,
                   onChanged: (customer) {
                     setState(() {
                       _selectedCustomer = customer;
@@ -209,12 +279,14 @@ class _VideoUploadPageState extends State<VideoUploadPage> {
                   },
                 ),
                 const SizedBox(height: 24),
-                const Text("Video File", style: TextStyle(fontWeight: FontWeight.bold)),
+                const Text("Video File",
+                    style: TextStyle(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
                 InkWell(
                   onTap: _pickVideo,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 20, horizontal: 12),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       border: Border.all(color: Colors.grey.shade300),
@@ -222,28 +294,53 @@ class _VideoUploadPageState extends State<VideoUploadPage> {
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.video_library, color: AppColors.purple),
+                        Icon(
+                          _selectedFileBytes != null
+                              ? Icons.check_circle
+                              : Icons.video_library,
+                          color: _selectedFileBytes != null
+                              ? Colors.green
+                              : AppColors.purple,
+                        ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                _selectedFileName ?? "No video selected",
+                                _selectedFileBytes != null
+                                    ? "New File: ${_selectedFileName ?? ''}"
+                                    : (_isEditing
+                                        ? "Existing: ${widget.video!.fileName}"
+                                        : "No video selected"),
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(fontWeight: FontWeight.bold),
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold),
                               ),
                               if (_selectedFileBytes != null)
                                 Text(
                                   "${(_selectedFileBytes!.length / (1024 * 1024)).toStringAsFixed(2)} MB",
-                                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                  style: const TextStyle(
+                                      fontSize: 12, color: Colors.grey),
+                                )
+                              else if (_isEditing)
+                                const Text(
+                                  "Tap to replace video (Optional)",
+                                  style: TextStyle(
+                                      fontSize: 12, color: Colors.grey),
                                 ),
                             ],
                           ),
                         ),
-                        const Text(
-                          "Select Video",
-                          style: TextStyle(color: AppColors.purple, fontWeight: FontWeight.bold),
+                        Text(
+                          _selectedFileBytes != null
+                              ? "Change File"
+                              : (_isEditing
+                                  ? "Replace Video"
+                                  : "Select Video"),
+                          style: const TextStyle(
+                              color: AppColors.purple,
+                              fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
@@ -253,9 +350,11 @@ class _VideoUploadPageState extends State<VideoUploadPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text("MCQ Questions", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    const Text("MCQ Questions",
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 16)),
                     TextButton.icon(
-                      onPressed: _addQuestionDialog,
+                      onPressed: () => _showQuestionDialog(),
                       icon: const Icon(Icons.add_circle_outline),
                       label: const Text("Add Question"),
                     ),
@@ -264,7 +363,9 @@ class _VideoUploadPageState extends State<VideoUploadPage> {
                 if (_questions.isEmpty)
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 10),
-                    child: Text("No questions added yet", style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey)),
+                    child: Text("No questions added yet",
+                        style: TextStyle(
+                            fontStyle: FontStyle.italic, color: Colors.grey)),
                   ),
                 ListView.builder(
                   shrinkWrap: true,
@@ -275,10 +376,22 @@ class _VideoUploadPageState extends State<VideoUploadPage> {
                     return Card(
                       child: ListTile(
                         title: Text("${index + 1}. ${q.question}"),
-                        subtitle: Text("Correct: Option ${q.correctOptionIndex + 1}"),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () => setState(() => _questions.removeAt(index)),
+                        subtitle: Text(
+                            "Correct: Option ${q.correctOptionIndex + 1}"),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.edit, color: Colors.blue),
+                              onPressed: () =>
+                                  _showQuestionDialog(index: index),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed: () =>
+                                  setState(() => _questions.removeAt(index)),
+                            ),
+                          ],
                         ),
                       ),
                     );
@@ -290,16 +403,22 @@ class _VideoUploadPageState extends State<VideoUploadPage> {
                   child: BlocBuilder<VideoCubit, VideoState>(
                     builder: (context, state) {
                       return ElevatedButton(
-                        onPressed: state is VideoLoading ? null : _upload,
+                        onPressed: state is VideoLoading ? null : _saveVideo,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.purple,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
                         ),
                         child: state is VideoLoading
-                            ? const CircularProgressIndicator(color: Colors.white)
-                            : const Text("Upload Video", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                            ? const CircularProgressIndicator(
+                                color: Colors.white)
+                            : Text(
+                                _isEditing ? "Update Video" : "Upload Video",
+                                style: const TextStyle(
+                                    fontSize: 16, fontWeight: FontWeight.bold),
+                              ),
                       );
                     },
                   ),

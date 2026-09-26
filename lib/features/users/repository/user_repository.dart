@@ -115,8 +115,35 @@ class UserRepository {
   }
 
   // 🔹 Fetch Employees (Role 4)
-  Future<List<EmployeeUserModel>> fetchEmployees({List<String>? customerIds, String? createdBy}) async {
+  Future<List<EmployeeUserModel>> fetchEmployees({
+    List<String>? customerIds,
+    String? createdBy,
+    String? consultantId,
+  }) async {
     try {
+      if (consultantId != null && consultantId.isNotEmpty) {
+        // 🚀 For consultants, fetch assigned customers
+        final custSnapshot = await firestore
+            .collection('customers')
+            .where('consultantId', isEqualTo: consultantId)
+            .get();
+        final assignedCustomerIds =
+            custSnapshot.docs.map((doc) => doc.id).toSet();
+
+        final snapshot = await firestore.collectionGroup('employees').get();
+        final allEmployees = snapshot.docs
+            .map((doc) => EmployeeUserModel.fromFirestore(
+                doc.id, doc.data() as Map<String, dynamic>))
+            .toList();
+
+        return allEmployees.where((emp) {
+          final isCreatedByMe = emp.createdBy == consultantId;
+          final isMyCustomerEmp = emp.customerId != null &&
+              assignedCustomerIds.contains(emp.customerId);
+          return isCreatedByMe || isMyCustomerEmp;
+        }).toList();
+      }
+
       Query query = firestore.collectionGroup('employees');
 
       if (customerIds != null && customerIds.isNotEmpty) {
@@ -129,7 +156,8 @@ class UserRepository {
 
       final snapshot = await query.get();
       return snapshot.docs
-          .map((doc) => EmployeeUserModel.fromFirestore(doc.id, doc.data() as Map<String, dynamic>))
+          .map((doc) => EmployeeUserModel.fromFirestore(
+              doc.id, doc.data() as Map<String, dynamic>))
           .toList();
     } catch (e) {
       developer.log("Error fetching employees: $e");

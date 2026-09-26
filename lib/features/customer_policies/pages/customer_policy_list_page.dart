@@ -8,6 +8,10 @@ import 'package:iq_plus/common/utility/utility.dart';
 import 'package:iq_plus/common/widgets/common_app_bar.dart';
 import 'package:iq_plus/core/local_storage/hive_service.dart';
 import 'package:iq_plus/di/service_locator.dart';
+import 'package:iq_plus/features/admin/customers/cubit/customer_list_cubit.dart';
+import 'package:iq_plus/features/admin/customers/cubit/customer_list_state.dart';
+import 'package:iq_plus/features/auth/model/customer_model.dart';
+import 'package:iq_plus/features/superadmin/models/document_model.dart';
 import 'package:iq_plus/features/superadmin/models/version_history_model.dart';
 import 'package:iq_plus/features/superadmin/repository/document_repository.dart';
 import 'package:iq_plus/features/superadmin/cubit/document_cubit.dart';
@@ -22,19 +26,110 @@ class CustomerPolicyListPage extends StatefulWidget {
 }
 
 class _CustomerPolicyListPageState extends State<CustomerPolicyListPage> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  String _statusFilter = 'all'; // 'all', 'active', 'draft', 'rejected'
+  String _selectedCompanyFilter = 'all'; // 'all' or customerId
+
   @override
   void initState() {
     super.initState();
-    final hive = getIt<HiveService>();
-    final customer = hive.getCustomer();
-    final user = hive.getUser();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final hive = getIt<HiveService>();
+      final customer = hive.getCustomer();
+      final user = hive.getUser();
 
-    // 🚀 Determine customerId from either Customer or Employee session
-    final String? effectiveCustomerId = customer?.customerId ?? user?.customerId;
+      final bool isConsultant = Utility.isConsultant(user?.roleId);
+      final String? consultantIdFilter = isConsultant ? user?.userId : null;
 
-    context.read<DocumentCubit>().loadDocuments(
-      customerId: effectiveCustomerId,
-    );
+      // 🚀 Determine customerId from either Customer or Employee session
+      final String? effectiveCustomerId = customer?.customerId ?? user?.customerId;
+
+      context.read<DocumentCubit>().loadDocuments(
+        userId: consultantIdFilter,
+        isConsultant: isConsultant,
+        customerId: effectiveCustomerId,
+      );
+
+      context.read<CustomerListCubit>().fetchApprovedCustomers(consultantIdFilter);
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  bool get _hasActiveFilters =>
+      _searchQuery.isNotEmpty || _statusFilter != 'all' || _selectedCompanyFilter != 'all';
+
+  void _clearAllFilters() {
+    if (!mounted) return;
+    setState(() {
+      _searchController.clear();
+      _searchQuery = '';
+      _statusFilter = 'all';
+      _selectedCompanyFilter = 'all';
+    });
+  }
+
+  List<DocumentModel> _getFilteredDocuments(
+    List<DocumentModel> docs,
+    List<CustomerModel> customers,
+  ) {
+    return docs.where((doc) {
+      // 1. Company Filter
+      if (_selectedCompanyFilter != 'all') {
+        if (doc.customerId != _selectedCompanyFilter) {
+          return false;
+        }
+      }
+
+      // 2. Search Query Filter
+      if (_searchQuery.isNotEmpty) {
+        final q = _searchQuery.toLowerCase().trim();
+        final title = doc.title.toLowerCase();
+        final createdBy = doc.createdBy.toLowerCase();
+        final reviewedBy = (doc.reviewedBy ?? '').toLowerCase();
+        final version = doc.currentVersion.toLowerCase();
+        final fileType = doc.fileType.toLowerCase();
+
+        String companyName = '';
+        if (doc.customerId != null) {
+          try {
+            companyName = customers
+                .firstWhere((c) => c.customerId == doc.customerId)
+                .companyName
+                .toLowerCase();
+          } catch (_) {}
+        }
+
+        final matches = title.contains(q) ||
+            createdBy.contains(q) ||
+            reviewedBy.contains(q) ||
+            version.contains(q) ||
+            fileType.contains(q) ||
+            companyName.contains(q);
+
+        if (!matches) return false;
+      }
+
+      // 3. Status Filter
+      final String status = doc.status.toLowerCase();
+      if (_statusFilter == 'active' && status != 'active') {
+        return false;
+      }
+      if (_statusFilter == 'draft' && status != 'draft') {
+        return false;
+      }
+      if (_statusFilter == 'rejected' && (status != 'rejected' && status != 'reject')) {
+        return false;
+      }
+
+      return true;
+    }).toList();
   }
 
   @override
@@ -68,13 +163,16 @@ class _CustomerPolicyListPageState extends State<CustomerPolicyListPage> {
                 final user = hive.getUser();
                 final customer = hive.getCustomer();
                 final String? roleId = user?.roleId ?? customer?.roleId;
-                final bool isEmployee = Utility.isEmployee(roleId);
 
-                final docs = isEmployee 
-                    ? state.documents.where((doc) => doc.status == 'active').toList() 
+                final bool isCustomer = Utility.isCustomer(roleId);
+                final bool isEmployee = Utility.isEmployee(roleId);
+                final bool isConsultant = Utility.isConsultant(roleId);
+
+                final allDocs = isEmployee
+                    ? state.documents.where((doc) => doc.status == 'active').toList()
                     : state.documents;
 
-                if (docs.isEmpty) {
+                if (allDocs.isEmpty) {
                   return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -82,22 +180,302 @@ class _CustomerPolicyListPageState extends State<CustomerPolicyListPage> {
                         Icon(Icons.policy_outlined, size: 64, color: Colors.grey.shade400),
                         const SizedBox(height: 16),
                         Text(
-                          isEmployee ? 'No active policies found' : 'No policies assigned yet', 
-                          style: TextStyle(color: Colors.grey.shade600, fontSize: 16)
+                          isEmployee ? 'No active policies found' : 'No policies assigned yet',
+                          style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
                         ),
                       ],
                     ),
                   );
                 }
-                return ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-                  physics: const BouncingScrollPhysics(),
-                  itemCount: docs.length,
-                  itemBuilder: (context, index) {
-                    final doc = docs[index];
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 24),
-                      child: _neoModernPolicyCard(doc),
+
+                return BlocBuilder<CustomerListCubit, CustomerListState>(
+                  builder: (context, customerState) {
+                    List<CustomerModel> customers = [];
+                    final bool isCustomerLoading = customerState is CustomerListLoading;
+                    if (customerState is CustomerListLoaded) {
+                      customers = customerState.customers;
+                    }
+
+                    // 🚀 Role-based company filter setup
+                    final bool showCompanyFilter = !isCustomer && !isEmployee;
+                    List<CustomerModel> availableCustomers = customers;
+                    if (isConsultant) {
+                      availableCustomers = customers
+                          .where((c) => c.consultantId == user?.userId)
+                          .toList();
+                    }
+
+                    // Sanitize selected company filter if no longer in available customers
+                    if (_selectedCompanyFilter != 'all') {
+                      final bool isValid = availableCustomers.any((c) => c.customerId == _selectedCompanyFilter);
+                      if (!isValid) {
+                        _selectedCompanyFilter = 'all';
+                      }
+                    }
+
+                    final filteredDocs = _getFilteredDocuments(allDocs, customers);
+                    final int totalCount = allDocs.length;
+                    final int activeCount = allDocs.where((d) => d.status == 'active').length;
+                    final int draftCount = allDocs.where((d) => d.status == 'draft').length;
+                    final int rejectedCount = allDocs.where((d) => d.status == 'rejected' || d.status == 'reject').length;
+
+                    return Column(
+                      children: [
+                        // 🔍 Search Bar & Filters Header Section
+                        Container(
+                          color: Colors.white,
+                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                          child: Column(
+                            children: [
+                              // Search Input Field
+                              Container(
+                                height: 48,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF1F5F9),
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                child: TextField(
+                                  controller: _searchController,
+                                  onChanged: (val) {
+                                    if (!mounted) return;
+                                    setState(() {
+                                      _searchQuery = val;
+                                    });
+                                  },
+                                  decoration: InputDecoration(
+                                    hintText: 'Search policy title, company, author...',
+                                    hintStyle: TextStyle(
+                                      color: Colors.grey.shade500,
+                                      fontSize: 14,
+                                    ),
+                                    prefixIcon: const Icon(
+                                      Icons.search_rounded,
+                                      color: AppColors.kPrimaryColor,
+                                      size: 22,
+                                    ),
+                                    suffixIcon: _searchQuery.isNotEmpty
+                                        ? IconButton(
+                                            icon: const Icon(Icons.close_rounded, size: 20),
+                                            onPressed: () {
+                                              _searchController.clear();
+                                              if (!mounted) return;
+                                              setState(() {
+                                                _searchQuery = '';
+                                              });
+                                            },
+                                          )
+                                        : null,
+                                    border: InputBorder.none,
+                                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                                  ),
+                                ),
+                              ),
+
+                              // 🏢 Separate Customer Filter Loading / Selector (Hidden for Customers/Employees)
+                              if (showCompanyFilter) ...[
+                                if (isCustomerLoading) ...[
+                                  const SizedBox(height: 10),
+                                  Container(
+                                    height: 44,
+                                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFF1F5F9),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: const Row(
+                                      children: [
+                                        Icon(Icons.business_rounded, size: 20, color: AppColors.kPrimaryColor),
+                                        SizedBox(width: 10),
+                                        Text(
+                                          "Loading companies...",
+                                          style: TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.w500),
+                                        ),
+                                        Spacer(),
+                                        SizedBox(
+                                          height: 16,
+                                          width: 16,
+                                          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.kPrimaryColor),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ] else if (availableCustomers.isNotEmpty) ...[
+                                  const SizedBox(height: 10),
+                                  Container(
+                                    height: 44,
+                                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFF1F5F9),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: DropdownButtonHideUnderline(
+                                      child: DropdownButton<String>(
+                                        value: _selectedCompanyFilter,
+                                        isExpanded: true,
+                                        icon: const Icon(Icons.business_rounded, size: 20, color: AppColors.kPrimaryColor),
+                                        style: const TextStyle(
+                                          color: AppColors.titleText,
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                        items: [
+                                          const DropdownMenuItem(
+                                            value: 'all',
+                                            child: Text('All Companies'),
+                                          ),
+                                          ...availableCustomers.map((c) => DropdownMenuItem(
+                                                value: c.customerId,
+                                                child: Text(
+                                                  c.companyName,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              )),
+                                        ],
+                                        onChanged: (val) {
+                                          if (val != null && mounted) {
+                                            setState(() {
+                                              _selectedCompanyFilter = val;
+                                            });
+                                          }
+                                        },
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+
+                              // 🟢 Status Filter Chips (Only shown if not restricted to employees)
+                              if (!isEmployee) ...[
+                                const SizedBox(height: 12),
+                                SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  physics: const BouncingScrollPhysics(),
+                                  child: Row(
+                                    children: [
+                                      _buildStatusChip(
+                                        label: 'All ($totalCount)',
+                                        value: 'all',
+                                      ),
+                                      const SizedBox(width: 8),
+                                      _buildStatusChip(
+                                        label: 'Active ($activeCount)',
+                                        value: 'active',
+                                        activeColor: Colors.green,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      _buildStatusChip(
+                                        label: 'Draft ($draftCount)',
+                                        value: 'draft',
+                                        activeColor: Colors.orange,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      _buildStatusChip(
+                                        label: 'Rejected ($rejectedCount)',
+                                        value: 'rejected',
+                                        activeColor: Colors.redAccent,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+
+                        // 📊 Active Filter Indicator Bar
+                        if (_hasActiveFilters)
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                            color: AppColors.kPrimaryColor.withValues(alpha: 0.05),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  "Showing ${filteredDocs.length} of ${allDocs.length} policies",
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.titleText,
+                                  ),
+                                ),
+                                GestureDetector(
+                                  onTap: _clearAllFilters,
+                                  child: const Row(
+                                    children: [
+                                      Icon(Icons.refresh_rounded, size: 14, color: AppColors.kPrimaryColor),
+                                      SizedBox(width: 4),
+                                      Text(
+                                        "Clear filters",
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppColors.kPrimaryColor,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                        // 📋 Policy List View / Empty Filter State
+                        Expanded(
+                          child: filteredDocs.isEmpty
+                              ? Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.policy_outlined,
+                                        size: 64,
+                                        color: Colors.grey.shade300,
+                                      ),
+                                      const SizedBox(height: 16),
+                                      const Text(
+                                        "No matching policies found",
+                                        style: TextStyle(
+                                          color: Colors.grey,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        "Try adjusting your search query or filters",
+                                        style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
+                                      ),
+                                      const SizedBox(height: 16),
+                                      ElevatedButton.icon(
+                                        onPressed: _clearAllFilters,
+                                        icon: const Icon(Icons.clear_all_rounded, size: 18),
+                                        label: const Text("Reset Filters"),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: AppColors.kPrimaryColor,
+                                          foregroundColor: Colors.white,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              : ListView.builder(
+                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                                  physics: const BouncingScrollPhysics(),
+                                  itemCount: filteredDocs.length,
+                                  itemBuilder: (context, index) {
+                                    final doc = filteredDocs[index];
+                                    return Padding(
+                                      padding: const EdgeInsets.only(bottom: 24),
+                                      child: _neoModernPolicyCard(doc),
+                                    );
+                                  },
+                                ),
+                        ),
+                      ],
                     );
                   },
                 );
@@ -110,11 +488,52 @@ class _CustomerPolicyListPageState extends State<CustomerPolicyListPage> {
     );
   }
 
-  Widget _neoModernPolicyCard(dynamic doc) {
+  Widget _buildStatusChip({
+    required String label,
+    required String value,
+    Color? activeColor,
+  }) {
+    final bool isSelected = _statusFilter == value;
+    final Color color = activeColor ?? AppColors.kPrimaryColor;
+
+    return ChoiceChip(
+      label: Text(
+        label,
+        style: TextStyle(
+          color: isSelected ? Colors.white : Colors.grey.shade700,
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+          fontSize: 13,
+        ),
+      ),
+      selected: isSelected,
+      onSelected: (selected) {
+        if (selected && mounted) {
+          setState(() {
+            _statusFilter = value;
+          });
+        }
+      },
+      selectedColor: color,
+      backgroundColor: const Color(0xFFF1F5F9),
+      showCheckmark: false,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide.none,
+      ),
+    );
+  }
+
+  Widget _neoModernPolicyCard(DocumentModel doc) {
     final hive = getIt<HiveService>();
     final user = hive.getUser();
     final customer = hive.getCustomer();
     final String? roleId = user?.roleId ?? customer?.roleId;
+
+    final bool canEditOrDelete = Utility.isConsultant(roleId) ||
+        Utility.isAdmin(roleId) ||
+        Utility.isSuperAdmin(roleId) ||
+        doc.createdByUserId == user?.userId;
 
     return Container(
       decoration: BoxDecoration(
@@ -202,7 +621,7 @@ class _CustomerPolicyListPageState extends State<CustomerPolicyListPage> {
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Text(
-                                  "${doc.currentVersion}",
+                                  doc.currentVersion,
                                   style: const TextStyle(
                                     fontSize: 11,
                                     color: AppColors.kPrimaryColor,
@@ -228,6 +647,24 @@ class _CustomerPolicyListPageState extends State<CustomerPolicyListPage> {
                       icon: const Icon(Icons.history_rounded, color: AppColors.subText),
                       onPressed: () => _showVersionHistoryDialog(context, doc.docId, doc.title),
                     ),
+                    if (canEditOrDelete) ...[
+                      IconButton(
+                        icon: const Icon(Icons.edit_note_rounded, color: Colors.blue),
+                        tooltip: 'Edit Policy',
+                        onPressed: () {
+                          if (doc.fileType.toLowerCase() == '.xlsx') {
+                            context.push(AppRoutes.excelEditor, extra: doc);
+                          } else {
+                            context.push(AppRoutes.documentEditor, extra: doc);
+                          }
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
+                        tooltip: 'Delete Policy',
+                        onPressed: () => _confirmDelete(context, doc.docId, doc.filePath),
+                      ),
+                    ],
                   ],
                 ),
                 const Padding(
@@ -453,6 +890,31 @@ class _CustomerPolicyListPageState extends State<CustomerPolicyListPage> {
     );
   }
 
+  void _confirmDelete(BuildContext context, String docId, String? filePath) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Delete Policy'),
+        content: const Text('Are you sure you want to delete this policy document?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              context.read<DocumentCubit>().deleteDocument(docId, filePath);
+              Navigator.pop(ctx);
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+            child: const Text('Delete', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _auditItemModern(String label, String value, IconData icon) {
     return Row(
       children: [
@@ -489,235 +951,293 @@ class _CustomerPolicyListPageState extends State<CustomerPolicyListPage> {
   }
 
   void _showVersionHistoryDialog(BuildContext context, String docId, String title) {
+    String dialogQuery = '';
+
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Version History',
-              style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.titleText),
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            backgroundColor: Colors.white,
+            surfaceTintColor: Colors.white,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
+            title: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Version History',
+                  style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.titleText),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppColors.subText.withValues(alpha: 0.7),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 4),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 13,
-                color: AppColors.subText.withValues(alpha: 0.7),
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: FutureBuilder<List<VersionHistoryModel>>(
-            future: DocumentRepository().getVersionHistory(docId),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const SizedBox(
-                  height: 100,
-                  child: Center(child: CircularProgressIndicator()),
-                );
-              }
-              if (snapshot.hasError) {
-                return Center(child: Text("Error: ${snapshot.error}"));
-              }
-              final hive = getIt<HiveService>();
-              final user = hive.getUser();
-              final customer = hive.getCustomer();
-              final String? roleId = user?.roleId ?? customer?.roleId;
-              final bool isEmployee = Utility.isEmployee(roleId);
+            content: SizedBox(
+              width: double.maxFinite,
+              child: FutureBuilder<List<VersionHistoryModel>>(
+                future: DocumentRepository().getVersionHistory(docId),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const SizedBox(
+                      height: 100,
+                      child: Center(child: CircularProgressIndicator()),
+                    );
+                  }
+                  if (snapshot.hasError) {
+                    return Center(child: Text("Error: ${snapshot.error}"));
+                  }
+                  final hive = getIt<HiveService>();
+                  final user = hive.getUser();
+                  final customer = hive.getCustomer();
+                  final String? roleId = user?.roleId ?? customer?.roleId;
+                  final bool isEmployee = Utility.isEmployee(roleId);
 
-              final history = isEmployee 
-                  ? (snapshot.data ?? []).where((v) => v.status == 'active').toList() 
-                  : (snapshot.data ?? []);
+                  var history = isEmployee 
+                      ? (snapshot.data ?? []).where((v) => v.status == 'active').toList() 
+                      : (snapshot.data ?? []);
 
-              if (history.isEmpty) {
-                return SizedBox(
-                  height: 100,
-                  child: Center(child: Text(isEmployee ? "No active history found" : "No history found")),
-                );
-              }
+                  if (history.isEmpty) {
+                    return SizedBox(
+                      height: 100,
+                      child: Center(child: Text(isEmployee ? "No active history found" : "No history found")),
+                    );
+                  }
 
-              return ListView.separated(
-                shrinkWrap: true,
-                physics: const BouncingScrollPhysics(),
-                itemCount: history.length,
-                separatorBuilder: (ctx, index) => const SizedBox(height: 16),
-                itemBuilder: (ctx, index) {
-                  final v = history[index];
-                  final isActive = v.status == 'active';
-                  final isRejected = v.status == 'rejected' || v.status == 'reject';
-                  final statusColor = isActive
-                      ? Colors.green
-                      : isRejected
-                          ? Colors.red
-                          : Colors.orange;
+                  if (dialogQuery.isNotEmpty) {
+                    final q = dialogQuery.toLowerCase().trim();
+                    history = history.where((v) {
+                      final versionNo = v.versionNo.toLowerCase();
+                      final desc = v.changeDescription.toLowerCase();
+                      final performedBy = v.performedBy.toLowerCase();
+                      final approvedBy = (v.approvedBy ?? '').toLowerCase();
+                      final rejectedBy = (v.rejectedBy ?? '').toLowerCase();
+                      final reason = (v.rejectionReason ?? '').toLowerCase();
+                      return versionNo.contains(q) ||
+                          desc.contains(q) ||
+                          performedBy.contains(q) ||
+                          approvedBy.contains(q) ||
+                          rejectedBy.contains(q) ||
+                          reason.contains(q);
+                    }).toList();
+                  }
 
-                  return Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF8FAFC),
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.purple.withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Text(
-                                    v.versionNo,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w900,
-                                      color: AppColors.purple,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: statusColor.withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Text(
-                                    v.status.toUpperCase(),
-                                    style: TextStyle(
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.w900,
-                                      color: statusColor,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Text(
-                              DateFormat('dd MMM yyyy').format(v.performedDate),
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: AppColors.subText.withValues(alpha: 0.6),
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Dialog Search Field
+                      Container(
+                        height: 40,
+                        margin: const EdgeInsets.only(bottom: 12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(10),
                         ),
-                        const SizedBox(height: 12),
-                        Text(
-                          v.changeDescription,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.titleText,
+                        child: TextField(
+                          onChanged: (val) => setDialogState(() => dialogQuery = val),
+                          style: const TextStyle(fontSize: 13),
+                          decoration: InputDecoration(
+                            hintText: 'Search version, author, description...',
+                            hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+                            prefixIcon: const Icon(Icons.search_rounded, color: AppColors.purple, size: 18),
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(vertical: 10),
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          "by ${v.performedBy}",
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontStyle: FontStyle.italic,
-                            color: AppColors.subText.withValues(alpha: 0.7),
-                          ),
-                        ),
-                        if (isActive && v.approvedBy != null)
-                          Container(
-                            margin: const EdgeInsets.only(top: 10),
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: Colors.green.withValues(alpha: 0.05),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.verified_rounded, color: Colors.green, size: 14),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    "Approved by ${v.approvedBy}",
-                                    style: const TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.green,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
+                      ),
+
+                      if (history.isEmpty)
+                        const Padding(
+                          padding: EdgeInsets.all(20),
+                          child: Text("No matching history found", style: TextStyle(color: Colors.grey)),
+                        )
+                      else
+                        Flexible(
+                          child: ListView.separated(
+                            shrinkWrap: true,
+                            physics: const BouncingScrollPhysics(),
+                            itemCount: history.length,
+                            separatorBuilder: (ctx, index) => const SizedBox(height: 16),
+                            itemBuilder: (ctx, index) {
+                              final v = history[index];
+                              final isActive = v.status == 'active';
+                              final isRejected = v.status == 'rejected' || v.status == 'reject';
+                              final statusColor = isActive
+                                  ? Colors.green
+                                  : isRejected
+                                      ? Colors.red
+                                      : Colors.orange;
+
+                              return Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF8FAFC),
+                                  borderRadius: BorderRadius.circular(24),
                                 ),
-                              ],
-                            ),
-                          ),
-                        if (isRejected && (v.rejectionReason != null || v.rejectedBy != null))
-                          Container(
-                            margin: const EdgeInsets.only(top: 10),
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: Colors.red.withValues(alpha: 0.05),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.red.withValues(alpha: 0.2)),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Icon(Icons.cancel_outlined, color: Colors.red, size: 14),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Text(
-                                        "Rejected by ${v.rejectedBy ?? v.performedBy}",
-                                        style: const TextStyle(
-                                          fontSize: 11,
-                                          color: Colors.red,
-                                          fontWeight: FontWeight.w800,
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                              decoration: BoxDecoration(
+                                                color: AppColors.purple.withValues(alpha: 0.1),
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child: Text(
+                                                v.versionNo,
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.w900,
+                                                  color: AppColors.purple,
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                              decoration: BoxDecoration(
+                                                color: statusColor.withValues(alpha: 0.1),
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child: Text(
+                                                v.status.toUpperCase(),
+                                                style: TextStyle(
+                                                  fontSize: 9,
+                                                  fontWeight: FontWeight.w900,
+                                                  color: statusColor,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
                                         ),
+                                        Text(
+                                          DateFormat('dd MMM yyyy').format(v.performedDate),
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: AppColors.subText.withValues(alpha: 0.6),
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Text(
+                                      v.changeDescription,
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w700,
+                                        color: AppColors.titleText,
                                       ),
                                     ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      "by ${v.performedBy}",
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontStyle: FontStyle.italic,
+                                        color: AppColors.subText.withValues(alpha: 0.7),
+                                      ),
+                                    ),
+                                    if (isActive && v.approvedBy != null)
+                                      Container(
+                                        margin: const EdgeInsets.only(top: 10),
+                                        padding: const EdgeInsets.all(10),
+                                        decoration: BoxDecoration(
+                                          color: Colors.green.withValues(alpha: 0.05),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            const Icon(Icons.verified_rounded, color: Colors.green, size: 14),
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              child: Text(
+                                                "Approved by ${v.approvedBy}",
+                                                style: const TextStyle(
+                                                  fontSize: 11,
+                                                  color: Colors.green,
+                                                  fontWeight: FontWeight.w800,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    if (isRejected && (v.rejectionReason != null || v.rejectedBy != null))
+                                      Container(
+                                        margin: const EdgeInsets.only(top: 10),
+                                        padding: const EdgeInsets.all(10),
+                                        decoration: BoxDecoration(
+                                          color: Colors.red.withValues(alpha: 0.05),
+                                          borderRadius: BorderRadius.circular(12),
+                                          border: Border.all(color: Colors.red.withValues(alpha: 0.2)),
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                const Icon(Icons.cancel_outlined, color: Colors.red, size: 14),
+                                                const SizedBox(width: 8),
+                                                Expanded(
+                                                  child: Text(
+                                                    "Rejected by ${v.rejectedBy ?? v.performedBy}",
+                                                    style: const TextStyle(
+                                                      fontSize: 11,
+                                                      color: Colors.red,
+                                                      fontWeight: FontWeight.w800,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            if (v.rejectionReason != null && v.rejectionReason!.isNotEmpty) ...[
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                "Reason: ${v.rejectionReason}",
+                                                style: TextStyle(
+                                                  fontSize: 11,
+                                                  color: Colors.red.shade900,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            ],
+                                          ],
+                                        ),
+                                      ),
                                   ],
                                 ),
-                                if (v.rejectionReason != null && v.rejectionReason!.isNotEmpty) ...[
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    "Reason: ${v.rejectionReason}",
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.red.shade900,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
+                              );
+                            },
                           ),
-                      ],
-                    ),
+                        ),
+                    ],
                   );
                 },
-              );
-            },
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text(
-              'Close',
-              style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.purple),
+              ),
             ),
-          ),
-        ],
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text(
+                  'Close',
+                  style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.purple),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
