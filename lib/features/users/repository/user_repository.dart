@@ -133,7 +133,7 @@ class UserRepository {
         final snapshot = await firestore.collectionGroup('employees').get();
         final allEmployees = snapshot.docs
             .map((doc) => EmployeeUserModel.fromFirestore(
-                doc.id, doc.data() as Map<String, dynamic>))
+                doc.id, doc.data()))
             .toList();
 
         return allEmployees.where((emp) {

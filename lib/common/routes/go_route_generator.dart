@@ -52,6 +52,8 @@ import 'package:iq_plus/features/videos/cubit/video_cubit.dart';
 import 'package:iq_plus/features/videos/repository/video_repository.dart';
 import 'package:iq_plus/features/videos/models/video_model.dart';
 import 'package:iq_plus/features/videos/pages/video_list_page.dart';
+import 'package:iq_plus/core/local_storage/hive_service.dart';
+import 'package:iq_plus/common/themes/app_const.dart';
 import 'package:iq_plus/features/videos/pages/video_upload_page.dart';
 import 'package:iq_plus/features/videos/pages/video_quiz_page.dart';
 import 'package:iq_plus/features/videos/pages/video_player_page.dart';
@@ -66,6 +68,45 @@ import 'package:iq_plus/features/periodic_compliance/pages/periodic_compliance_d
 class AppRouter {
   static final GoRouter router = GoRouter(
     initialLocation: AppRoutes.login, // ✅ REQUIRED
+
+    redirect: (BuildContext context, GoRouterState state) {
+      final hiveService = getIt<HiveService>();
+      final user = hiveService.getUser();
+      final customer = hiveService.getCustomer();
+      final bool isLoggedIn = user != null || customer != null;
+
+      final String location = state.matchedLocation;
+
+      final bool isPublicRoute = location == AppRoutes.login ||
+          location == AppRoutes.customerOnboarding ||
+          location == '/customer-onboarding' ||
+          location == AppRoutes.forgotPassword ||
+          location == AppRoutes.signUp ||
+          location == AppRoutes.splash;
+
+      // 1. If user is not logged in and trying to access a protected route, redirect to login
+      if (!isLoggedIn && !isPublicRoute) {
+        return AppRoutes.login;
+      }
+
+      // 2. If user is logged in and trying to access the login page, redirect to their dashboard
+      if (isLoggedIn && location == AppRoutes.login) {
+        final roleId = user?.roleId ?? customer?.roleId;
+        if (roleId == AppConst.superAdminRole) {
+          return AppRoutes.superAdminDashboard;
+        } else if (roleId == AppConst.adminRole) {
+          return AppRoutes.adminDashboard;
+        } else if (roleId == AppConst.consultantRole) {
+          return AppRoutes.consultantDashboard;
+        } else if (roleId == AppConst.employeeRole) {
+          return AppRoutes.employeeDashboard;
+        } else {
+          return AppRoutes.customerDashboard;
+        }
+      }
+
+      return null;
+    },
 
     routes: [
       /// 🔐 LOGIN

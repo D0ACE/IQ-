@@ -17,7 +17,7 @@ class AuthCubit extends Cubit<AuthState> {
   /// LOGIN
   Future<void> login(String email, String password, int selectedRole) async {
   try {
-    getIt<HiveService>().clearAll();
+    await getIt<HiveService>().clearAll();
     emit(AuthLoading());
 
     // 🔹 convert selected tab index → roleId

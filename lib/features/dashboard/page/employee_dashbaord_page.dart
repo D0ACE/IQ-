@@ -376,10 +376,13 @@ class _EmployeeDashboardPageState extends State<EmployeeDashboardPage> {
                         icon: Icons.logout_rounded,
                         title: 'Logout',
                         color: Colors.redAccent,
-                        onTap: () {
-                          getIt<HiveService>().clearAll();
-                          GoRouter.of(context).pop();
-                          context.go(AppRoutes.login);
+                        onTap: () async {
+                          final router = GoRouter.of(context);
+                          await getIt<HiveService>().clearAll();
+                          if (router.canPop()) {
+                            router.pop();
+                          }
+                          router.go(AppRoutes.login);
                         },
                       ),
                     ],

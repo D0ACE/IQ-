@@ -15,7 +15,7 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  late DialogFlowtter dialogFlowtter;
+  DialogFlowtter? dialogFlowtter;
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
@@ -30,8 +30,14 @@ class _ChatScreenState extends State<ChatScreen> {
   void initState() {
     super.initState();
     DialogFlowtter.fromFile().then((instance) {
-      dialogFlowtter = instance;
-      _addWelcomeMessage();
+      if (mounted) {
+        setState(() {
+          dialogFlowtter = instance;
+        });
+        _addWelcomeMessage();
+      }
+    }).catchError((e) {
+      debugPrint("DialogFlowtter initialization error: $e");
     });
   }
 
@@ -64,7 +70,7 @@ class _ChatScreenState extends State<ChatScreen> {
   void dispose() {
     _controller.dispose();
     _scrollController.dispose();
-    dialogFlowtter.dispose();
+    dialogFlowtter?.dispose();
     super.dispose();
   }
 
@@ -251,8 +257,11 @@ class _ChatScreenState extends State<ChatScreen> {
     if (_handleLocalQuery(text)) return;
 
     try {
+      if (dialogFlowtter == null) {
+        throw Exception("DialogFlowtter is not initialized");
+      }
       // 🚀 Optimized Cloud Intent Detection
-      final response = await dialogFlowtter.detectIntent(
+      final response = await dialogFlowtter!.detectIntent(
         queryInput: QueryInput(
           text: TextInput(text: text),
         ),

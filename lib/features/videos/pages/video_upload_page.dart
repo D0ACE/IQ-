@@ -154,7 +154,9 @@ class _VideoUploadPageState extends State<VideoUploadPage> {
               onPressed: () {
                 if (qCtrl.text.isEmpty ||
                     opt1.text.isEmpty ||
-                    opt2.text.isEmpty) return;
+                    opt2.text.isEmpty) {
+                  return;
+                }
                 final updatedQ = AwarenessQuestionModel(
                   question: qCtrl.text.trim(),
                   options: [

@@ -514,7 +514,7 @@ class DocumentRepository {
       Map<String, Map<String, String>> docCache = {};
 
       for (var doc in snapshot.docs) {
-        final data = doc.data() as Map<String, dynamic>;
+        final data = doc.data();
         final String dId = data['docId'] ?? '';
 
         if (allowedDocIds != null && !allowedDocIds.contains(dId)) {

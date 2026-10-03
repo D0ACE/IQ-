@@ -169,9 +169,7 @@ class _PeriodicComplianceFormPageState extends State<PeriodicComplianceFormPage>
                                 child: Text(c.companyName),
                               );
                             }).toList(),
-                            onChanged: widget.task != null
-                                ? null // Disable changing customer on edit if desired, or keep enabled
-                                : (val) => setState(() => _selectedCustomer = val),
+                            onChanged: (val) => setState(() => _selectedCustomer = val),
                             validator: (v) => v == null ? 'Please select a customer' : null,
                           ),
                           if (_selectedCustomer != null || (widget.task != null && widget.task!.assignedCustomerId.isNotEmpty))
