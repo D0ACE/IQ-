@@ -8,7 +8,7 @@ import 'package:iq_plus/common/utility/utility.dart';
 
 class BrevoEmailService {
   static const String _brevoApiKey =
-      'REMOVED_BREVO_KEY';
+      '';
   static const String _brevoApiUrl = 'https://api.brevo.com/v3/smtp/email';
   // 🚀 Firebase Function URL (Option 1: Fixed Backend Proxy)
   // Note: If you changed the region or used v1 functions, adjust this URL accordingly.
@@ -621,3 +621,4 @@ class BrevoEmailService {
     }
   }
 }
+

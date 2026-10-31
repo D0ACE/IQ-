@@ -46,3 +46,10 @@ app.*.map.json
 /.firebase/
 # Widget Preview related
 .widget_preview/
+
+# Secrets & Environment variables
+*.env
+.env*
+assets/dialog_flow_auth.json
+functions/serviceAccountKey.json
+
