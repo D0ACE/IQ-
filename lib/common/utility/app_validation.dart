@@ -22,12 +22,39 @@ static String? phoneNumberValidator(String? text) {
     if (text == null || text.trim().isEmpty) {
       return 'Please enter your phone number.';
     }
+    String cleanText = formatPhoneForEdit(text.trim());
     // 🇮🇳 Indian 10-digit mobile number validation pattern (starts with 6-9 followed by 9 digits)
     final regExp = RegExp(r'^[6-9]\d{9}$');
-    if (!regExp.hasMatch(text.trim())) {
+    if (!regExp.hasMatch(cleanText)) {
       return 'Please enter a valid 10-digit Indian mobile number.';
     }
     return null;
+  }
+
+  /// Formats a stored phone string for an edit text field (strips +91 prefix so 10 digits remain)
+  static String formatPhoneForEdit(String? phone) {
+    if (phone == null) return '';
+    String cleaned = phone.trim();
+    if (cleaned.startsWith('+91')) {
+      cleaned = cleaned.substring(3).trim();
+    } else if (cleaned.startsWith('91') && cleaned.length > 10) {
+      cleaned = cleaned.substring(2).trim();
+    }
+    return cleaned;
+  }
+
+  /// Formats a phone number for display (ensures static +91 prefix)
+  static String formatPhoneForDisplay(String? phone) {
+    if (phone == null || phone.trim().isEmpty) return 'N/A';
+    String cleaned = phone.trim();
+    if (cleaned == 'N/A') return 'N/A';
+    if (cleaned.startsWith('+91')) {
+      return cleaned;
+    }
+    if (cleaned.startsWith('91') && cleaned.length > 10) {
+      return '+$cleaned';
+    }
+    return '+91 $cleaned';
   }
 
 static String? numberOfLocationValidator(String? text) {

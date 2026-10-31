@@ -209,13 +209,29 @@ class Utility {
     }
   }
 
-  static String formatTimestamp(Timestamp? timestamp) {
-    if(timestamp!=null)
-    {
+  static String formatTimestamp(dynamic timestamp) {
+    if (timestamp == null) return "";
+
+    if (timestamp is Timestamp) {
       final date = timestamp.toDate();
       return DateFormat('dd MMM yyyy').format(date);
-    }else{
-      return "";
     }
+
+    if (timestamp is DateTime) {
+      return DateFormat('dd MMM yyyy').format(timestamp);
+    }
+
+    if (timestamp is String) {
+      if (timestamp.trim().isEmpty) return "";
+      try {
+        final parsed = DateTime.tryParse(timestamp);
+        if (parsed != null) {
+          return DateFormat('dd MMM yyyy').format(parsed);
+        }
+      } catch (_) {}
+      return timestamp;
+    }
+
+    return "";
   }
 }

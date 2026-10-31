@@ -359,10 +359,10 @@ class _CustomerPolicyDetailPageState extends State<CustomerPolicyDetailPage> {
                                 ElevatedButton.icon(
                                   onPressed: _downloadFile,
                                   icon: const Icon(Icons.download_rounded),
-                                  label: const Text("Download & View File"),
+                                  label: const Text("DOWNLOAD & VIEW FILE"),
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppColors.kPrimaryColor,
-                                    foregroundColor: Colors.white,
+                                    backgroundColor: AppColors.buttonDarkGreen,
+                                    foregroundColor: AppColors.buttonYellow,
                                     padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 18),
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                                     elevation: 8,

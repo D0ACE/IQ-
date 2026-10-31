@@ -280,7 +280,7 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
                                 OutlinedButton.icon(
                                   onPressed: () => launchUrl(Uri.parse(widget.document.fileUrl)),
                                   icon: const Icon(Icons.download_rounded),
-                                  label: const Text("Download & View File"),
+                                  label: const Text("DOWNLOAD & VIEW FILE"),
                                   style: OutlinedButton.styleFrom(
                                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -290,10 +290,10 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
                                 ElevatedButton.icon(
                                   onPressed: _importFromFile,
                                   icon: const Icon(Icons.upload_file_rounded),
-                                  label: const Text("Re-upload"),
+                                  label: const Text("RE-UPLOAD"),
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppColors.kPrimaryColor,
-                                    foregroundColor: Colors.white,
+                                    backgroundColor: AppColors.buttonDarkGreen,
+                                    foregroundColor: AppColors.buttonYellow,
                                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                   ),
@@ -368,8 +368,8 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
                       child: ElevatedButton(
                         onPressed: _saveDocument,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.purple,
-                          foregroundColor: Colors.white,
+                          backgroundColor: AppColors.buttonDarkGreen,
+                          foregroundColor: AppColors.buttonYellow,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
@@ -449,9 +449,23 @@ class _DocumentEditorPageState extends State<DocumentEditorPage> {
 
       if (result == null || result.files.isEmpty) return;
 
+      final file = result.files.first;
+      final extension = (file.extension ?? file.name.split('.').last).toLowerCase();
+      final allowedExts = ['docx', 'doc', 'pdf'];
+      if (!allowedExts.contains(extension)) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Only DOCX, DOC, and PDF files are allowed."),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
       setState(() => _isLoading = true);
 
-      final file = result.files.first;
       final bytes = file.bytes;
       if (bytes == null) throw Exception("Could not read file bytes");
       

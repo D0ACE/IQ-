@@ -33,6 +33,8 @@ class AwarenessVideoModel {
   final String createdBy; 
   final String? customerId; 
   final List<AwarenessQuestionModel> questions; 
+  final List<String> assignedEmployeeIds;
+  final bool accessToOtherEmployees;
   final DateTime createdAt;
 
   AwarenessVideoModel({
@@ -44,6 +46,8 @@ class AwarenessVideoModel {
     required this.createdBy,
     this.customerId,
     required this.questions,
+    this.assignedEmployeeIds = const [],
+    this.accessToOtherEmployees = false,
     required this.createdAt,
   });
 
@@ -60,6 +64,10 @@ class AwarenessVideoModel {
       questions: (data['questions'] as List?)
           ?.map((q) => AwarenessQuestionModel.fromJson(q as Map<String, dynamic>))
           .toList() ?? [],
+      assignedEmployeeIds: data['assigned_employee_ids'] != null
+          ? List<String>.from(data['assigned_employee_ids'])
+          : [],
+      accessToOtherEmployees: data['access_to_other_employees'] ?? false,
       createdAt: (data['created_at'] as Timestamp?)?.toDate() ?? DateTime.now(),
     );
   }
@@ -73,6 +81,8 @@ class AwarenessVideoModel {
       'created_by': createdBy,
       'customer_id': customerId,
       'questions': questions.map((AwarenessQuestionModel q) => q.toJson()).toList(),
+      'assigned_employee_ids': assignedEmployeeIds,
+      'access_to_other_employees': accessToOtherEmployees,
       'created_at': FieldValue.serverTimestamp(),
     };
   }

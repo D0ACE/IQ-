@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:iq_plus/common/routes/go_route.dart';
+import 'package:iq_plus/common/utility/app_validation.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
 import 'package:iq_plus/features/admin/customers/cubit/customer_list_cubit.dart';
 import 'package:iq_plus/features/admin/customers/cubit/customer_list_state.dart';
@@ -27,9 +28,11 @@ class _CustomerListPageState extends State<CustomerListPage> {
   }
 
   List<CustomerModel> _getFilteredCustomers(List<CustomerModel> customers) {
-    if (_searchQuery.isEmpty) return customers;
+    // 🚫 Filter out customers without valid data / company name
+    final validCustomers = customers.where((c) => c.companyName.trim().isNotEmpty).toList();
+    if (_searchQuery.isEmpty) return validCustomers;
     final q = _searchQuery.toLowerCase().trim();
-    return customers.where((customer) {
+    return validCustomers.where((customer) {
       final matchName = customer.companyName.toLowerCase().contains(q);
       final matchEmail = customer.email.toLowerCase().contains(q);
       final matchPhone = customer.phoneNumber.toLowerCase().contains(q);
@@ -68,9 +71,9 @@ class _CustomerListPageState extends State<CustomerListPage> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddEditDialog(context),
-        backgroundColor: AppColors.primary,
-        icon: const Icon(Icons.business_center_rounded, color: Colors.white),
-        label: const Text("Add Customer", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        backgroundColor: AppColors.buttonDarkGreen,
+        icon: const Icon(Icons.business_center_rounded, color: AppColors.buttonYellow),
+        label: const Text("Add Customer", style: TextStyle(color: AppColors.buttonYellow, fontWeight: FontWeight.bold)),
       ),
       body: Stack(
         children: [
@@ -244,10 +247,10 @@ class _CustomerListPageState extends State<CustomerListPage> {
                                           });
                                         },
                                         icon: const Icon(Icons.clear_rounded, size: 18),
-                                        label: const Text("Clear Search"),
+                                        label: const Text("CLEAR SEARCH"),
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor: AppColors.primary,
-                                          foregroundColor: Colors.white,
+                                          backgroundColor: AppColors.buttonDarkGreen,
+                                          foregroundColor: AppColors.buttonYellow,
                                           shape: RoundedRectangleBorder(
                                             borderRadius: BorderRadius.circular(12),
                                           ),
@@ -310,10 +313,10 @@ class _CustomerListPageState extends State<CustomerListPage> {
                         ElevatedButton.icon(
                           onPressed: () => context.read<CustomerListCubit>().fetchCustomers(),
                           icon: const Icon(Icons.refresh_rounded),
-                          label: const Text("Try Again"),
+                          label: const Text("TRY AGAIN"),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            foregroundColor: Colors.white,
+                            backgroundColor: AppColors.buttonDarkGreen,
+                            foregroundColor: AppColors.buttonYellow,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
                         ),
@@ -360,14 +363,15 @@ class _CustomerListPageState extends State<CustomerListPage> {
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text(
-              "Cancel",
-              style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.bold),
+              "CANCEL",
+              style: TextStyle(color: AppColors.buttonYellow,
+ fontWeight: FontWeight.bold),
             ),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent,
-              foregroundColor: Colors.white,
+              backgroundColor: AppColors.buttonDarkGreen,
+              foregroundColor: AppColors.buttonYellow,
               elevation: 0,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
@@ -375,7 +379,7 @@ class _CustomerListPageState extends State<CustomerListPage> {
               context.read<CustomerListCubit>().deleteCustomer(customer.customerId);
               Navigator.pop(ctx);
             },
-            child: const Text("Delete Account", style: TextStyle(fontWeight: FontWeight.bold)),
+            child: const Text("DELETE ACCOUNT", style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -489,7 +493,7 @@ class _CustomerCard extends StatelessWidget {
                             const SizedBox(width: 6),
                             Expanded(
                               child: Text(
-                                customer.phoneNumber.isNotEmpty ? customer.phoneNumber : 'N/A',
+                                AppValidation.formatPhoneForDisplay(customer.phoneNumber),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(

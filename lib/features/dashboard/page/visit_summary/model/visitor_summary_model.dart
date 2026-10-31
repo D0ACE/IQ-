@@ -7,18 +7,22 @@ class VisitorSummaryModel {
   final String customerId;
   final String consultantId;
 
-  final String clientName;
   final String location;
 
   final String? visitDate;
-  final String fromTime;
-  final String toTime;
+  final String loginTime;
+  final String logoutTime;
+
+  String get fromTime => loginTime;
+  String get toTime => logoutTime;
 
   final String purpose;
-  final String officerName;
+  final String consultantCoachName;
+  String get officerName => consultantCoachName;
+
   final String department;
 
-  final Map<String, dynamic> scopeOfReview;
+  final List<String> scopeOfReview;
 
   final List<ObservationModel> observations;
 
@@ -39,22 +43,21 @@ class VisitorSummaryModel {
     required this.id,
     required this.customerId,
     required this.consultantId,
-    required this.clientName,
     required this.location,
     required this.visitDate,
-    required this.fromTime,
-    required this.toTime,
+    required this.loginTime,
+    required this.logoutTime,
     required this.purpose,
-    required this.officerName,
+    required this.consultantCoachName,
     required this.department,
     required this.scopeOfReview,
-    required this.observations,
+    this.observations = const [],
     required this.complianceStatus,
     required this.complianceComments,
     required this.nonCompliances,
     required this.capas,
     required this.clientFeedback,
-    required this.overallAssessment,
+    this.overallAssessment = '',
     required this.signOff,
     required this.createdAt,
   });
@@ -70,17 +73,18 @@ class VisitorSummaryModel {
       id: id,
       customerId: json['customerId'] ?? '',
       consultantId: json['consultantId'] ?? '',
-      clientName: json['clientName'] ?? '',
       location: json['location'] ?? '',
-      visitDate:Utility.formatTimestamp(json['visitDate']),
-      fromTime: json['fromTime'] ?? '',
-      toTime: json['toTime'] ?? '',
+      visitDate: Utility.formatTimestamp(json['visitDate']),
+      loginTime: json['loginTime'] ?? json['fromTime'] ?? '',
+      logoutTime: json['logoutTime'] ?? json['toTime'] ?? '',
       purpose: json['purpose'] ?? '',
-      officerName: json['officerName'] ?? '',
+      consultantCoachName: json['consultantCoachName'] ?? json['officerName'] ?? '',
       department: json['department'] ?? '',
-      scopeOfReview: Map<String, dynamic>.from(
-        json['scopeOfReview'] ?? {},
-      ),
+      scopeOfReview: (json['scopeOfReview'] is List)
+          ? (json['scopeOfReview'] as List).map((e) => e.toString()).toList()
+          : (json['scopeOfReview'] is Map)
+              ? (json['scopeOfReview'] as Map).keys.map((k) => k.toString()).toList()
+              : [],
       observations: (json['observations'] as List<dynamic>? ?? [])
           .map((e) => ObservationModel.fromJson(e))
           .toList(),
@@ -95,7 +99,7 @@ class VisitorSummaryModel {
       clientFeedback: json['clientFeedback'] ?? '',
       overallAssessment: json['overallAssessment'] ?? '',
       signOff: SignOffModel.fromJson(json['signOff'] ?? {}),
-      createdAt: json['createdAt'] as Timestamp?,
+      createdAt: json['createdAt'] is Timestamp ? json['createdAt'] as Timestamp : null,
     );
   }
 
@@ -106,13 +110,12 @@ class VisitorSummaryModel {
     return {
       'customerId': customerId,
       'consultantId': consultantId,
-      'clientName': clientName,
       'location': location,
       'visitDate': visitDate,
-      'fromTime': fromTime,
-      'toTime': toTime,
+      'loginTime': loginTime,
+      'logoutTime': logoutTime,
       'purpose': purpose,
-      'officerName': officerName,
+      'consultantCoachName': consultantCoachName,
       'department': department,
       'scopeOfReview': scopeOfReview,
       'observations': observations.map((e) => e.toJson()).toList(),
@@ -160,65 +163,87 @@ class ObservationModel {
 
 class NonComplianceModel {
   final String gap;
-  final String root;
-  final String impact;
+  final String category;
+  final String actionRequired;
+  final String responsible;
+  final String? targetDate;
+
+  String get root => category;
+  String get impact => actionRequired;
 
   NonComplianceModel({
     required this.gap,
-    required this.root,
-    required this.impact,
+    this.category = 'Minor',
+    this.actionRequired = '',
+    this.responsible = '',
+    this.targetDate,
   });
 
   factory NonComplianceModel.fromJson(Map<String, dynamic> json) {
     return NonComplianceModel(
-      gap: json['gap'] ?? '',
-      root: json['root'] ?? '',
-      impact: json['impact'] ?? '',
+      gap: json['descriptionOfNc'] ?? json['gap'] ?? '',
+      category: json['categoryOfNc'] ?? json['category'] ?? json['root'] ?? 'Minor',
+      actionRequired: json['actionRequired'] ?? json['impact'] ?? '',
+      responsible: json['responsible'] ?? '',
+      targetDate: Utility.formatTimestamp(json['targetDate'] ?? json['targetDateStr'] ?? json['date']),
     );
   }
 
   Map<String, dynamic> toJson() => {
     'gap': gap,
-    'root': root,
-    'impact': impact,
+    'category': category,
+    'actionRequired': actionRequired,
+    'responsible': responsible,
+    'targetDate': targetDate,
   };
 }
 
 class CapaModel {
   final String action;
+  final String rootCause;
   final String owner;
   final String? date;
+  final String actionTakenBy;
+  final String evidence;
 
   CapaModel({
     required this.action,
-    required this.owner,
+    required this.rootCause,
+    String? owner,
     required this.date,
-  });
+    this.actionTakenBy = '',
+    this.evidence = '',
+  }) : owner = owner ?? rootCause;
 
   factory CapaModel.fromJson(Map<String, dynamic> json) {
     return CapaModel(
-      action: json['action'] ?? '',
-      owner: json['owner'] ?? '',
-      date: Utility.formatTimestamp(json['date'] as Timestamp?),
+      action: json['actionTaken'] ?? json['action'] ?? '',
+      rootCause: json['rootCause'] ?? json['owner'] ?? '',
+      date: Utility.formatTimestamp(json['dateOfAction'] ?? json['date']),
+      actionTakenBy: json['actionTakenBy'] ?? '',
+      evidence: json['evidence'] ?? '',
     );
   }
 
   Map<String, dynamic> toJson() => {
     'action': action,
-    'owner': owner,
+    'rootCause': rootCause,
     'date': date,
+    'actionTakenBy': actionTakenBy,
+    'evidence': evidence,
   };
 }
 
 class SignOffModel {
-  final String officerName;
+  final String consultantCoachName;
+  String get officerName => consultantCoachName;
   final String officerSign;
   final String clientName;
   final String clientSign;
   final String? signDate;
 
   SignOffModel({
-    required this.officerName,
+    required this.consultantCoachName,
     required this.officerSign,
     required this.clientName,
     required this.clientSign,
@@ -227,16 +252,16 @@ class SignOffModel {
 
   factory SignOffModel.fromJson(Map<String, dynamic> json) {
     return SignOffModel(
-      officerName: json['officerName'] ?? '',
+      consultantCoachName: json['consultantCoachName'] ?? json['officerName'] ?? '',
       officerSign: json['officerSign'] ?? '',
       clientName: json['clientName'] ?? '',
       clientSign: json['clientSign'] ?? '',
-      signDate: Utility.formatTimestamp(json['signDate'] as Timestamp?),
+      signDate: Utility.formatTimestamp(json['signDate']),
     );
   }
 
   Map<String, dynamic> toJson() => {
-    'officerName': officerName,
+    'consultantCoachName': consultantCoachName,
     'officerSign': officerSign,
     'clientName': clientName,
     'clientSign': clientSign,

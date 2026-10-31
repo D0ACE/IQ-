@@ -35,6 +35,7 @@ class _VideoUploadPageState extends State<VideoUploadPage> {
   final _user = getIt<HiveService>().getUser();
   
   final List<AwarenessQuestionModel> _questions = [];
+  bool _accessToOtherEmployees = false;
 
   bool get _isEditing => widget.video != null;
 
@@ -46,6 +47,7 @@ class _VideoUploadPageState extends State<VideoUploadPage> {
       _titleCtrl.text = v.title;
       _selectedFileName = v.fileName;
       _questions.addAll(v.questions);
+      _accessToOtherEmployees = v.accessToOtherEmployees;
       if (v.customerId != null && v.customerId!.isNotEmpty) {
         _selectedCustomer = CustomerModel.fromJson(
           {},
@@ -62,14 +64,31 @@ class _VideoUploadPageState extends State<VideoUploadPage> {
   }
 
   Future<void> _pickVideo() async {
+    const videoExtensions = ['mp4', 'mov', 'avi', 'mkv', 'webm', 'flv', 'wmv', 'm4v', '3gp', 'mpv', 'mp4v'];
+
     final result = await FilePicker.platform.pickFiles(
-      type: FileType.video,
+      type: FileType.custom,
+      allowedExtensions: videoExtensions,
       withData: true, // 🚀 Required for Web to get bytes
     );
 
     if (result != null && result.files.single.bytes != null) {
       final file = result.files.single;
-      
+      final ext = file.extension?.toLowerCase() ?? '';
+
+      // 🛡️ Validate video extension
+      if (ext.isNotEmpty && !videoExtensions.contains(ext)) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Only video files (MP4, MOV, AVI, MKV, WEBM, etc.) are allowed."),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
       // 🛡️ Check file size (Supabase Free Tier limit is 50MB)
       if (file.size > AppConst.maxVideoSize) {
         if (mounted) {
@@ -221,6 +240,7 @@ class _VideoUploadPageState extends State<VideoUploadPage> {
             userId: _user?.userId ?? 'unknown',
             customerId: _selectedCustomer?.customerId,
             questions: _questions,
+            accessToOtherEmployees: _accessToOtherEmployees,
           );
     } else {
       context.read<VideoCubit>().uploadVideo(
@@ -230,6 +250,7 @@ class _VideoUploadPageState extends State<VideoUploadPage> {
             userId: _user?.userId ?? 'unknown',
             customerId: _selectedCustomer?.customerId,
             questions: _questions,
+            accessToOtherEmployees: _accessToOtherEmployees,
           );
     }
   }
@@ -348,6 +369,19 @@ class _VideoUploadPageState extends State<VideoUploadPage> {
                     ),
                   ),
                 ),
+                const SizedBox(height: 20),
+                CheckboxListTile(
+                  title: const Text("Access to other employees", style: TextStyle(fontWeight: FontWeight.bold)),
+                  subtitle: const Text("Allow other employees of this customer company to view and take this training video"),
+                  value: _accessToOtherEmployees,
+                  onChanged: (val) {
+                    setState(() {
+                      _accessToOtherEmployees = val ?? true;
+                    });
+                  },
+                  controlAffinity: ListTileControlAffinity.leading,
+                  contentPadding: EdgeInsets.zero,
+                ),
                 const SizedBox(height: 24),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -407,8 +441,8 @@ class _VideoUploadPageState extends State<VideoUploadPage> {
                       return ElevatedButton(
                         onPressed: state is VideoLoading ? null : _saveVideo,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.purple,
-                          foregroundColor: Colors.white,
+                          backgroundColor: AppColors.buttonDarkGreen,
+                          foregroundColor: AppColors.buttonYellow,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12)),

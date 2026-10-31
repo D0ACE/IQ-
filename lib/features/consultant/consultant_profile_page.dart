@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:iq_plus/common/app_widget/app_text_field_widget.dart';
+import 'package:iq_plus/common/routes/go_route.dart';
+import 'package:iq_plus/common/utility/app_validation.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
 import 'package:iq_plus/core/local_storage/hive_service.dart';
 import 'package:iq_plus/di/service_locator.dart';
@@ -41,6 +45,130 @@ class _ConsultantProfilePageState extends State<ConsultantProfilePage> {
     _statusCtrl.text = user!.activeUser ? "Active" : "Inactive";
   }
 
+  void _showEditProfileDialog(BuildContext context) {
+    if (user == null) return;
+    final formKey = GlobalKey<FormState>();
+    final nameCtrl = TextEditingController(text: user!.userName);
+    final emailCtrl = TextEditingController(text: user!.email);
+    final phoneCtrl = TextEditingController(text: AppValidation.formatPhoneForEdit(user!.phoneNumber));
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Text("Edit Profile", style: TextStyle(fontWeight: FontWeight.w900)),
+        content: Form(
+          key: formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 8),
+                AppTextFieldWidget(
+                  labelText: "Full Name",
+                  hintText: "Enter full name",
+                  textFieldController: nameCtrl,
+                  isRequired: true,
+                  validator: AppValidation.nameValidator,
+                  prefixIconWidget: const Icon(Icons.person_outline_rounded, color: AppColors.kPrimaryColor, size: 20),
+                ),
+                const SizedBox(height: 16),
+                AppTextFieldWidget(
+                  labelText: "Email Address",
+                  hintText: "Enter email address",
+                  textFieldController: emailCtrl,
+                  isRequired: true,
+                  keyboardType: TextInputType.emailAddress,
+                  validator: AppValidation.checkEmailValidation,
+                  prefixIconWidget: const Icon(Icons.alternate_email_rounded, color: AppColors.kPrimaryColor, size: 20),
+                ),
+                const SizedBox(height: 16),
+                AppTextFieldWidget(
+                  labelText: "Phone Number",
+                  hintText: "Enter 10-digit mobile number",
+                  textFieldController: phoneCtrl,
+                  isRequired: true,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: AppValidation.phoneNumberFormatters(),
+                  validator: AppValidation.phoneNumberValidator,
+                  prefixText: "+91 ",
+                  prefixIconWidget: const Icon(Icons.phone_iphone_rounded, color: AppColors.kPrimaryColor, size: 20),
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("Cancel", style: TextStyle(color: AppColors.buttonYellow, fontWeight: FontWeight.bold)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.buttonDarkGreen,
+              foregroundColor: AppColors.buttonYellow,
+            ),
+            onPressed: () async {
+              if (!formKey.currentState!.validate()) {
+                return;
+              }
+
+              final newName = nameCtrl.text.trim();
+              final newEmail = emailCtrl.text.trim();
+              final newPhone = AppValidation.formatPhoneForDisplay(phoneCtrl.text.trim());
+
+              try {
+                // Update Firestore
+                await FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(widget.consultantId)
+                    .update({
+                  'userName': newName,
+                  'email': newEmail,
+                  'phoneNumber': newPhone,
+                });
+
+                // Update Hive local storage
+                user!.userName = newName;
+                user!.email = newEmail;
+                user!.phoneNumber = newPhone;
+                await getIt<HiveService>().saveUser(user!);
+
+                if (context.mounted) {
+                  Navigator.pop(ctx);
+                  context.go(AppRoutes.consultantDashboard);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Profile updated successfully")),
+                  );
+                }
+
+                setState(() {
+                  _nameCtrl.text = newName;
+                  _emailCtrl.text = newEmail;
+                  _phoneCtrl.text = newPhone;
+                });
+
+                if (context.mounted) {
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Profile updated successfully")),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("Failed to update profile: $e"), backgroundColor: Colors.red),
+                  );
+                }
+              }
+            },
+            child: const Text("Save", style: TextStyle(color: AppColors.buttonYellow, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (user == null) {
@@ -63,6 +191,13 @@ class _ConsultantProfilePageState extends State<ConsultantProfilePage> {
           style: TextStyle(color: AppColors.blackColor, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit, color: AppColors.blackColor),
+            onPressed: () => _showEditProfileDialog(context),
+            tooltip: 'Edit Profile',
+          ),
+        ],
       ),
       body: Stack(
         children: [
@@ -232,7 +367,7 @@ class _ConsultantProfilePageState extends State<ConsultantProfilePage> {
             const Divider(height: 32, color: Colors.black12),
             _buildDetailItem(Icons.email_outlined, "Email Address", _emailCtrl.text),
             const Divider(height: 32, color: Colors.black12),
-            _buildDetailItem(Icons.phone_iphone_rounded, "Contact Number", _phoneCtrl.text),
+            _buildDetailItem(Icons.phone_iphone_rounded, "Contact Number", AppValidation.formatPhoneForDisplay(_phoneCtrl.text)),
             const Divider(height: 32, color: Colors.black12),
             _buildDetailItem(Icons.badge_outlined, "Designation Role", _roleCtrl.text),
             const Divider(height: 32, color: Colors.black12),

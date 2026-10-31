@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:iq_plus/common/routes/go_route.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
+import 'package:iq_plus/common/utility/app_validation.dart';
 import 'package:iq_plus/common/utility/utility.dart';
 import 'package:iq_plus/core/local_storage/hive_service.dart';
 import 'package:iq_plus/di/service_locator.dart';
@@ -57,6 +58,11 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
     } else if (customer != null && Utility.isCustomer(customer.roleId)) {
       // For customers, show all employees of their company
       customerIds = [customer.customerId];
+    } else if (user != null && Utility.isEmployee(user.roleId)) {
+      // For employees, show all employees of their assigned company
+      if (user.customerId != null && user.customerId!.isNotEmpty) {
+        customerIds = [user.customerId!];
+      }
     } else {
       // For Admins/SuperAdmins, show all employees and resolve company names (Run in background)
       customerCubit.fetchApprovedCustomers(null);
@@ -281,6 +287,8 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
     final currentRole = getIt<HiveService>().getCustomer()?.roleId ??
         getIt<HiveService>().getUser()?.roleId;
     final isCustomerUser = Utility.isCustomer(currentRole);
+    final isEmployeeUser = Utility.isEmployee(currentRole);
+    final isReadOnlyUser = isCustomerUser || isEmployeeUser;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FC),
@@ -293,7 +301,7 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
           style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18),
         ),
         actions: [
-          if (!isCustomerUser)
+          if (!isReadOnlyUser)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: ElevatedButton.icon(
@@ -305,11 +313,11 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
                 },
                 icon: const Icon(Icons.add, color: Colors.white, size: 18),
                 label: const Text(
-                  "Add Employee",
-                  style: TextStyle(color: Colors.white),
+                  "ADD EMPLOYEE",
+                  style: TextStyle(color: AppColors.buttonYellow),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.kPrimaryColor,
+                  backgroundColor: AppColors.buttonDarkGreen,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -382,7 +390,7 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
                                   const SizedBox(height: 12),
                                   TextButton.icon(
                                     icon: const Icon(Icons.refresh),
-                                    label: const Text("Clear Filters"),
+                                    label: const Text("CLEAR FILTERS"),
                                     onPressed: () {
                                       searchController.clear();
                                       setState(() {
@@ -540,7 +548,7 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
                                                     color: Colors.grey),
                                                 const SizedBox(width: 6),
                                                 Text(
-                                                  employee.phoneNumber,
+                                                  AppValidation.formatPhoneForDisplay(employee.phoneNumber),
                                                   style: const TextStyle(
                                                       fontSize: 13,
                                                       color: Colors
@@ -626,13 +634,12 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
                                               icon: const Icon(Icons.bar_chart,
                                                   size: 16),
                                               label: const Text(
-                                                  "View Training Results",
+                                                  "VIEW TRAINING RESULTS",
                                                   style: TextStyle(
                                                       fontSize: 12)),
                                               style: ElevatedButton.styleFrom(
-                                                backgroundColor:
-                                                    AppColors.kPrimaryColor,
-                                                foregroundColor: Colors.white,
+                                                backgroundColor: AppColors.buttonDarkGreen,
+                                                foregroundColor: AppColors.buttonYellow,
                                                 padding: const EdgeInsets
                                                     .symmetric(
                                                     horizontal: 12,
@@ -648,7 +655,7 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
                                                 ),
                                               ),
                                             ),
-                                          if (!isCustomerUser)
+                                          if (!isReadOnlyUser)
                                             Row(
                                               children: [
                                                 IconButton(
@@ -711,15 +718,15 @@ class _EmployeeListPageState extends State<EmployeeListPage> {
         content: Text("Are you sure you want to delete ${employee.userName}?"),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx), child: const Text("Cancel")),
+              onPressed: () => Navigator.pop(ctx), child: const Text("CANCEL")),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.buttonDarkGreen),
             onPressed: () {
               context.read<UserCubit>().deleteUser(employee.userId,
                   customerId: employee.customerId);
               Navigator.pop(ctx);
             },
-            child: const Text("Delete", style: TextStyle(color: Colors.white)),
+            child: const Text("DELETE", style: TextStyle(color: AppColors.buttonYellow)),
           ),
         ],
       ),

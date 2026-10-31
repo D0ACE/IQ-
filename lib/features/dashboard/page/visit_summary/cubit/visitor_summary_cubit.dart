@@ -47,6 +47,13 @@ class VisitorSummaryCubit extends Cubit<VisitorSummaryState> {
 
       await repository.createVisitorSummary(data);
       
+      final pdfBytes = await BrevoEmailService.generateVisitorSummaryPdfBytes(
+        selectedCustomer: selectedCustomer,
+        consultantUserModel: consultantUserModel,
+        payload: payload,
+        isUpdateVisitorSummary: false,
+      );
+
       // 📧 Send Emails (Await to catch unhandled errors in UI)
       await BrevoEmailService.sendVisitorSummaryMailFromPayload(
         toEmail: selectedCustomer?.email ?? '',
@@ -54,6 +61,7 @@ class VisitorSummaryCubit extends Cubit<VisitorSummaryState> {
         payload: payload,
         selectedCustomer: selectedCustomer,
         consultantUserModel: consultantUserModel,
+        existingPdfBytes: pdfBytes,
       );
 
       await BrevoEmailService.sendVisitorSummaryMailFromPayload(
@@ -62,6 +70,7 @@ class VisitorSummaryCubit extends Cubit<VisitorSummaryState> {
         payload: payload,
         selectedCustomer: selectedCustomer,
         consultantUserModel: consultantUserModel,
+        existingPdfBytes: pdfBytes,
       );
 
       List<EmployeeUserModel> adminUsers = await repository.fetchAdminUsers();
@@ -72,6 +81,7 @@ class VisitorSummaryCubit extends Cubit<VisitorSummaryState> {
           payload: payload,
           selectedCustomer: selectedCustomer,
           consultantUserModel: consultantUserModel,
+          existingPdfBytes: pdfBytes,
         );
       }
       emit(VisitorSummarySuccess('Visitor summary saved'));
@@ -95,6 +105,13 @@ class VisitorSummaryCubit extends Cubit<VisitorSummaryState> {
 
       await repository.updateVisitorSummary(docId: docId, data: data);
 
+      final pdfBytes = await BrevoEmailService.generateVisitorSummaryPdfBytes(
+        selectedCustomer: selectedCustomer,
+        consultantUserModel: consultantUserModel,
+        payload: payload,
+        isUpdateVisitorSummary: true,
+      );
+
       // 📧 Send Emails (Await to catch unhandled errors in UI)
       await BrevoEmailService.sendVisitorSummaryMailFromPayload(
         toEmail: selectedCustomer?.email ?? '',
@@ -103,6 +120,7 @@ class VisitorSummaryCubit extends Cubit<VisitorSummaryState> {
         selectedCustomer: selectedCustomer,
         consultantUserModel: consultantUserModel,
         isUpdateVisitorSummary: true,
+        existingPdfBytes: pdfBytes,
       );
 
       await BrevoEmailService.sendVisitorSummaryMailFromPayload(
@@ -112,6 +130,7 @@ class VisitorSummaryCubit extends Cubit<VisitorSummaryState> {
         selectedCustomer: selectedCustomer,
         consultantUserModel: consultantUserModel,
         isUpdateVisitorSummary: true,
+        existingPdfBytes: pdfBytes,
       );
 
       List<EmployeeUserModel> adminUsers = await repository.fetchAdminUsers();
@@ -123,6 +142,7 @@ class VisitorSummaryCubit extends Cubit<VisitorSummaryState> {
           selectedCustomer: selectedCustomer,
           consultantUserModel: consultantUserModel,
           isUpdateVisitorSummary: true,
+          existingPdfBytes: pdfBytes,
         );
       }
       emit(VisitorSummarySuccess('Visitor summary updated'));

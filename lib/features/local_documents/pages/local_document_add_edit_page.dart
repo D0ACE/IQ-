@@ -128,7 +128,7 @@ class _LocalDocumentAddEditPageState extends State<LocalDocumentAddEditPage> {
                           });
                         },
                         icon: const Icon(Icons.edit_note, color: AppColors.purple),
-                        label: const Text("Open in Rich Document Editor", style: TextStyle(color: AppColors.purple)),
+                        label: const Text("OPEN IN RICH DOCUMENT EDITOR", style: TextStyle(color: AppColors.buttonYellow)),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           side: const BorderSide(color: AppColors.purple),
@@ -143,8 +143,8 @@ class _LocalDocumentAddEditPageState extends State<LocalDocumentAddEditPage> {
                     child: ElevatedButton(
                       onPressed: state is LocalDocumentLoading ? null : _saveDocument,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.purple,
-                        foregroundColor: Colors.white,
+                        backgroundColor: AppColors.buttonDarkGreen,
+                        foregroundColor: AppColors.buttonYellow,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),

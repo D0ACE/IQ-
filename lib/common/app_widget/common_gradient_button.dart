@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
+import 'package:iq_plus/common/themes/app_strings.dart';
 
 class GradientButton extends StatelessWidget {
   final String text;
@@ -25,17 +26,24 @@ class GradientButton extends StatelessWidget {
           gradient: LinearGradient(
             colors: isLoading
                 ? [
-                    AppColors.kPrimaryLightColor.withValues(alpha:0.6),
-                    AppColors.kPrimaryColor.withValues(alpha:0.6),
+                    AppColors.buttonDarkGreen.withValues(alpha: 0.6),
+                    AppColors.buttonDarkGreen.withValues(alpha: 0.6),
                   ]
                 : [
-                    AppColors.kPrimaryLightColor,
-                    AppColors.kPrimaryColor,
+                    AppColors.buttonDarkGreen,
+                    AppColors.buttonDarkGreen,
                   ],
             begin: Alignment.centerLeft,
             end: Alignment.centerRight,
           ),
           borderRadius: BorderRadius.circular(radiusSize),
+          boxShadow: const [
+            BoxShadow(
+              color: AppColors.shadowColorBrand,
+              blurRadius: 20,
+              offset: Offset(0, 5),
+            ),
+          ],
         ),
         child: Center(
           child: isLoading
@@ -44,14 +52,15 @@ class GradientButton extends StatelessWidget {
                   width: 22,
                   child: CircularProgressIndicator(
                     strokeWidth: 2.5,
-                    color: Colors.white,
+                    color: AppColors.loginAccent,
                   ),
                 )
               : Text(
                   text,
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: AppColors.buttonYellow,
                     fontSize: 16,
+                    fontFamily: AppFonts.fontOpenSansBold,
                     fontWeight: FontWeight.bold,
                   ),
                 ),

@@ -1,4 +1,5 @@
 import 'package:iq_plus/common/themes/app_colors.dart';
+import 'package:iq_plus/common/themes/app_const.dart';
 import 'package:iq_plus/common/themes/app_theme_data.dart';
 import 'package:iq_plus/common/themes/app_ui_helper.dart';
 import 'package:flutter/material.dart';
@@ -16,6 +17,9 @@ class AppTextFieldWidget extends StatefulWidget {
   final TextEditingController textFieldController;
   final Widget? suffixIconWidget;
   final Widget? prefixIconWidget;
+  final String? prefixText;
+  final TextStyle? prefixStyle;
+  final Widget? prefix;
   final TextStyle? textStyle;
   final EdgeInsets margin;
   final FormFieldValidator<String>? validator;
@@ -58,6 +62,9 @@ class AppTextFieldWidget extends StatefulWidget {
     required this.textFieldController,
     this.errorText,
     this.prefixIconWidget,
+    this.prefixText,
+    this.prefixStyle,
+    this.prefix,
     this.suffixIconWidget,
     this.textStyle,
     this.margin = const EdgeInsets.all(0.0),
@@ -118,10 +125,10 @@ class AppTextFieldWidgetState extends State<AppTextFieldWidget> {
   Widget mainTextFieldWidget() {
     return Theme(
       data: Theme.of(context).copyWith(
-        primaryColor: AppColors.greyTextColor,
+        primaryColor: AppColors.brandPrimary,
         hintColor: isErrorShow
-            ? AppColors.redTextStatusColor
-            : AppColors.greyTextColor,
+            ? AppColors.semanticError
+            : AppColors.neutralTextSecondary,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -132,16 +139,14 @@ class AppTextFieldWidgetState extends State<AppTextFieldWidget> {
                 Flexible(
                   child: Padding(
                     padding:
-                    widget.labelTextPadding ??
+                        widget.labelTextPadding ??
                         const EdgeInsets.only(bottom: 7.0),
                     child: Text(
                       widget.labelText!,
                       style:
-                      widget.labelTextStyle ??
-                          AppThemeData.textFieldTextStyle.copyWith(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.grey90TextColor,
+                          widget.labelTextStyle ??
+                          AppThemeData.textFieldLabelTextStyle.copyWith(
+                            color: AppColors.neutralTextPrimary,
                           ),
                     ),
                   ),
@@ -149,16 +154,19 @@ class AppTextFieldWidgetState extends State<AppTextFieldWidget> {
                 if (widget.isRequired || (widget.showAsterisk ?? false))
                   const Text(
                     '*',
-                    style: TextStyle(fontSize: 16.0, color: Colors.red),
+                    style: TextStyle(
+                      fontSize: 16.0,
+                      color: AppColors.semanticError,
+                    ),
                   ),
               ],
             ),
           TextFormField(
             autofocus: widget.autoFocus,
             style:
-            widget.textStyle ??
+                widget.textStyle ??
                 AppThemeData.textFieldTextStyle.copyWith(
-                  color: AppColors.blackTextColor,
+                  color: AppColors.neutralTextPrimary,
                 ),
             enabled: widget.isEnabled,
             maxLength: widget.maxLength,
@@ -204,7 +212,7 @@ class AppTextFieldWidgetState extends State<AppTextFieldWidget> {
             inputFormatters: widget.inputFormatters,
             textInputAction: widget.textInputAction,
             focusNode: widget.focusNode,
-            cursorColor: AppColors.primary,
+            cursorColor: AppColors.brandPrimary,
             autofillHints: widget.autoFillHint.isNotEmpty
                 ? [widget.autoFillHint]
                 : null,
@@ -217,22 +225,22 @@ class AppTextFieldWidgetState extends State<AppTextFieldWidget> {
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(borderRadius),
                 borderSide: const BorderSide(
-                  color: AppColors.primary,
+                  color: AppColors.neutralBorder,
                   width: 1,
                   style: BorderStyle.none,
                 ),
               ),
               errorBorder: OutlineInputBorder(
                 borderSide: const BorderSide(
-                  color: AppColors.redTextStatusColor,
+                  color: AppColors.semanticError,
                   width: 1.0,
                 ),
                 borderRadius: BorderRadius.circular(borderRadius),
               ),
               focusedErrorBorder: OutlineInputBorder(
                 borderSide: const BorderSide(
-                  color: AppColors.redTextStatusColor,
-                  width: 1.0,
+                  color: AppColors.semanticError,
+                  width: 1.5,
                 ),
                 borderRadius: BorderRadius.circular(borderRadius),
               ),
@@ -246,69 +254,82 @@ class AppTextFieldWidgetState extends State<AppTextFieldWidget> {
               ),
               focusedBorder: widget.disableFocusBorder == true
                   ? OutlineInputBorder(
-                borderRadius: BorderRadius.circular(borderRadius),
-                borderSide: const BorderSide(
-                  width: 0,
-                  style: BorderStyle.none,
-                ),
-              )
+                      borderRadius: BorderRadius.circular(borderRadius),
+                      borderSide: const BorderSide(
+                        width: 0,
+                        style: BorderStyle.none,
+                      ),
+                    )
                   : OutlineInputBorder(
-                borderSide: BorderSide(
-                  color: AppColors.greyTextFormFiledColor!,
-                  width: 1.0,
-                ),
-                borderRadius: BorderRadius.circular(borderRadius),
-              ),
-              fillColor: AppColors.greyTextFormFiledColor,
+                      borderSide: const BorderSide(
+                        color: AppColors.brandPrimary,
+                        width: 1.5,
+                      ),
+                      borderRadius: BorderRadius.circular(borderRadius),
+                    ),
+              fillColor: AppColors.neutralSurfaceSunken,
               filled: true,
               prefixIcon: widget.prefixIconWidget,
+              prefix:
+                  widget.prefix ??
+                  (widget.prefixText != null
+                      ? Text(
+                          widget.prefixText!,
+                          style:
+                              widget.prefixStyle ??
+                              AppThemeData.textFieldTextStyle.copyWith(
+                                color: AppColors.neutralTextPrimary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                        )
+                      : null),
               suffixIcon:
-              widget.suffixIconWidget ??
+                  widget.suffixIconWidget ??
                   (widget.isPasswordTextField
                       ? Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        alignment: Alignment.center,
-                        child: GestureDetector(
-                          onTap: () {
-                            if (widget.focusNode != null) {
-                              widget.focusNode!.unfocus();
-                              widget.focusNode!.canRequestFocus = false;
-                            }
-                            setState(() {
-                              isShowPassword = !isShowPassword;
-                            });
-                            if (widget.focusNode != null) {
-                              Future.delayed(
-                                const Duration(milliseconds: 100),
-                                    () {
-                                  widget.focusNode!.canRequestFocus =
-                                  true;
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              alignment: Alignment.center,
+                              child: GestureDetector(
+                                onTap: () {
+                                  if (widget.focusNode != null) {
+                                    widget.focusNode!.unfocus();
+                                    widget.focusNode!.canRequestFocus = false;
+                                  }
+                                  setState(() {
+                                    isShowPassword = !isShowPassword;
+                                  });
+                                  if (widget.focusNode != null) {
+                                    Future.delayed(
+                                      const Duration(milliseconds: 100),
+                                      () {
+                                        widget.focusNode!.canRequestFocus =
+                                            true;
+                                      },
+                                    );
+                                  }
                                 },
-                              );
-                            }
-                          },
-                          child: Icon(
-                            isShowPassword
-                                ? Icons.visibility_off_rounded
-                                : Icons.visibility_rounded,
-                            color: AppColors.kPrimaryColor,
-                            size: 23,
-                          ),
-                        ),
-                      ),
-                    ],
-                  )
+                                child: Icon(
+                                  isShowPassword
+                                      ? Icons.visibility_off_rounded
+                                      : Icons.visibility_rounded,
+                                  color: AppColors.brandPrimary,
+                                  size: AppConst.iconLg,
+                                ),
+                              ),
+                            ),
+                          ],
+                        )
                       : null),
               hintText: widget.hintText,
               hintStyle:
-              widget.hintTextStyle ??
+                  widget.hintTextStyle ??
                   AppThemeData.textFieldTextStyle.copyWith(
-                    color: AppColors.greyLoginTextColor,
+                    color: AppColors.neutralTextSecondary,
                   ),
               contentPadding:
-              widget.contentPadding ??
+                  widget.contentPadding ??
                   const EdgeInsets.fromLTRB(
                     appHorizontalPadding10,
                     appHorizontalPadding20,

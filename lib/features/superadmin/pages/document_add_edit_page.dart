@@ -65,6 +65,21 @@ class _DocumentAddEditPageState extends State<DocumentAddEditPage> {
     if (result != null && result.files.single.bytes != null) {
       final file = result.files.single;
 
+      // 🛡️ Enforce extension validation
+      final extension = (file.extension ?? file.name.split('.').last).toLowerCase();
+      final allowedExts = ['pdf', 'docx', 'doc', 'xlsx', 'xls'];
+      if (!allowedExts.contains(extension)) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Only PDF, DOCX, and Excel files (.pdf, .docx, .doc, .xlsx, .xls) are allowed."),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
       // 🛡️ Check file size
       if (file.size > AppConst.maxVideoSize) {
         if (mounted) {
@@ -200,7 +215,7 @@ class _DocumentAddEditPageState extends State<DocumentAddEditPage> {
                           }
                         },
                         icon: const Icon(Icons.edit_note, color: AppColors.purple),
-                        label: const Text("Open in Policy Editor", style: TextStyle(color: AppColors.purple)),
+                        label: const Text("OPEN IN POLICY EDITOR", style: TextStyle(color: AppColors.buttonYellow)),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           side: const BorderSide(color: AppColors.purple),
@@ -215,8 +230,8 @@ class _DocumentAddEditPageState extends State<DocumentAddEditPage> {
                     child: ElevatedButton(
                       onPressed: state is DocumentLoading ? null : _saveDocument,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.purple,
-                        foregroundColor: Colors.white,
+                        backgroundColor: AppColors.buttonDarkGreen,
+                        foregroundColor: AppColors.buttonYellow,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),

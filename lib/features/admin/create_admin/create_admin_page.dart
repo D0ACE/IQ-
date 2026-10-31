@@ -158,6 +158,7 @@ class _CreateAdminPageState extends State<CreateAdminPage> {
       isRequired: true,
       keyboardType: TextInputType.phone,
       textFieldController: _mobileCtrl,
+      prefixText: '+91 ',
       prefixIconWidget: const Icon(Icons.phone_outlined),
       inputFormatters: [
         FilteringTextInputFormatter.digitsOnly,

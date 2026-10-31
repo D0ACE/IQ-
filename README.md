@@ -1,6 +1,6 @@
 # iq_plus
 
-IQ Plus.
+IQ +.
 
 ## Getting Started
 

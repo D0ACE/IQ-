@@ -55,6 +55,28 @@ class VideoCubit extends Cubit<VideoState> {
     }
   }
 
+  Future<void> assignEmployeesToVideo({
+    required String videoId,
+    required List<String> employeeIds,
+  }) async {
+    emit(VideoLoading());
+    try {
+      await _repository.assignEmployeesToVideo(
+        videoId: videoId,
+        employeeIds: employeeIds,
+      );
+      emit(VideoOperationSuccess("Employees assigned successfully"));
+      await loadVideos(
+        customerId: _lastCustomerId,
+        userId: _lastUserId,
+        createdBy: _lastCreatedBy,
+        isConsultant: _lastIsConsultant,
+      );
+    } catch (e) {
+      emit(VideoError(e.toString()));
+    }
+  }
+
   Future<void> enrollInVideo({
     required String videoId,
     required String employeeId,
@@ -115,6 +137,7 @@ class VideoCubit extends Cubit<VideoState> {
     required String userId,
     String? customerId,
     required List<AwarenessQuestionModel> questions,
+    required bool accessToOtherEmployees,
   }) async {
     emit(VideoLoading());
     try {
@@ -125,6 +148,7 @@ class VideoCubit extends Cubit<VideoState> {
         userId: userId,
         customerId: customerId,
         questions: questions,
+        accessToOtherEmployees: accessToOtherEmployees,
       );
       emit(VideoOperationSuccess("Video uploaded successfully"));
       loadVideos(
@@ -147,6 +171,7 @@ class VideoCubit extends Cubit<VideoState> {
     required String userId,
     String? customerId,
     required List<AwarenessQuestionModel> questions,
+    required bool accessToOtherEmployees,
   }) async {
     emit(VideoLoading());
     try {
@@ -159,6 +184,7 @@ class VideoCubit extends Cubit<VideoState> {
         userId: userId,
         customerId: customerId,
         questions: questions,
+        accessToOtherEmployees: accessToOtherEmployees,
       );
       emit(VideoOperationSuccess("Video updated successfully"));
       loadVideos(

@@ -124,6 +124,10 @@ class _CustomerMMEFormPageState extends State<CustomerMMEFormPage> {
                             lastDateCtrl.text =
                                 DateFormat('dd MMM yyyy')
                                     .format(pickedDate);
+                            if (nextDate != null && nextDate!.isBefore(pickedDate)) {
+                              nextDate = null;
+                              nextDateCtrl.clear();
+                            }
                           });
                         }
                       },
@@ -137,15 +141,36 @@ class _CustomerMMEFormPageState extends State<CustomerMMEFormPage> {
                       readOnly: true,
                       decoration:
                       _dropdownDecoration("Next Calibration Due Date"),
-                      validator: (value) =>
-                      value == null || value.isEmpty
-                          ? "Next calibration date required"
-                          : null,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return "Next calibration date required";
+                        }
+                        if (lastDate != null && nextDate != null) {
+                          if (nextDate!.isBefore(lastDate!)) {
+                            return "Next calibration due date cannot be before Last Calibration date";
+                          }
+                        }
+                        return null;
+                      },
                       onTap: () async {
+                        if (lastDate == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text("Please select Last Calibration Date first"),
+                              backgroundColor: Colors.orange,
+                            ),
+                          );
+                          return;
+                        }
+
+                        final initial = (nextDate != null && nextDate!.isAfter(lastDate!))
+                            ? nextDate!
+                            : lastDate!.add(const Duration(days: 1));
+
                         final pickedDate = await showDatePicker(
                           context: context,
-                          initialDate: nextDate ?? DateTime.now(),
-                          firstDate: DateTime(2000),
+                          initialDate: initial,
+                          firstDate: lastDate!,
                           lastDate: DateTime(2100),
                         );
 

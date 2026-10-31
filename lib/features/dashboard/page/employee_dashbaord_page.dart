@@ -8,9 +8,12 @@ import 'package:iq_plus/common/themes/responsive.dart';
 import 'package:iq_plus/common/widgets/common_app_bar.dart';
 import 'package:iq_plus/core/local_storage/hive_service.dart';
 import 'package:iq_plus/di/service_locator.dart';
+import 'package:iq_plus/features/auth/model/user_model.dart';
+import 'package:iq_plus/features/auth/cubit/auth_cubit.dart';
+import 'package:iq_plus/features/auth/repository/auth_repository.dart';
 import 'package:iq_plus/features/auth/Login/change_password_dialog.dart';
 import 'package:iq_plus/features/auth/cubit/change_password_cubit.dart';
-import 'package:iq_plus/features/auth/repository/auth_repository.dart';
+import 'package:iq_plus/features/users/models/employe_user.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class EmployeeDashboardPage extends StatefulWidget {
@@ -21,23 +24,66 @@ class EmployeeDashboardPage extends StatefulWidget {
 }
 
 class _EmployeeDashboardPageState extends State<EmployeeDashboardPage> {
-  final user = getIt<HiveService>().getUser();
+  UserModel? get user => getIt<HiveService>().getUser();
+  late final bool isDirectEmailLogin = user?.password == null || user!.password.isEmpty;
   String? companyName;
+  List<String> visibleModules = List.from(EmployeeUserModel.defaultModules);
 
   @override
   void initState() {
     super.initState();
-    _loadCompanyName();
+    // 🚀 Check if user is blocked
+    context.read<AuthCubit>().checkBlockStatus();
+    _loadEmployeeData();
   }
 
-  Future<void> _loadCompanyName() async {
-    if (user?.customerId != null) {
-      final customer = await AuthRepository(FirebaseFirestore.instance)
-          .getCustomerById(user!.customerId!);
-      if (mounted) {
-        setState(() {
-          companyName = customer?.companyName;
-        });
+  Future<void> _loadEmployeeData() async {
+    if (user != null) {
+      if (user!.customerId != null && user!.customerId!.isNotEmpty) {
+        final customer = await AuthRepository(FirebaseFirestore.instance)
+            .getCustomerById(user!.customerId!);
+        if (mounted) {
+          setState(() {
+            companyName = customer?.companyName;
+          });
+        }
+      }
+
+      try {
+        DocumentSnapshot? empDoc;
+        if (user!.customerId != null && user!.customerId!.isNotEmpty) {
+          empDoc = await FirebaseFirestore.instance
+              .collection('customers')
+              .doc(user!.customerId)
+              .collection('employees')
+              .doc(user!.userId)
+              .get();
+        }
+
+        if (empDoc == null || !empDoc.exists) {
+          final snap = await FirebaseFirestore.instance
+              .collectionGroup('employees')
+              .where('email', isEqualTo: user!.email)
+              .limit(1)
+              .get();
+          if (snap.docs.isNotEmpty) {
+            empDoc = snap.docs.first;
+          }
+        }
+
+        if (empDoc != null && empDoc.exists) {
+          final data = empDoc.data() as Map<String, dynamic>?;
+          if (data != null && data['visibleModules'] != null) {
+            final modulesList = List<String>.from(data['visibleModules']);
+            if (mounted) {
+              setState(() {
+                visibleModules = modulesList;
+              });
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint("Error loading employee visible modules: $e");
       }
     }
   }
@@ -336,38 +382,87 @@ class _EmployeeDashboardPageState extends State<EmployeeDashboardPage> {
                     padding: EdgeInsets.zero,
                     physics: const BouncingScrollPhysics(),
                     children: [
-                      _drawerItem(
-                        icon: Icons.policy_rounded,
-                        title: 'Policies & Procedures',
-                        onTap: () {
-                          GoRouter.of(context).pop();
-                          context.push(AppRoutes.customerPolicyList);
-                        },
-                      ),
-                      _drawerItem(
-                        icon: Icons.video_library,
-                        title: 'My Training Videos',
-                        onTap: () {
-                          GoRouter.of(context).pop();
-                          context.push(AppRoutes.employeeTraining);
-                        },
-                      ),
-                      _drawerItem(
-                        icon: Icons.assignment_turned_in,
-                        title: 'My Training Results',
-                        onTap: () {
-                          GoRouter.of(context).pop();
-                          context.push(AppRoutes.trainingResults);
-                        },
-                      ),
-                      _drawerItem(
-                        icon: Icons.lock_rounded,
-                        title: 'Change Password',
-                        onTap: () {
-                          GoRouter.of(context).pop();
-                          _showChangePasswordDialog();
-                        },
-                      ),
+                      if (visibleModules.contains('NCR'))
+                        _drawerItem(
+                          icon: Icons.report_problem_rounded,
+                          title: 'NCR',
+                          onTap: () {
+                            GoRouter.of(context).pop();
+                            context.push(AppRoutes.ncrPage);
+                          },
+                        ),
+                      if (visibleModules.contains('Visit Summary'))
+                        _drawerItem(
+                          icon: Icons.fact_check_rounded,
+                          title: 'Visit Summary',
+                          onTap: () {
+                            GoRouter.of(context).pop();
+                            context.push(AppRoutes.visitorSummaryList);
+                          },
+                        ),
+                      if (visibleModules.contains('Policies & Procedures'))
+                        _drawerItem(
+                          icon: Icons.policy_rounded,
+                          title: 'Policies & Procedures',
+                          onTap: () {
+                            GoRouter.of(context).pop();
+                            context.push(AppRoutes.customerPolicyList);
+                          },
+                        ),
+                      if (visibleModules.contains('Policy History'))
+                        _drawerItem(
+                          icon: Icons.manage_history_rounded,
+                          title: 'Policy History',
+                          onTap: () {
+                            GoRouter.of(context).pop();
+                            context.push(AppRoutes.globalVersionHistory);
+                          },
+                        ),
+                      if (visibleModules.contains('Employees'))
+                        _drawerItem(
+                          icon: Icons.people_alt_rounded,
+                          title: 'Employees',
+                          onTap: () {
+                            GoRouter.of(context).pop();
+                            context.push(AppRoutes.employeeListing);
+                          },
+                        ),
+                      if (visibleModules.contains('Training Videos')) ...[
+                        _drawerItem(
+                          icon: Icons.video_library,
+                          title: 'My Training Videos',
+                          onTap: () {
+                            GoRouter.of(context).pop();
+                            context.push(AppRoutes.employeeTraining);
+                          },
+                        ),
+                        _drawerItem(
+                          icon: Icons.assignment_turned_in,
+                          title: 'My Training Results',
+                          onTap: () {
+                            GoRouter.of(context).pop();
+                            context.push(AppRoutes.trainingResults);
+                          },
+                        ),
+                      ],
+                      if (visibleModules.contains('Compliance Tasks'))
+                        _drawerItem(
+                          icon: Icons.task_alt_rounded,
+                          title: 'Compliance Tasks',
+                          onTap: () {
+                            GoRouter.of(context).pop();
+                            context.push(AppRoutes.periodicComplianceList);
+                          },
+                        ),
+                      if (!isDirectEmailLogin)
+                        _drawerItem(
+                          icon: Icons.lock_rounded,
+                          title: 'Change Password',
+                          onTap: () {
+                            GoRouter.of(context).pop();
+                            _showChangePasswordDialog();
+                          },
+                        ),
                       const Padding(
                         padding: EdgeInsets.symmetric(vertical: 20, horizontal: 8),
                         child: Divider(height: 1, color: Colors.black12),
@@ -450,36 +545,112 @@ class _EmployeeDashboardPageState extends State<EmployeeDashboardPage> {
   }
 
   Widget _dashboardGrid(BuildContext context, {required bool isMobile}) {
-    final actions = [
-      _ActionItem(
-        title: 'Policies & Procedures',
-        subtitle: 'Company Docs',
-        icon: Icons.auto_stories_rounded,
-        color: const Color(0xFF6366F1),
-        onTap: () => context.push(AppRoutes.customerPolicyList),
-      ),
-      _ActionItem(
-        title: 'My Training Videos',
-        subtitle: 'Watch & Learn',
-        icon: Icons.video_library_rounded,
-        color: const Color(0xFF8B5CF6),
-        onTap: () => context.push(AppRoutes.employeeTraining),
-      ),
-      _ActionItem(
-        title: 'My Training Results',
-        subtitle: 'Performance',
-        icon: Icons.assignment_turned_in_rounded,
-        color: const Color(0xFF10B981),
-        onTap: () => context.push(AppRoutes.trainingResults),
-      ),
-      _ActionItem(
-        title: 'Change Password',
-        subtitle: 'Security',
-        icon: Icons.shield_rounded,
-        color: const Color(0xFFF59E0B),
-        onTap: _showChangePasswordDialog,
-      ),
-    ];
+    final List<_ActionItem> actions = [];
+
+    if (visibleModules.contains('NCR')) {
+      actions.add(
+        _ActionItem(
+          title: 'NCR',
+          subtitle: 'Non-Conformance',
+          icon: Icons.report_problem_rounded,
+          color: const Color(0xFFEF4444),
+          onTap: () => context.push(AppRoutes.ncrPage),
+        ),
+      );
+    }
+
+    if (visibleModules.contains('Visit Summary')) {
+      actions.add(
+        _ActionItem(
+          title: 'Visit Summary',
+          subtitle: 'Audit & Visits',
+          icon: Icons.fact_check_rounded,
+          color: const Color(0xFF0EA5E9),
+          onTap: () => context.push(AppRoutes.visitorSummaryList),
+        ),
+      );
+    }
+
+    if (visibleModules.contains('Policies & Procedures')) {
+      actions.add(
+        _ActionItem(
+          title: 'Policies & Procedures',
+          subtitle: 'Company Docs',
+          icon: Icons.auto_stories_rounded,
+          color: const Color(0xFF6366F1),
+          onTap: () => context.push(AppRoutes.customerPolicyList),
+        ),
+      );
+    }
+
+    if (visibleModules.contains('Policy History')) {
+      actions.add(
+        _ActionItem(
+          title: 'Policy History',
+          subtitle: 'Version History',
+          icon: Icons.manage_history_rounded,
+          color: const Color(0xFF8B5CF6),
+          onTap: () => context.push(AppRoutes.globalVersionHistory),
+        ),
+      );
+    }
+
+    if (visibleModules.contains('Employees')) {
+      actions.add(
+        _ActionItem(
+          title: 'Employees',
+          subtitle: 'Team Directory',
+          icon: Icons.people_alt_rounded,
+          color: const Color(0xFFEC4899),
+          onTap: () => context.push(AppRoutes.employeeListing),
+        ),
+      );
+    }
+
+    if (visibleModules.contains('Training Videos')) {
+      actions.add(
+        _ActionItem(
+          title: 'My Training Videos',
+          subtitle: 'Watch & Learn',
+          icon: Icons.video_library_rounded,
+          color: const Color(0xFF8B5CF6),
+          onTap: () => context.push(AppRoutes.employeeTraining),
+        ),
+      );
+      actions.add(
+        _ActionItem(
+          title: 'My Training Results',
+          subtitle: 'Performance',
+          icon: Icons.assignment_turned_in_rounded,
+          color: const Color(0xFF10B981),
+          onTap: () => context.push(AppRoutes.trainingResults),
+        ),
+      );
+    }
+
+    if (visibleModules.contains('Compliance Tasks')) {
+      actions.add(
+        _ActionItem(
+          title: 'Compliance Tasks',
+          subtitle: 'Tasks & Audits',
+          icon: Icons.task_alt_rounded,
+          color: const Color(0xFF14B8A6),
+          onTap: () => context.push(AppRoutes.periodicComplianceList),
+        ),
+      );
+    }
+
+    if (!isDirectEmailLogin) {
+      actions.add(
+        _ActionItem(
+          title: 'Change Password',
+          subtitle: 'Security',
+          icon: Icons.shield_rounded,
+          color: const Color(0xFFF59E0B),
+          onTap: _showChangePasswordDialog,
+        ),
+      );
+    }
 
     return GridView.builder(
       shrinkWrap: true,
@@ -558,7 +729,7 @@ class _EmployeeDashboardPageState extends State<EmployeeDashboardPage> {
                         item.title,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w900,
                           color: AppColors.titleText,

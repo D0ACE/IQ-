@@ -77,6 +77,7 @@ class UserRepository {
         "designation": user.designation,
         "customerId": user.customerId,
         "createdBy": user.createdBy,
+        "visibleModules": user.visibleModules,
         "fcmToken": "",
         "createdAt": FieldValue.serverTimestamp(),
       };
@@ -133,10 +134,11 @@ class UserRepository {
         final snapshot = await firestore.collectionGroup('employees').get();
         final allEmployees = snapshot.docs
             .map((doc) => EmployeeUserModel.fromFirestore(
-                doc.id, doc.data()))
+                doc.id, doc.data(), pathCustomerId: doc.reference.parent.parent?.id))
             .toList();
 
         return allEmployees.where((emp) {
+          if (emp.isOtherEmployee) return false;
           final isCreatedByMe = emp.createdBy == consultantId;
           final isMyCustomerEmp = emp.customerId != null &&
               assignedCustomerIds.contains(emp.customerId);
@@ -155,10 +157,11 @@ class UserRepository {
       }
 
       final snapshot = await query.get();
-      return snapshot.docs
+      final employees = snapshot.docs
           .map((doc) => EmployeeUserModel.fromFirestore(
-              doc.id, doc.data() as Map<String, dynamic>))
+              doc.id, doc.data() as Map<String, dynamic>, pathCustomerId: doc.reference.parent.parent?.id))
           .toList();
+      return employees.where((emp) => !emp.isOtherEmployee).toList();
     } catch (e) {
       developer.log("Error fetching employees: $e");
       // Return empty list if index is missing to prevent UI crash
@@ -220,8 +223,12 @@ class UserRepository {
 
   // 🔹 Global Statistics
   Future<int> getTotalCustomerCount() async {
-    final snapshot = await firestore.collection('customers').count().get();
-    return snapshot.count ?? 0;
+    final snapshot = await firestore.collection('customers').get();
+    return snapshot.docs.where((doc) {
+      final data = doc.data();
+      final companyName = (data['companyName'] ?? '').toString().trim();
+      return companyName.isNotEmpty;
+    }).length;
   }
 
   Future<int> getTotalConsultantCount() async {
@@ -245,10 +252,13 @@ class UserRepository {
 
   // 🔹 Real-time Stream Statistics
   Stream<int> getCustomerCountStream() {
-    return firestore
-        .collection('customers')
-        .snapshots()
-        .map((snapshot) => snapshot.docs.length);
+    return firestore.collection('customers').snapshots().map((snapshot) {
+      return snapshot.docs.where((doc) {
+        final data = doc.data();
+        final companyName = (data['companyName'] ?? '').toString().trim();
+        return companyName.isNotEmpty;
+      }).length;
+    });
   }
 
   Stream<int> getConsultantCountStream() {
@@ -277,7 +287,12 @@ class UserRepository {
   Future<int> getTotalActiveUserCount() async {
     try {
       final users = await firestore.collection('users').where('blockStatus', isEqualTo: false).count().get();
-      final customers = await firestore.collection('customers').where('isProfileApproved', isEqualTo: true).count().get();
+      final customersSnap = await firestore.collection('customers').where('isProfileApproved', isEqualTo: true).get();
+      final activeCustomersCount = customersSnap.docs.where((doc) {
+        final data = doc.data();
+        final companyName = (data['companyName'] ?? '').toString().trim();
+        return companyName.isNotEmpty;
+      }).length;
       
       // 🚀 Wrap collectionGroup in try-catch to prevent crash if index is missing
       int employeeCount = 0;
@@ -289,7 +304,7 @@ class UserRepository {
         // Fallback or just return 0 for now until index is created
       }
       
-      return (users.count ?? 0) + (customers.count ?? 0) + employeeCount;
+      return (users.count ?? 0) + activeCustomersCount + employeeCount;
     } catch (e) {
       developer.log("Error calculating active users: $e");
       return 0;

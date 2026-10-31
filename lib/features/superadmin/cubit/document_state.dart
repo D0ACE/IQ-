@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:iq_plus/features/superadmin/models/document_model.dart';
 import 'package:iq_plus/features/superadmin/models/version_history_model.dart';
 
@@ -14,7 +15,30 @@ class DocumentLoaded extends DocumentState {
 
 class GlobalVersionHistoryLoaded extends DocumentState {
   final List<VersionHistoryModel> history;
-  GlobalVersionHistoryLoaded(this.history);
+  final bool hasMore;
+  final bool isLoadingMore;
+  final DocumentSnapshot? lastDocument;
+
+  GlobalVersionHistoryLoaded({
+    required this.history,
+    this.hasMore = true,
+    this.isLoadingMore = false,
+    this.lastDocument,
+  });
+
+  GlobalVersionHistoryLoaded copyWith({
+    List<VersionHistoryModel>? history,
+    bool? hasMore,
+    bool? isLoadingMore,
+    DocumentSnapshot? lastDocument,
+  }) {
+    return GlobalVersionHistoryLoaded(
+      history: history ?? this.history,
+      hasMore: hasMore ?? this.hasMore,
+      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      lastDocument: lastDocument ?? this.lastDocument,
+    );
+  }
 }
 
 class DocumentOperationSuccess extends DocumentState {

@@ -44,6 +44,8 @@ class NcrProvider extends ChangeNotifier {
       final isConsultant =
           (consultantId.isNotEmpty && Utility.isConsultant(userLoginDetails?.roleId ?? ""));
       final isCustomer = (customerLoginDetails?.customerId ?? "").isNotEmpty;
+      final isEmployee = Utility.isEmployee(userLoginDetails?.roleId);
+      final employeeCustomerId = userLoginDetails?.customerId ?? '';
 
       _ncrList = snapshot.docs.map((doc) {
         final data = doc.data();
@@ -55,6 +57,8 @@ class NcrProvider extends ChangeNotifier {
       }).where((ncr) {
         if (isCustomer) {
           return (ncr['customerId'] ?? ncr['companyId']) == customerLoginDetails?.customerId;
+        } else if (isEmployee) {
+          return (ncr['customerId'] ?? ncr['companyId']) == employeeCustomerId;
         } else if (isConsultant) {
           final ncrConsultantId = (ncr['consultantId'] ?? '').toString();
           final ncrCustomerId = (ncr['customerId'] ?? ncr['companyId'] ?? '').toString();
@@ -69,8 +73,26 @@ class NcrProvider extends ChangeNotifier {
         return true;
       }).toList();
 
+      // 🔹 Sort NCRs descending by createdAt (newest first)
+      _ncrList.sort((a, b) {
+        final aTime = _parseDateTime(a['createdAt']) ?? _parseDateTime(a['updatedAt']);
+        final bTime = _parseDateTime(b['createdAt']) ?? _parseDateTime(b['updatedAt']);
+        if (aTime == null && bTime == null) return 0;
+        if (aTime == null) return 1;
+        if (bTime == null) return -1;
+        return bTime.compareTo(aTime);
+      });
+
       notifyListeners();
     });
+  }
+
+  DateTime? _parseDateTime(dynamic date) {
+    if (date == null) return null;
+    if (date is Timestamp) return date.toDate();
+    if (date is DateTime) return date;
+    if (date is String) return DateTime.tryParse(date);
+    return null;
   }
 
   /// 🔹 Update status in Firestore and locally

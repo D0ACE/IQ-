@@ -1,10 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class NcrFormModel {
-  String docNo;
-  String revNo;
-  String issueDate;
-  String page;
   String process;
   String iqaNo;
   String clause;
@@ -23,14 +19,13 @@ class NcrFormModel {
   String approvedBy;
   String consultantId;
   String companyId;
+  String employeeId;
+  String employeeName;
+  String employeeEmail;
   String status;
   Timestamp createdAt;
 
   NcrFormModel({
-    required this.docNo,
-    required this.revNo,
-    required this.issueDate,
-    required this.page,
     required this.process,
     required this.iqaNo,
     required this.clause,
@@ -49,6 +44,9 @@ class NcrFormModel {
     required this.approvedBy,
     required this.consultantId,
     required this.companyId,
+    required this.employeeId,
+    required this.employeeName,
+    required this.employeeEmail,
     required this.status,
     required this.createdAt,
   });
@@ -56,10 +54,6 @@ class NcrFormModel {
   /// 🔹 Convert model to Map for Firestore
   Map<String, dynamic> toMap() {
     return {
-      'docNo': docNo,
-      'revNo': revNo,
-      'issueDate': issueDate,
-      'page': page,
       'process': process,
       'iqaNo': iqaNo,
       'clause': clause,
@@ -78,8 +72,12 @@ class NcrFormModel {
       'approvedBy': approvedBy,
       'consultantId': consultantId,
       'customerId': companyId,
+      'employeeId': employeeId,
+      'employeeName': employeeName,
+      'employeeEmail': employeeEmail,
       'status': status,
       'createdAt': createdAt,
     };
   }
 }
+

@@ -144,9 +144,23 @@ class _ExcelEditorPageState extends State<ExcelEditorPage> {
         return;
       }
 
+      final file = result.files.first;
+      final extension = (file.extension ?? file.name.split('.').last).toLowerCase();
+      final allowedExts = ['xlsx', 'xls'];
+      if (!allowedExts.contains(extension)) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Only Excel spreadsheet files (.xlsx, .xls) are allowed."),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
       setState(() => _isLoading = true);
 
-      final file = result.files.first;
       final bytes = file.bytes;
       if (bytes == null) {
         developer.log("❌ Error: File bytes are null.");
@@ -378,7 +392,7 @@ class _ExcelEditorPageState extends State<ExcelEditorPage> {
                               OutlinedButton.icon(
                                 onPressed: () => launchUrl(Uri.parse(widget.document!.fileUrl)),
                                 icon: const Icon(Icons.download_rounded),
-                                label: const Text("Download & View File"),
+                                label: const Text("DOWNLOAD & VIEW FILE"),
                                 style: OutlinedButton.styleFrom(
                                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -431,8 +445,8 @@ class _ExcelEditorPageState extends State<ExcelEditorPage> {
         icon: Icon(icon, size: 18),
         label: Text(label),
         style: ElevatedButton.styleFrom(
-          backgroundColor: color,
-          foregroundColor: Colors.white,
+          backgroundColor: AppColors.buttonDarkGreen,
+          foregroundColor: AppColors.buttonYellow,
           padding: const EdgeInsets.symmetric(vertical: 12),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),

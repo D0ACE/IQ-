@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:iq_plus/common/utility/app_validation.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
 import 'package:iq_plus/core/local_storage/hive_service.dart';
 import 'package:iq_plus/di/service_locator.dart';
@@ -255,7 +256,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
             const Divider(height: 32, color: Colors.black12),
             _buildDetailItem(Icons.email_outlined, "Email Address", _emailCtrl.text),
             const Divider(height: 32, color: Colors.black12),
-            _buildDetailItem(Icons.phone_iphone_rounded, "Contact Number", _phoneCtrl.text.isEmpty ? "N/A" : _phoneCtrl.text),
+            _buildDetailItem(Icons.phone_iphone_rounded, "Contact Number", AppValidation.formatPhoneForDisplay(_phoneCtrl.text)),
             const Divider(height: 32, color: Colors.black12),
             _buildDetailItem(Icons.badge_outlined, "Designation Role", _roleCtrl.text),
             const Divider(height: 32, color: Colors.black12),

@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:iq_plus/common/utility/app_validation.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
 import 'package:iq_plus/features/users/cubit/employee_user_cubit.dart';
 import 'package:iq_plus/features/users/cubit/employee_user_state.dart';
@@ -93,9 +94,9 @@ class _UserListPageState extends State<UserListPage> {
             ),
           );
         },
-        backgroundColor: AppColors.kPrimaryColor,
-        icon: const Icon(Icons.person_add_rounded, color: Colors.white),
-        label: const Text("Add User", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        backgroundColor: AppColors.buttonDarkGreen,
+        icon: const Icon(Icons.person_add_rounded, color: AppColors.buttonYellow),
+        label: const Text("Add User", style: TextStyle(color: AppColors.buttonYellow, fontWeight: FontWeight.bold)),
       ),
       body: Stack(
         children: [
@@ -302,10 +303,10 @@ class _UserListPageState extends State<UserListPage> {
                                 ElevatedButton.icon(
                                   onPressed: _clearAllFilters,
                                   icon: const Icon(Icons.clear_all_rounded, size: 18),
-                                  label: const Text("Reset Filters"),
+                                  label: const Text("RESET FILTERS"),
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppColors.kPrimaryColor,
-                                    foregroundColor: Colors.white,
+                                    backgroundColor: AppColors.buttonDarkGreen,
+                                    foregroundColor: AppColors.buttonYellow,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12),
                                     ),
@@ -534,7 +535,7 @@ class _UserListPageState extends State<UserListPage> {
                             Icon(Icons.phone_iphone_rounded, size: 14, color: Colors.grey.shade400),
                             const SizedBox(width: 6),
                             Text(
-                              user.phoneNumber ?? '',
+                              AppValidation.formatPhoneForDisplay(user.phoneNumber),
                               style: TextStyle(
                                 fontSize: 13,
                                 color: Colors.grey.shade600,
@@ -607,14 +608,15 @@ class _UserListPageState extends State<UserListPage> {
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text(
-              "Keep User",
-              style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.bold),
+              "KEEP USER",
+              style: TextStyle(color: AppColors.buttonYellow,
+ fontWeight: FontWeight.bold),
             ),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent,
-              foregroundColor: Colors.white,
+              backgroundColor: AppColors.buttonDarkGreen,
+              foregroundColor: AppColors.buttonYellow,
               elevation: 0,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
@@ -622,7 +624,7 @@ class _UserListPageState extends State<UserListPage> {
               Navigator.pop(ctx);
               context.read<UserCubit>().deleteUser(user.userId);
             },
-            child: const Text("Delete Account", style: TextStyle(fontWeight: FontWeight.bold)),
+            child: const Text("DELETE ACCOUNT", style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),

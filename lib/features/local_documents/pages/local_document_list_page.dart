@@ -53,8 +53,8 @@ class _LocalDocumentListPageState extends State<LocalDocumentListPage> {
             'isLocal': true,
           });
         },
-        backgroundColor: AppColors.purple,
-        child: const Icon(Icons.add, color: Colors.white),
+        backgroundColor: AppColors.buttonDarkGreen,
+        child: const Icon(Icons.add, color: AppColors.buttonYellow),
       ),
       body: BlocBuilder<LocalDocumentCubit, LocalDocumentState>(
         builder: (context, state) {
@@ -197,10 +197,10 @@ class _LocalDocumentListPageState extends State<LocalDocumentListPage> {
                                   });
                                 },
                                 icon: const Icon(Icons.clear_rounded, size: 18),
-                                label: const Text("Clear Search"),
+                                label: const Text("CLEAR SEARCH"),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.purple,
-                                  foregroundColor: Colors.white,
+                                  backgroundColor: AppColors.buttonDarkGreen,
+                                  foregroundColor: AppColors.buttonYellow,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
@@ -288,13 +288,13 @@ class _LocalDocumentListPageState extends State<LocalDocumentListPage> {
         title: const Text('Delete Local Document'),
         content: const Text('Are you sure you want to delete this document locally?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('CANCEL')),
           TextButton(
             onPressed: () {
               context.read<LocalDocumentCubit>().deleteDocument(id);
               Navigator.pop(ctx);
             },
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            child: const Text('DELETE', style: TextStyle(color: AppColors.buttonYellow)),
           ),
         ],
       ),

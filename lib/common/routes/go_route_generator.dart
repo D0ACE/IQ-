@@ -25,6 +25,7 @@ import 'package:iq_plus/features/consultant/consultant_profile_page.dart';
 import 'package:iq_plus/features/customer_mme/pages/customer_mme_form_page.dart';
 import 'package:iq_plus/features/customer_mme/pages/customer_mme_list_page.dart';
 import 'package:iq_plus/features/dashboard/page/admin_dashbaord_page.dart';
+import 'package:iq_plus/features/dashboard/page/audit_report_page.dart';
 import 'package:iq_plus/features/dashboard/page/consultant_dashbaord_page.dart';
 import 'package:iq_plus/features/dashboard/page/contact_us_page.dart';
 import 'package:iq_plus/features/dashboard/page/customer_dashbaord_page.dart';
@@ -64,6 +65,10 @@ import 'package:iq_plus/features/periodic_compliance/models/periodic_compliance_
 import 'package:iq_plus/features/periodic_compliance/pages/periodic_compliance_list_page.dart';
 import 'package:iq_plus/features/periodic_compliance/pages/periodic_compliance_form_page.dart';
 import 'package:iq_plus/features/periodic_compliance/pages/periodic_compliance_details_page.dart';
+import 'package:iq_plus/features/kpis/models/kpi_model.dart';
+import 'package:iq_plus/features/kpis/pages/kpi_list_page.dart';
+import 'package:iq_plus/features/kpis/pages/kpi_form_page.dart';
+import 'package:iq_plus/features/kpis/pages/kpi_details_page.dart';
 
 class AppRouter {
   static final GoRouter router = GoRouter(
@@ -71,6 +76,11 @@ class AppRouter {
 
     redirect: (BuildContext context, GoRouterState state) {
       final hiveService = getIt<HiveService>();
+
+      if (!hiveService.isTabSessionActive()) {
+        hiveService.clearAll();
+      }
+
       final user = hiveService.getUser();
       final customer = hiveService.getCustomer();
       final bool isLoggedIn = user != null || customer != null;
@@ -193,6 +203,14 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.adminDashboard,
         builder: (context, state) => const AdminDashboardPage(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.auditReport,
+        builder: (context, state) {
+          final isReadOnly = state.extra is bool ? state.extra as bool : null;
+          return AuditReportPage(isReadOnly: isReadOnly);
+        },
       ),
 
       /// CONSULTANT DASHBOARD
@@ -529,6 +547,26 @@ class AppRouter {
         builder: (context, state) {
           final task = state.extra as PeriodicComplianceTask;
           return PeriodicComplianceDetailsPage(task: task);
+        },
+      ),
+
+      /// KPI's
+      GoRoute(
+        path: AppRoutes.kpiList,
+        builder: (context, state) => const KpiListPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.kpiForm,
+        builder: (context, state) {
+          final task = state.extra as KpiTask?;
+          return KpiFormPage(task: task);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.kpiDetails,
+        builder: (context, state) {
+          final task = state.extra as KpiTask;
+          return KpiDetailsPage(task: task);
         },
       ),
     ],

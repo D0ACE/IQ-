@@ -1,6 +1,8 @@
 import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:iq_plus/core/email_services/email_service.dart';
 import 'package:iq_plus/core/supabase/supabase_config.dart';
 import 'package:iq_plus/features/videos/models/video_model.dart';
 import 'package:iq_plus/features/videos/models/video_enrollment_model.dart';
@@ -16,6 +18,7 @@ class VideoRepository {
     required String userId,
     String? customerId,
     required List<AwarenessQuestionModel> questions,
+    required bool accessToOtherEmployees,
   }) async {
     final String supabasePath = 'videos/${DateTime.now().millisecondsSinceEpoch}_$fileName';
 
@@ -44,6 +47,7 @@ class VideoRepository {
       'created_by': userId,
       'customer_id': customerId,
       'questions': questions.map((AwarenessQuestionModel q) => q.toJson()).toList(),
+      'access_to_other_employees': accessToOtherEmployees,
       'created_at': FieldValue.serverTimestamp(),
     });
   }
@@ -57,6 +61,7 @@ class VideoRepository {
     required String userId,
     String? customerId,
     required List<AwarenessQuestionModel> questions,
+    required bool accessToOtherEmployees,
   }) async {
     String? videoUrl;
     String? supabasePath;
@@ -90,6 +95,7 @@ class VideoRepository {
       'title': title,
       'customer_id': customerId,
       'questions': questions.map((AwarenessQuestionModel q) => q.toJson()).toList(),
+      'access_to_other_employees': accessToOtherEmployees,
       'updated_at': FieldValue.serverTimestamp(),
     };
 
@@ -143,6 +149,82 @@ class VideoRepository {
         .toList();
   }
 
+  Future<void> assignEmployeesToVideo({
+    required String videoId,
+    required List<String> employeeIds,
+  }) async {
+    // 1. Fetch current video document to check existing assigned employees and video title
+    final videoDoc = await _firestore.collection('videos').doc(videoId).get();
+    final videoData = videoDoc.data() ?? {};
+    final String videoTitle = videoData['title'] ?? 'Training Video';
+    final String? customerId = videoData['customer_id'];
+    final List<String> previousEmployeeIds = videoData['assigned_employee_ids'] != null
+        ? List<String>.from(videoData['assigned_employee_ids'])
+        : [];
+
+    // 2. Identify newly assigned employee IDs (only those NOT previously assigned)
+    final newlyAssignedIds = employeeIds
+        .where((id) => !previousEmployeeIds.contains(id))
+        .toList();
+
+    // 3. Update Firestore document
+    await _firestore.collection('videos').doc(videoId).update({
+      'assigned_employee_ids': employeeIds,
+      'updated_at': FieldValue.serverTimestamp(),
+    });
+
+    // 4. Send email to newly assigned employees (sent only once unless unassigned and reassigned)
+    if (newlyAssignedIds.isNotEmpty) {
+      _sendEmailsToNewlyAssignedEmployees(
+        newlyAssignedIds: newlyAssignedIds,
+        videoTitle: videoTitle,
+        customerId: customerId,
+      );
+    }
+  }
+
+  Future<void> _sendEmailsToNewlyAssignedEmployees({
+    required List<String> newlyAssignedIds,
+    required String videoTitle,
+    String? customerId,
+  }) async {
+    try {
+      String? companyName;
+      if (customerId != null && customerId.isNotEmpty) {
+        try {
+          final custDoc = await _firestore.collection('customers').doc(customerId).get();
+          if (custDoc.exists) {
+            companyName = custDoc.data()?['companyName'];
+          }
+        } catch (_) {}
+      }
+
+      final snapshot = await _firestore.collectionGroup('employees').get();
+      final matchedDocs = snapshot.docs.where((doc) => newlyAssignedIds.contains(doc.id));
+
+      for (final doc in matchedDocs) {
+        final data = doc.data();
+        final String email = data['email'] ?? '';
+        final String userName = data['userName'] ?? 'Employee';
+
+        if (email.isNotEmpty) {
+          try {
+            await BrevoEmailService.sendVideoAssignedMail(
+              employeeEmail: email,
+              employeeName: userName,
+              videoTitle: videoTitle,
+              companyName: companyName,
+            );
+          } catch (e) {
+            debugPrint("Error sending video assignment email to $email: $e");
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint("Error in _sendEmailsToNewlyAssignedEmployees: $e");
+    }
+  }
+
   Future<void> enrollInVideo({
     required String videoId,
     required String employeeId,
@@ -156,11 +238,23 @@ class VideoRepository {
         .collection('video_enrollments')
         .doc(videoId);
 
+    final docSnap = await enrollmentRef.get();
+    int currentAttempts = 0;
+    if (docSnap.exists && docSnap.data() != null) {
+      currentAttempts = docSnap.data()?['attempt_count'] ?? 0;
+    }
+
+    int newAttempts = currentAttempts + 1;
+    if (newAttempts > 3) {
+      throw 'Maximum 3 attempts reached for this training course.';
+    }
+
     await enrollmentRef.set({
       'video_id': videoId,
       'enrolled_at': FieldValue.serverTimestamp(),
       'status': 'enrolled',
-    });
+      'attempt_count': newAttempts,
+    }, SetOptions(merge: true));
   }
 
   Future<List<VideoEnrollmentModel>> getVideoEnrollments({
@@ -193,12 +287,16 @@ class VideoRepository {
         .collection('video_enrollments')
         .doc(videoId);
 
-    await enrollmentRef.update({
+    final double percentage = (totalQuestions > 0) ? (score / totalQuestions) * 100 : 0;
+    final bool passed = percentage >= 80;
+    final String status = passed ? 'completed' : 'failed';
+
+    await enrollmentRef.set({
       'score': score,
       'total_questions': totalQuestions,
       'completed_at': FieldValue.serverTimestamp(),
-      'status': 'completed',
-    });
+      'status': status,
+    }, SetOptions(merge: true));
   }
 
   Future<void> deleteVideo(String videoId, String filePath) async {

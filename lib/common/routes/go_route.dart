@@ -49,4 +49,8 @@ class AppRoutes {
   static const String periodicComplianceList = '/periodicComplianceList';
   static const String periodicComplianceForm = '/periodicComplianceForm';
   static const String periodicComplianceDetails = '/periodicComplianceDetails';
+  static const String kpiList = '/kpiList';
+  static const String kpiForm = '/kpiForm';
+  static const String kpiDetails = '/kpiDetails';
+  static const String auditReport = '/auditReport';
 }

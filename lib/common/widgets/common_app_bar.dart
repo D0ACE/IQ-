@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
+import 'package:iq_plus/common/themes/app_strings.dart';
 
 class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
@@ -16,14 +17,14 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
+      decoration: const BoxDecoration(
+        color: AppColors.neutralSurface,
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
+            color: AppColors.shadowColor,
             blurRadius: 20,
-            offset: const Offset(0, 10),
+            offset: Offset(0, 10),
           ),
         ],
       ),
@@ -31,17 +32,18 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
         child: PreferredSize(
           preferredSize: const Size.fromHeight(70),
           child: AppBar(
-            backgroundColor: Colors.transparent,
+            backgroundColor: AppColors.transparent,
             elevation: 0,
             centerTitle: centerTitle,
-            iconTheme: const IconThemeData(color: AppColors.kPrimaryColor, size: 22),
+            iconTheme: const IconThemeData(color: AppColors.brandPrimary, size: 22),
             title: Text(
               title,
               style: const TextStyle(
                 fontSize: 18,
-                fontWeight: FontWeight.w900,
-                color: AppColors.titleText,
-                letterSpacing: -0.5,
+                fontWeight: FontWeight.w700,
+                color: AppColors.neutralTextPrimary,
+                fontFamily: AppFonts.fontOpenSansBold,
+                letterSpacing: -0.3,
               ),
             ),
             actions: actions?.map((a) => Padding(padding: const EdgeInsets.only(right: 8), child: a)).toList(),

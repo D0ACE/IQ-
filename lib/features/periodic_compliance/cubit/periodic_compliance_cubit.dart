@@ -64,9 +64,50 @@ class PeriodicComplianceCubit extends Cubit<PeriodicComplianceState> {
     }
   }
 
-  Future<void> markAsCompleted(String taskId) async {
+  Future<void> saveProgress(
+    String taskId, {
+    required String evidenceUrl,
+    required String evidenceFileName,
+    String comment = '',
+    String achieved = '',
+    String achievedType = '',
+  }) async {
     try {
-      await _repository.completeTask(taskId);
+      final bool isNonCompliant = await _repository.saveTaskProgress(
+        taskId,
+        evidenceUrl: evidenceUrl,
+        evidenceFileName: evidenceFileName,
+        comment: comment,
+        achieved: achieved,
+        achievedType: achievedType,
+      );
+      if (isNonCompliant) {
+        safeEmit(const PeriodicComplianceActionSuccess('Progress saved successfully.'));
+      } else {
+        safeEmit(const PeriodicComplianceActionSuccess('Progress saved. Task status updated to In Progress.'));
+      }
+    } catch (e) {
+      safeEmit(PeriodicComplianceError(e.toString()));
+    }
+  }
+
+  Future<void> markAsCompleted(
+    String taskId, {
+    String evidenceUrl = '',
+    String evidenceFileName = '',
+    String comment = '',
+    String achieved = '',
+    String achievedType = '',
+  }) async {
+    try {
+      await _repository.completeTask(
+        taskId,
+        evidenceUrl: evidenceUrl,
+        evidenceFileName: evidenceFileName,
+        comment: comment,
+        achieved: achieved,
+        achievedType: achievedType,
+      );
       safeEmit(const PeriodicComplianceActionSuccess('Task completed successfully'));
     } catch (e) {
       safeEmit(PeriodicComplianceError(e.toString()));

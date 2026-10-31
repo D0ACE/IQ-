@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:iq_plus/features/superadmin/cubit/document_state.dart';
 import 'package:iq_plus/features/superadmin/repository/document_repository.dart';
+import 'package:iq_plus/features/superadmin/models/version_history_model.dart';
 import 'dart:developer' as developer;
 
 class DocumentCubit extends Cubit<DocumentState> {
@@ -172,14 +173,54 @@ class DocumentCubit extends Cubit<DocumentState> {
   }) async {
     emit(DocumentLoading());
     try {
-      final history = await _repository.getGlobalVersionHistory(
+      final result = await _repository.getGlobalVersionHistoryPaginated(
         userId: userId,
         isConsultant: isConsultant,
         customerId: customerId,
+        limit: 15,
       );
-      emit(GlobalVersionHistoryLoaded(history));
+      emit(GlobalVersionHistoryLoaded(
+        history: result.history,
+        hasMore: result.hasMore,
+        lastDocument: result.lastDocument,
+      ));
     } catch (e) {
       emit(DocumentError(e.toString()));
+    }
+  }
+
+  Future<void> loadMoreGlobalVersionHistory({
+    String? userId,
+    bool isConsultant = false,
+    String? customerId,
+  }) async {
+    if (state is! GlobalVersionHistoryLoaded) return;
+    final currentState = state as GlobalVersionHistoryLoaded;
+
+    if (!currentState.hasMore || currentState.isLoadingMore) return;
+
+    emit(currentState.copyWith(isLoadingMore: true));
+
+    try {
+      final result = await _repository.getGlobalVersionHistoryPaginated(
+        userId: userId,
+        isConsultant: isConsultant,
+        customerId: customerId,
+        lastDocument: currentState.lastDocument,
+        limit: 15,
+      );
+
+      final updatedHistory = List<VersionHistoryModel>.from(currentState.history)
+        ..addAll(result.history);
+
+      emit(GlobalVersionHistoryLoaded(
+        history: updatedHistory,
+        hasMore: result.hasMore,
+        isLoadingMore: false,
+        lastDocument: result.lastDocument,
+      ));
+    } catch (e) {
+      emit(currentState.copyWith(isLoadingMore: false));
     }
   }
 }

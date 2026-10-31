@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:intl/intl.dart';
+import 'package:iq_plus/common/utility/utility.dart';
 import 'package:iq_plus/core/local_storage/hive_service.dart';
 import 'package:iq_plus/di/service_locator.dart';
 import 'package:iq_plus/features/dashboard/page/visit_summary/model/visitor_summary_model.dart';
@@ -41,12 +43,25 @@ class VisitorSummaryRepository {
   Future<List<VisitorSummaryModel>> fetchVisitorSummaries() async {
     final user = getIt<HiveService>().getUser();
 
+    List<VisitorSummaryModel> result = [];
+
     if (user?.roleId == '0' || user?.roleId == '1') {
       // Super Admin and Admin can see all visitor summaries globally
       final snapshot = await firestore.collection('visitor_summaries').get();
-      return snapshot.docs
+      result = snapshot.docs
           .map((e) => VisitorSummaryModel.fromJson(
               e.id, e.data()))
+          .toList();
+    } else if (user != null && Utility.isEmployee(user.roleId)) {
+      // Employees can only see summaries for their assigned customer
+      final customerId = user.customerId ?? '';
+      if (customerId.isEmpty) return [];
+      final snapshot = await firestore
+          .collection('visitor_summaries')
+          .where('customerId', isEqualTo: customerId)
+          .get();
+      result = snapshot.docs
+          .map((e) => VisitorSummaryModel.fromJson(e.id, e.data()))
           .toList();
     } else {
       // Consultants can see summaries created by them OR for their assigned customers
@@ -59,7 +74,7 @@ class VisitorSummaryRepository {
 
       final snapshot = await firestore.collection('visitor_summaries').get();
 
-      return snapshot.docs.where((doc) {
+      result = snapshot.docs.where((doc) {
         final data = doc.data();
         final consultantId = (data['consultantId'] ?? '').toString();
         final customerId = (data['customerId'] ?? '').toString();
@@ -73,6 +88,8 @@ class VisitorSummaryRepository {
       }).map((e) => VisitorSummaryModel.fromJson(
           e.id, e.data())).toList();
     }
+
+    return _sortVisitorSummaries(result);
   }
 
   Future<List<VisitorSummaryModel>> fetchVisitorSummariesForCustomer() async {
@@ -83,9 +100,37 @@ class VisitorSummaryRepository {
         ?.customerId)
         .get();
 
-    return snapshot.docs
+    final result = snapshot.docs
         .map((e) => VisitorSummaryModel.fromJson(e.id, e.data()))
         .toList();
+
+    return _sortVisitorSummaries(result);
+  }
+
+  /// 🔹 Sort visitor summaries descending by createdAt (newest first)
+  List<VisitorSummaryModel> _sortVisitorSummaries(List<VisitorSummaryModel> list) {
+    list.sort((a, b) {
+      final aTime = a.createdAt?.toDate() ?? _parseVisitDate(a.visitDate);
+      final bTime = b.createdAt?.toDate() ?? _parseVisitDate(b.visitDate);
+      if (aTime == null && bTime == null) return 0;
+      if (aTime == null) return 1;
+      if (bTime == null) return -1;
+      return bTime.compareTo(aTime);
+    });
+    return list;
+  }
+
+  DateTime? _parseVisitDate(String? visitDate) {
+    if (visitDate == null || visitDate.trim().isEmpty) return null;
+    try {
+      return DateFormat('dd MMM yyyy').parse(visitDate.trim());
+    } catch (_) {
+      try {
+        return DateTime.parse(visitDate.trim());
+      } catch (_) {
+        return null;
+      }
+    }
   }
 
   /// ✅ DELETE

@@ -145,6 +145,7 @@ class UserCubit extends Cubit<UserState> {
     String? designation,
     String? customerId,
     DateTime? joiningDate,
+    List<String>? visibleModules,
   }) async {
     try {
       emit(UserLoading());
@@ -166,6 +167,7 @@ class UserCubit extends Cubit<UserState> {
 
       if (designation != null) updateData['designation'] = designation;
       if (joiningDate != null) updateData['joiningDate'] = joiningDate;
+      if (visibleModules != null) updateData['visibleModules'] = visibleModules;
 
       await repository.updateUser(
         userId: userId,

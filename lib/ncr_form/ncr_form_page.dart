@@ -11,12 +11,16 @@ import 'package:iq_plus/common/app_widget/common_gradient_button.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
 import 'package:iq_plus/common/themes/app_const.dart';
 import 'package:iq_plus/common/themes/app_theme_data.dart';
+import 'package:iq_plus/common/utility/app_validation.dart';
 import 'package:iq_plus/common/utility/utility.dart';
+import 'package:iq_plus/core/email_services/email_service.dart';
 import 'package:iq_plus/core/local_storage/hive_service.dart';
 import 'package:iq_plus/di/service_locator.dart';
 import 'package:iq_plus/features/admin/customers/widgets/customer_dropdown_widget.dart';
 import 'package:iq_plus/features/auth/model/customer_model.dart';
 import 'package:iq_plus/features/auth/model/user_model.dart';
+import 'package:iq_plus/features/users/models/employe_user.dart';
+import 'package:iq_plus/features/users/repository/user_repository.dart';
 import 'package:provider/provider.dart';
 import 'package:iq_plus/ncr_form/ncr_provider.dart';
 import 'package:iq_plus/ncr_form/ncr/model/ncr_form_model.dart';
@@ -44,11 +48,6 @@ class _NCRFormPageState extends State<NCRFormPage> {
   // role fetched from Firebase
 
   /// 🔹 Controllers
-  final docNoCtrl = TextEditingController();
-  final revNoCtrl = TextEditingController();
-  final issueDateCtrl = TextEditingController();
-  final pageCtrl = TextEditingController();
-
   final processCtrl = TextEditingController();
   final iqaCtrl = TextEditingController();
   final clauseCtrl = TextEditingController();
@@ -74,6 +73,102 @@ class _NCRFormPageState extends State<NCRFormPage> {
   bool isStatusUpdating = false;
 
   CustomerModel? selectedCustomer;
+  List<EmployeeUserModel> employeesList = [];
+  String? selectedEmployeeId;
+
+  EmployeeUserModel? getSelectedEmployee() {
+    try {
+      return employeesList.firstWhere((e) => e.userId == selectedEmployeeId);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> loadEmployeesForDropdown() async {
+    final custId = selectedCustomer?.customerId ?? widget.ncrData?['customerId'] ?? '';
+
+    if (custId.isEmpty) {
+      if (mounted) {
+        setState(() {
+          employeesList = [];
+          selectedEmployeeId = null;
+        });
+      }
+      return;
+    }
+
+    try {
+      List<EmployeeUserModel> emps = [];
+      final repo = UserRepository(FirebaseFirestore.instance);
+
+      if (Utility.isSuperAdmin(roleId) || Utility.isAdmin(roleId)) {
+        // Admin & SuperAdmin show employees of selected customer
+        emps = await repo.fetchEmployees(customerIds: [custId]);
+        if (emps.isEmpty) {
+          final allEmps = await repo.fetchEmployees();
+          emps = allEmps.where((e) => e.customerId == custId).toList();
+        }
+      } else if (Utility.isConsultant(roleId)) {
+        // Consultant: fetch all employees of assigned customers using consultantId and filter by selected customer
+        emps = await repo.fetchEmployees(consultantId: userLoginDetails?.userId);
+        emps = emps.where((e) => e.customerId == custId).toList();
+      } else {
+        // Customer or Employee
+        emps = await repo.fetchEmployees(customerIds: [custId]);
+        if (emps.isEmpty) {
+          final allEmps = await repo.fetchEmployees();
+          emps = allEmps.where((e) => e.customerId == custId).toList();
+        }
+      }
+
+      // 🚀 Deduplicate employees by userId to prevent Dropdown duplicate value assertion errors
+      final Map<String, EmployeeUserModel> uniqueEmps = {};
+      for (final emp in emps) {
+        if (emp.userId.isNotEmpty) {
+          uniqueEmps[emp.userId] = emp;
+        }
+      }
+      emps = uniqueEmps.values.toList();
+
+      if (!mounted) return;
+      setState(() {
+        employeesList = emps;
+
+        // If currently selected employee does not belong to the newly loaded employees list, clear selection
+        if (selectedEmployeeId != null && !employeesList.any((e) => e.userId == selectedEmployeeId)) {
+          selectedEmployeeId = null;
+        }
+
+        // Try to match pre-selected employee for edit/view mode if no employee is selected
+        if (selectedEmployeeId == null) {
+          String targetEmpId = widget.ncrData?['employeeId'] ?? '';
+          if (targetEmpId.isEmpty) {
+            final empEmail = (widget.ncrData?['employeeEmail'] ?? '').toString().toLowerCase().trim();
+            final empName = (widget.ncrData?['employeeName'] ?? '').toString().toLowerCase().trim();
+            if (empEmail.isNotEmpty) {
+              try {
+                targetEmpId = employeesList.firstWhere((e) => e.email.toLowerCase().trim() == empEmail).userId;
+              } catch (_) {}
+            }
+            if (targetEmpId.isEmpty && empName.isNotEmpty) {
+              try {
+                targetEmpId = employeesList.firstWhere((e) => e.userName.toLowerCase().trim() == empName).userId;
+              } catch (_) {}
+            }
+          }
+
+          if (targetEmpId.isNotEmpty) {
+            if (employeesList.any((e) => e.userId == targetEmpId)) {
+              selectedEmployeeId = targetEmpId;
+            }
+          }
+        }
+      });
+    } catch (e) {
+      debugPrint("Error loading employees for NCR: $e");
+    }
+  }
+
   final UserModel? userLoginDetails = getIt<HiveService>().getUser();
   final CustomerModel? customerLoginDetails = getIt<HiveService>()
       .getCustomer();
@@ -87,10 +182,6 @@ class _NCRFormPageState extends State<NCRFormPage> {
 
     if (isReview) {
       final ncr = widget.ncrData!;
-      docNoCtrl.text = ncr['docNo'] ?? '';
-      revNoCtrl.text = ncr['revNo'] ?? '';
-      issueDateCtrl.text = ncr['issueDate'] ?? '';
-      pageCtrl.text = ncr['page'] ?? '';
       processCtrl.text = ncr['process'] ?? '';
       iqaCtrl.text = ncr['iqaNo'] ?? '';
       clauseCtrl.text = ncr['clause'] ?? '';
@@ -121,10 +212,6 @@ class _NCRFormPageState extends State<NCRFormPage> {
 
   @override
   void dispose() {
-    docNoCtrl.dispose();
-    revNoCtrl.dispose();
-    issueDateCtrl.dispose();
-    pageCtrl.dispose();
     processCtrl.dispose();
     iqaCtrl.dispose();
     clauseCtrl.dispose();
@@ -162,6 +249,7 @@ class _NCRFormPageState extends State<NCRFormPage> {
             customerId: customerId,
           );
         });
+        loadEmployeesForDropdown();
       }
     } catch (e) {
       debugPrint('Error fetching customer: $e');
@@ -172,8 +260,9 @@ class _NCRFormPageState extends State<NCRFormPage> {
     roleId = userLoginDetails?.roleId ?? customerLoginDetails?.roleId ?? '';
     isRoleLoaded = true;
     if (isReview) {
-      isEditable = widget.forceEdit && !Utility.isCustomer(roleId);
+      isEditable = widget.forceEdit && !Utility.isCustomer(roleId) && !Utility.isEmployee(roleId);
     }
+    loadEmployeesForDropdown();
     setState(() {});
   }
 
@@ -299,86 +388,18 @@ class _NCRFormPageState extends State<NCRFormPage> {
           children: [
             /// 🔹 HEADER
             Container(
-              padding: const EdgeInsets.all(8),
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
               decoration: BoxDecoration(
                 border: Border.all(color: AppColors.greyBorderColor),
               ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  /// LOGO
-                  Builder(
-                    builder: (context) {
-                      final logoFile = logo;
-                      return GestureDetector(
-                        onTap: pickLogo,
-                        child: Container(
-                          height: 80,
-                          width: 80,
-                          decoration: BoxDecoration(
-                            border: Border.all(color: AppColors.greyBorderColor),
-                          ),
-                          child: logoFile == null
-                              ? const Center(
-                                  child: Text(
-                                    "Upload\nLogo",
-                                    textAlign: TextAlign.center,
-                                  ),
-                                )
-                              : Image.file(logoFile, fit: BoxFit.contain),
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(width: 8),
-
-                  /// TITLE
-                  const Expanded(
-                    child: Text(
-                      "Internal Quality Audit\nNon Conformity Report (NCR)\n(System / Process)",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 28,
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(width: 8),
-
-                  /// RIGHT SIDE FIELDS
-                  SizedBox(
-                    width: 160,
-                    child: Column(
-                      children: [
-                        AppTextFieldWidget(
-                          hintText: "DOC NO",
-                          textFieldController: docNoCtrl,
-                          readOnly: !isEditable,
-                        ),
-                        const SizedBox(height: 6),
-                        AppTextFieldWidget(
-                          hintText: "REV NO",
-                          textFieldController: revNoCtrl,
-                          readOnly: !isEditable,
-                        ),
-                        const SizedBox(height: 6),
-                        AppTextFieldWidget(
-                          hintText: "Issue Date",
-                          textFieldController: issueDateCtrl,
-                          readOnly: true,
-                          onTap: () => isEditable ? pickDate(issueDateCtrl) : null,
-                        ),
-                        const SizedBox(height: 6),
-                        AppTextFieldWidget(
-                          hintText: "PAGE",
-                          textFieldController: pageCtrl,
-                          readOnly: !isEditable,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+              child: const Text(
+                "Internal Quality Audit\nNon Conformity Report (NCR)\n(System / Process)",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 28,
+                ),
               ),
             ),
 
@@ -434,7 +455,7 @@ class _NCRFormPageState extends State<NCRFormPage> {
                   ),
 
                   /// Status Action Buttons (Super Admin / Admin / Consultant)
-                  if (isReview && isRoleLoaded && !Utility.isCustomer(roleId)) ...[
+                  if (isReview && isRoleLoaded && !Utility.isCustomer(roleId) && !Utility.isEmployee(roleId)) ...[
                     if (currentStatus == AppConst.openNCRStatusKey ||
                         currentStatus == AppConst.inProgressNCRStatusKey) ...[
                       const SizedBox(height: 12),
@@ -447,8 +468,8 @@ class _NCRFormPageState extends State<NCRFormPage> {
                           if (currentStatus == AppConst.openNCRStatusKey)
                             ElevatedButton.icon(
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.blue,
-                                foregroundColor: Colors.white,
+                                backgroundColor: AppColors.buttonDarkGreen,
+                                foregroundColor: AppColors.buttonYellow,
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 20,
                                   vertical: 10,
@@ -485,8 +506,8 @@ class _NCRFormPageState extends State<NCRFormPage> {
                           if (currentStatus == AppConst.inProgressNCRStatusKey)
                             ElevatedButton.icon(
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.redAccent,
-                                foregroundColor: Colors.white,
+                                backgroundColor: AppColors.buttonDarkGreen,
+                                foregroundColor: AppColors.buttonYellow,
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 20,
                                   vertical: 10,
@@ -564,12 +585,69 @@ class _NCRFormPageState extends State<NCRFormPage> {
               onChanged: (customer) {
                 setState(() {
                   selectedCustomer = customer;
+                  // If selected employee doesn't belong to the newly selected customer, clear selected employee
+                  final currentEmp = getSelectedEmployee();
+                  if (currentEmp == null || currentEmp.customerId != customer?.customerId) {
+                    selectedEmployeeId = null;
+                  }
+                  employeesList = [];
                 });
+                loadEmployeesForDropdown();
 
                 /// 🔥 FULL MODEL AVAILABLE
                 debugPrint('Customer ID: ${customer?.customerId}');
                 debugPrint('Top Dept Email: ${customer?.topLevelEmail}');
               },
+            ),
+
+            const SizedBox(height: 12),
+            sectionHeader("Select Employee"),
+            GestureDetector(
+              onTap: isEditable && (selectedCustomer?.customerId ?? '').isEmpty
+                  ? () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("Please select a company first"),
+                          behavior: SnackBarBehavior.floating,
+                          backgroundColor: Colors.orange,
+                        ),
+                      );
+                    }
+                  : null,
+              child: AbsorbPointer(
+                absorbing: isEditable && (selectedCustomer?.customerId ?? '').isEmpty,
+                child: DropdownButtonFormField<String>(
+                  value: selectedEmployeeId != null && employeesList.any((e) => e.userId == selectedEmployeeId) ? selectedEmployeeId : null,
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                    filled: true,
+                    fillColor: (selectedCustomer?.customerId ?? '').isEmpty ? Colors.grey.shade100 : Colors.white,
+                  ),
+                  hint: Text(
+                    (selectedCustomer?.customerId ?? '').isEmpty
+                        ? "Select Company First"
+                        : "Select Employee",
+                    style: TextStyle(
+                      color: (selectedCustomer?.customerId ?? '').isEmpty
+                          ? Colors.grey
+                          : AppColors.blackTextColor,
+                    ),
+                  ),
+                  items: employeesList.map((emp) {
+                    return DropdownMenuItem<String>(
+                      value: emp.userId,
+                      child: Text("${emp.userName} (${emp.email})"),
+                    );
+                  }).toList(),
+                  onChanged: isEditable && (selectedCustomer?.customerId ?? '').isNotEmpty
+                      ? (empId) {
+                          setState(() {
+                            selectedEmployeeId = empId;
+                          });
+                        }
+                      : null,
+                ),
+              ),
             ),
 
             const SizedBox(height: 24),
@@ -798,13 +876,14 @@ class _NCRFormPageState extends State<NCRFormPage> {
                     hintText: "Phone",
                     textFieldController: TextEditingController.fromValue(
                       TextEditingValue(
-                        text: selectedCustomer?.lowLevelMobile ?? "",
+                        text: AppValidation.formatPhoneForEdit(selectedCustomer?.lowLevelMobile ?? ""),
                       ),
                     ),
                     readOnly: true,
                     isEnabled: false,
                     keyboardType: TextInputType.number,
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    prefixText: "+91 ",
                   ),
                 ),
               ],
@@ -832,16 +911,24 @@ class _NCRFormPageState extends State<NCRFormPage> {
                       return;
                     }
 
+                    if ((selectedEmployeeId ?? '').isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Please select an employee'),
+                          behavior: SnackBarBehavior.floating,
+                          backgroundColor: Colors.redAccent,
+                        ),
+                      );
+                      return;
+                    }
+
                     setState(() {
                       isSaving = true;
                     });
 
                     try {
+                      final selectedEmp = getSelectedEmployee();
                       final Map<String, dynamic> dataMap = {
-                        'docNo': docNoCtrl.text,
-                        'revNo': revNoCtrl.text,
-                        'issueDate': issueDateCtrl.text,
-                        'page': pageCtrl.text,
                         'process': processCtrl.text,
                         'iqaNo': iqaCtrl.text,
                         'clause': clauseCtrl.text,
@@ -860,6 +947,9 @@ class _NCRFormPageState extends State<NCRFormPage> {
                         'approvedBy': approvedCtrl.text,
                         'customerId': selectedCustomer?.customerId ?? '',
                         'companyName': selectedCustomer?.companyName ?? '',
+                        'employeeId': selectedEmp?.userId ?? '',
+                        'employeeName': selectedEmp?.userName ?? '',
+                        'employeeEmail': selectedEmp?.email ?? '',
                         'status': currentStatus,
                       };
 
@@ -872,11 +962,56 @@ class _NCRFormPageState extends State<NCRFormPage> {
 
                       dataMap['consultantId'] = assignedConsultantId;
 
+                      Future<void> sendNcrEmails(bool isUpdate) async {
+                        // 1. Notify Employee
+                        if ((selectedEmp?.email ?? '').isNotEmpty) {
+                          try {
+                            await BrevoEmailService.sendNcrAssignedMail(
+                              employeeEmail: selectedEmp!.email,
+                              employeeName: selectedEmp!.userName,
+                              companyName: selectedCustomer?.companyName ?? '',
+                              ncrNo: ncrNoCtrl.text,
+                              process: processCtrl.text,
+                              isUpdate: isUpdate,
+                            );
+                          } catch (e) {
+                            debugPrint("Failed to send NCR employee email notification: $e");
+                          }
+                        }
+
+                        // 2. Notify Customer Contacts
+                        if (selectedCustomer != null) {
+                          final Set<String> customerEmails = {};
+                          if ((selectedCustomer?.email ?? '').isNotEmpty) customerEmails.add(selectedCustomer!.email.trim());
+                          if ((selectedCustomer?.topLevelEmail ?? '').isNotEmpty) customerEmails.add(selectedCustomer!.topLevelEmail.trim());
+                          if ((selectedCustomer?.mediumLevelEmail ?? '').isNotEmpty) customerEmails.add(selectedCustomer!.mediumLevelEmail.trim());
+                          if ((selectedCustomer?.lowLevelEmail ?? '').isNotEmpty) customerEmails.add(selectedCustomer!.lowLevelEmail.trim());
+
+                          for (final custEmail in customerEmails) {
+                            if (!Utility.emailValidationPattern(value: custEmail)) {
+                              try {
+                                await BrevoEmailService.sendNcrAssignedMail(
+                                  employeeEmail: custEmail,
+                                  employeeName: selectedCustomer?.companyName ?? 'Valued Customer',
+                                  companyName: selectedCustomer?.companyName ?? '',
+                                  ncrNo: ncrNoCtrl.text,
+                                  process: processCtrl.text,
+                                  isUpdate: isUpdate,
+                                );
+                              } catch (e) {
+                                debugPrint("Failed to send NCR customer email notification to $custEmail: $e");
+                              }
+                            }
+                          }
+                        }
+                      }
+
                       if (isReview) {
                         final docId = widget.ncrData?['id'];
                         if (docId != null) {
                           dataMap['updatedAt'] = Timestamp.now();
                           await _ncrRepository.updateNcrForm(docId, dataMap);
+                          await sendNcrEmails(true);
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text("NCR Updated Successfully")),
@@ -899,10 +1034,6 @@ class _NCRFormPageState extends State<NCRFormPage> {
                         dataMap['createdAt'] = Timestamp.now();
 
                         final model = NcrFormModel(
-                          docNo: docNoCtrl.text,
-                          revNo: revNoCtrl.text,
-                          issueDate: issueDateCtrl.text,
-                          page: pageCtrl.text,
                           process: processCtrl.text,
                           iqaNo: iqaCtrl.text,
                           clause: clauseCtrl.text,
@@ -921,11 +1052,15 @@ class _NCRFormPageState extends State<NCRFormPage> {
                           approvedBy: approvedCtrl.text,
                           consultantId: assignedConsultantId,
                           companyId: selectedCustomer?.customerId ?? '',
+                          employeeId: selectedEmp?.userId ?? '',
+                          employeeName: selectedEmp?.userName ?? '',
+                          employeeEmail: selectedEmp?.email ?? '',
                           status: currentStatus,
                           createdAt: Timestamp.now(),
                         );
 
                         await _ncrRepository.saveNcrForm(model);
+                        await sendNcrEmails(false);
 
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(

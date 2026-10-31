@@ -293,14 +293,14 @@ class _CustomerMMEListPageState extends State<CustomerMMEListPage> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: AppColors.kPrimaryColor,
+        backgroundColor: AppColors.buttonDarkGreen,
         onPressed: () {
           context.push(
             AppRoutes.customerMMEForm,
             extra: {'customerId': widget.customerId},
           );
         },
-        child: const Icon(Icons.add, color: AppColors.whiteColor),
+        child: const Icon(Icons.add, color: AppColors.buttonYellow),
       ),
       body: BlocBuilder<CustomerMMECubit, CustomerMMEState>(
         builder: (context, state) {
@@ -345,7 +345,7 @@ class _CustomerMMEListPageState extends State<CustomerMMEListPage> {
                                 const SizedBox(height: 12),
                                 TextButton.icon(
                                   icon: const Icon(Icons.refresh),
-                                  label: const Text("Clear Filters"),
+                                  label: const Text("CLEAR FILTERS"),
                                   onPressed: () {
                                     searchController.clear();
                                     setState(() {
@@ -559,15 +559,15 @@ class _CustomerMMEListPageState extends State<CustomerMMEListPage> {
                     width: double.infinity,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.deepPurple,
+                        backgroundColor: AppColors.buttonDarkGreen,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
                       onPressed: () => Navigator.pop(context),
                       child: const Text(
-                        'Close',
-                        style: TextStyle(color: AppColors.whiteTextColor),
+                        'CLOSE',
+                        style: TextStyle(color: AppColors.buttonYellow),
                       ),
                     ),
                   ),
@@ -628,10 +628,10 @@ class _CustomerMMEListPageState extends State<CustomerMMEListPage> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
+              child: const Text('CANCEL'),
             ),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.buttonDarkGreen),
               onPressed: () {
                 if ((mme.docId ?? '').isNotEmpty) {
                   GoRouter.of(context).pop();
@@ -642,8 +642,8 @@ class _CustomerMMEListPageState extends State<CustomerMMEListPage> {
                 }
               },
               child: const Text(
-                'Delete',
-                style: TextStyle(color: AppColors.whiteTextColor),
+                'DELETE',
+                style: TextStyle(color: AppColors.buttonYellow),
               ),
             ),
           ],
@@ -802,7 +802,7 @@ class _CustomerMMEListPageState extends State<CustomerMMEListPage> {
                       Expanded(
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.deepPurple,
+                            backgroundColor: AppColors.buttonDarkGreen,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -817,7 +817,7 @@ class _CustomerMMEListPageState extends State<CustomerMMEListPage> {
                                 },
                           child: const Text(
                             'CONFIRM & UPLOAD',
-                            style: TextStyle(color: AppColors.whiteTextColor),
+                            style: TextStyle(color: AppColors.buttonYellow),
                           ),
                         ),
                       ),

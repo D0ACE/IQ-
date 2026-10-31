@@ -1,6 +1,8 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:universal_html/html.dart' as html;
+import 'package:iq_plus/common/utility/app_validation.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
 import 'package:iq_plus/features/admin/consultants/cubit/consultant_cubit.dart';
 import 'package:iq_plus/features/admin/consultants/cubit/consultant_state.dart';
@@ -81,7 +83,7 @@ class _CustomerDetailViewState extends State<CustomerDetailPage> {
                         _buildDetailCard([
                           _buildDetailRow(Icons.business_rounded, "Company Name", widget.customer.companyName),
                           _buildDetailRow(Icons.alternate_email_rounded, "Corporate Email", widget.customer.email),
-                          _buildDetailRow(Icons.phone_android_rounded, "Primary Contact", widget.customer.phoneNumber),
+                          _buildDetailRow(Icons.phone_android_rounded, "Primary Contact", AppValidation.formatPhoneForDisplay(widget.customer.phoneNumber)),
                           _buildDetailRow(Icons.location_on_rounded, "Headquarters", widget.customer.address),
                         ]),
 
@@ -91,6 +93,50 @@ class _CustomerDetailViewState extends State<CustomerDetailPage> {
                           _buildDetailRow(Icons.verified_rounded, "Standard", widget.customer.certificateStandard),
                           _buildDetailRow(Icons.groups_rounded, "Workforce", widget.customer.numberOfEmployees),
                           _buildDetailRow(Icons.map_rounded, "Nodes", widget.customer.numberOfLocations),
+                        ]),
+
+                        const SizedBox(height: 24),
+                        _buildSectionHeader("LEGAL DOCUMENTATION"),
+                        _buildDetailCard([
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.description_rounded, color: AppColors.primary, size: 24),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text("Legal Document File", style: TextStyle(fontSize: 9, color: Colors.grey, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        widget.customer.legitDocumentUrl.isNotEmpty ? "Document Attached" : "No Document Uploaded",
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: widget.customer.legitDocumentUrl.isNotEmpty ? Colors.green.shade700 : Colors.red,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                if (widget.customer.legitDocumentUrl.isNotEmpty)
+                                  ElevatedButton.icon(
+                                    onPressed: () {
+                                      html.window.open(widget.customer.legitDocumentUrl, '_blank');
+                                    },
+                                    icon: const Icon(Icons.open_in_new_rounded, size: 16),
+                                    label: const Text("VIEW FILE"),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppColors.buttonDarkGreen,
+                                      foregroundColor: AppColors.buttonYellow,
+                                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
                         ]),
 
                         const SizedBox(height: 24),
@@ -166,8 +212,8 @@ class _CustomerDetailViewState extends State<CustomerDetailPage> {
                     height: 56,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: widget.customer.isProfileApproved ? Colors.green : AppColors.primary,
-                        foregroundColor: Colors.white,
+                        backgroundColor: AppColors.buttonDarkGreen,
+                        foregroundColor: AppColors.buttonYellow,
                         elevation: 0,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       ),

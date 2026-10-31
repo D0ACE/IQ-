@@ -47,9 +47,7 @@ class _TrainingResultsPageState extends State<TrainingResultsPage> {
     }
   }
 
-  Future<void> _exportToExcel(List<AwarenessVideoModel> videos, List<VideoEnrollmentModel> enrollments) async {
-    final completedEnrollments = enrollments.where((e) => e.status == 'completed').toList();
-    
+  Future<void> _exportToExcel(List<AwarenessVideoModel> videos, List<VideoEnrollmentModel> completedEnrollments) async {
     if (completedEnrollments.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("No completed trainings to export")),
@@ -85,7 +83,7 @@ class _TrainingResultsPageState extends State<TrainingResultsPage> {
         excel_pkg.TextCellValue(DateFormat('dd MMM yyyy').format(enrollment.enrolledAt)),
         excel_pkg.TextCellValue(enrollment.completedAt != null ? DateFormat('dd MMM yyyy').format(enrollment.completedAt!) : 'N/A'),
         excel_pkg.TextCellValue("${enrollment.score ?? 0} / ${enrollment.totalQuestions ?? 0}"),
-        excel_pkg.TextCellValue(enrollment.status.toUpperCase()),
+        excel_pkg.TextCellValue(enrollment.status == 'completed' ? 'COMPLETED' : 'FAILED'),
       ]);
     }
 
@@ -123,10 +121,22 @@ class _TrainingResultsPageState extends State<TrainingResultsPage> {
 
           if (state is VideoLoaded) {
             final cubit = context.read<VideoCubit>();
-            final completedEnrollments = cubit.enrollments.where((e) => e.status == 'completed').toList();
+            final targetUserId = widget.userId ?? _currentUser?.userId;
+            final customerId = widget.customerId ?? _currentUser?.customerId;
+
+            final allowedVideos = state.videos.where((v) {
+              if (targetUserId == null) return false;
+              final bool matchesCustomer = v.customerId == null || v.customerId!.isEmpty || v.customerId == customerId;
+              final bool hasAccess = v.accessToOtherEmployees || v.assignedEmployeeIds.contains(targetUserId);
+              return matchesCustomer && hasAccess;
+            }).map((v) => v.videoId).toSet();
+
+            final completedEnrollments = cubit.enrollments.where((e) => 
+              allowedVideos.contains(e.videoId) && (e.status == 'completed' || e.status == 'failed')
+            ).toList();
 
             if (completedEnrollments.isEmpty) {
-              return const Center(child: Text("No completed trainings found."));
+              return const Center(child: Text("No completed or failed training results found."));
             }
 
             return SingleChildScrollView(
@@ -138,16 +148,16 @@ class _TrainingResultsPageState extends State<TrainingResultsPage> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text(
-                        "Completed Trainings",
+                        "Training History",
                         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       ElevatedButton.icon(
-                        onPressed: () => _exportToExcel(state.videos, cubit.enrollments),
+                        onPressed: () => _exportToExcel(state.videos, completedEnrollments),
                         icon: const Icon(Icons.file_download),
-                        label: const Text("Export Training"),
+                        label: const Text("EXPORT TRAINING"),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.purple,
-                          foregroundColor: Colors.white,
+                          backgroundColor: AppColors.buttonDarkGreen,
+                          foregroundColor: AppColors.buttonYellow,
                         ),
                       ),
                     ],
@@ -173,18 +183,22 @@ class _TrainingResultsPageState extends State<TrainingResultsPage> {
                               filePath: '', createdBy: '', questions: [], createdAt: DateTime.now()
                             ));
                           
+                          final bool isPassed = enrollment.status == 'completed';
+                          final Color badgeColor = isPassed ? Colors.green : Colors.red;
+                          final String badgeText = isPassed ? "COMPLETED" : "FAILED";
+
                           return DataRow(cells: [
                             DataCell(Text(video.title)),
                             DataCell(Text(DateFormat('dd MMM yyyy').format(enrollment.enrolledAt))),
-                            DataCell(Text("${enrollment.score} / ${enrollment.totalQuestions}")),
+                            DataCell(Text("${enrollment.score ?? 0} / ${enrollment.totalQuestions ?? 0}")),
                             DataCell(
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: Colors.green.withValues(alpha: 0.1),
+                                  color: badgeColor.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(4),
                                 ),
-                                child: const Text("COMPLETED", style: TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold)),
+                                child: Text(badgeText, style: TextStyle(color: badgeColor, fontSize: 10, fontWeight: FontWeight.bold)),
                               ),
                             ),
                             DataCell(Text(enrollment.completedAt != null ? DateFormat('dd MMM yyyy').format(enrollment.completedAt!) : '-')),

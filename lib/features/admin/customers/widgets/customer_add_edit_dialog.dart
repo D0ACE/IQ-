@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:iq_plus/core/supabase/supabase_config.dart';
 import 'package:iq_plus/common/app_widget/app_text_field_widget.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
 import 'package:iq_plus/common/utility/app_validation.dart';
@@ -62,7 +64,7 @@ class _CustomerAddEditDialogState extends State<CustomerAddEditDialog> {
     
     companyNameCtrl = TextEditingController(text: c?.companyName);
     addressCtrl = TextEditingController(text: c?.address);
-    phoneCtrl = TextEditingController(text: c?.phoneNumber);
+    phoneCtrl = TextEditingController(text: AppValidation.formatPhoneForEdit(c?.phoneNumber));
     emailCtrl = TextEditingController(text: c?.email);
 
     certificateCtrl = TextEditingController(text: c?.certificateStandard);
@@ -73,15 +75,15 @@ class _CustomerAddEditDialogState extends State<CustomerAddEditDialog> {
 
     lowNameCtrl = TextEditingController(text: c?.lowLevelName);
     lowEmailCtrl = TextEditingController(text: c?.lowLevelEmail);
-    lowMobileCtrl = TextEditingController(text: c?.lowLevelMobile);
+    lowMobileCtrl = TextEditingController(text: AppValidation.formatPhoneForEdit(c?.lowLevelMobile));
 
     mediumNameCtrl = TextEditingController(text: c?.mediumLevelName);
     mediumEmailCtrl = TextEditingController(text: c?.mediumLevelEmail);
-    mediumMobileCtrl = TextEditingController(text: c?.mediumLevelMobile);
+    mediumMobileCtrl = TextEditingController(text: AppValidation.formatPhoneForEdit(c?.mediumLevelMobile));
 
     topNameCtrl = TextEditingController(text: c?.topLevelName);
     topEmailCtrl = TextEditingController(text: c?.topLevelEmail);
-    topMobileCtrl = TextEditingController(text: c?.topLevelMobile);
+    topMobileCtrl = TextEditingController(text: AppValidation.formatPhoneForEdit(c?.topLevelMobile));
     
     selectedConsultantId = c?.consultantId;
   }
@@ -112,14 +114,18 @@ class _CustomerAddEditDialogState extends State<CustomerAddEditDialog> {
     super.dispose();
   }
 
+  Uint8List? selectedFileBytes;
+
   Future<void> _pickDocument() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['pdf', 'doc', 'docx', 'jpg', 'png'],
+      withData: true,
     );
 
-    if (result != null) {
+    if (result != null && result.files.single.bytes != null) {
       setState(() {
+        selectedFileBytes = result.files.single.bytes;
         selectedFileName = result.files.single.name;
         legitDocumentUrlCtrl.text = selectedFileName!;
       });
@@ -162,7 +168,7 @@ class _CustomerAddEditDialogState extends State<CustomerAddEditDialog> {
                 _sectionHeader("ORGANIZATION CORE"),
                 _buildModernField("Company Name", companyNameName: companyNameCtrl, icon: Icons.business_rounded, isRequired: true),
                 _buildModernField("Headquarters Address", companyNameName: addressCtrl, icon: Icons.location_on_rounded, isRequired: true),
-                _buildModernField("Primary Contact", companyNameName: phoneCtrl, icon: Icons.phone_android_rounded, isRequired: true, keyboardType: TextInputType.number, validator: AppValidation.phoneNumberValidator, inputFormatters: AppValidation.phoneNumberFormatters()),
+                _buildModernField("Primary Contact", companyNameName: phoneCtrl, icon: Icons.phone_android_rounded, isRequired: true, keyboardType: TextInputType.number, validator: AppValidation.phoneNumberValidator, inputFormatters: AppValidation.phoneNumberFormatters(), prefixText: "+91 "),
                 _buildModernField("Corporate Email", companyNameName: emailCtrl, icon: Icons.alternate_email_rounded, isRequired: true, validator: AppValidation.checkEmailValidation, keyboardType: TextInputType.emailAddress),
                 
                 const SizedBox(height: 20),
@@ -192,6 +198,9 @@ class _CustomerAddEditDialogState extends State<CustomerAddEditDialog> {
                     }
 
                     if (state is ConsultantLoaded) {
+                      final bool hasSelectedConsultant = state.consultants.any((c) => c.id == selectedConsultantId);
+                      final String? validConsultantValue = hasSelectedConsultant ? selectedConsultantId : null;
+
                       return Container(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         decoration: BoxDecoration(
@@ -200,7 +209,7 @@ class _CustomerAddEditDialogState extends State<CustomerAddEditDialog> {
                           border: Border.all(color: Colors.grey.shade200),
                         ),
                         child: DropdownButtonFormField<String>(
-                          initialValue: selectedConsultantId,
+                          initialValue: validConsultantValue,
                           dropdownColor: Colors.white,
                           style: const TextStyle(color: AppColors.titleText, fontWeight: FontWeight.bold, fontSize: 14),
                           decoration: const InputDecoration(
@@ -236,13 +245,13 @@ class _CustomerAddEditDialogState extends State<CustomerAddEditDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: Text("CANCEL", style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.bold)),
+          child: const Text("CANCEL", style: TextStyle(color: AppColors.buttonYellow, fontWeight: FontWeight.bold)),
         ),
         const SizedBox(width: 8),
         ElevatedButton(
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primary,
-            foregroundColor: Colors.white,
+            backgroundColor: AppColors.buttonDarkGreen,
+            foregroundColor: AppColors.buttonYellow,
             elevation: 0,
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -264,7 +273,7 @@ class _CustomerAddEditDialogState extends State<CustomerAddEditDialog> {
     );
   }
 
-  Widget _buildModernField(String hint, {required TextEditingController companyNameName, required IconData icon, bool isRequired = false, bool isEnabled = true, String? Function(String?)? validator, TextInputType? keyboardType, List<TextInputFormatter>? inputFormatters}) {
+  Widget _buildModernField(String hint, {required TextEditingController companyNameName, required IconData icon, bool isRequired = false, bool isEnabled = true, String? Function(String?)? validator, TextInputType? keyboardType, List<TextInputFormatter>? inputFormatters, String? prefixText}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Container(
@@ -281,6 +290,7 @@ class _CustomerAddEditDialogState extends State<CustomerAddEditDialog> {
           validator: validator,
           keyboardType: keyboardType,
           inputFormatters: inputFormatters,
+          prefixText: prefixText,
           prefixIconWidget: Icon(icon, color: AppColors.primary, size: 20),
           textStyle: const TextStyle(color: AppColors.titleText, fontSize: 14, fontWeight: FontWeight.bold),
           decoration: InputDecoration(
@@ -368,14 +378,14 @@ class _CustomerAddEditDialogState extends State<CustomerAddEditDialog> {
             const SizedBox(height: 16),
             _buildModernField("Authority Name", companyNameName: name, icon: Icons.person_rounded, isRequired: true),
             _buildModernField("Direct Email", companyNameName: email, icon: Icons.email_rounded, keyboardType: TextInputType.emailAddress, validator: AppValidation.checkEmailValidation),
-            _buildModernField("Mobile Connection", companyNameName: mobile, icon: Icons.phone_rounded, keyboardType: TextInputType.number, validator: AppValidation.phoneNumberValidator, inputFormatters: AppValidation.phoneNumberFormatters()),
+            _buildModernField("Mobile Connection", companyNameName: mobile, icon: Icons.phone_rounded, keyboardType: TextInputType.number, validator: AppValidation.phoneNumberValidator, inputFormatters: AppValidation.phoneNumberFormatters(), prefixText: "+91 "),
           ],
         ),
       ),
     );
   }
 
-  void _onSave() {
+  Future<void> _onSave() async {
     if (selectedConsultantId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -389,7 +399,31 @@ class _CustomerAddEditDialogState extends State<CustomerAddEditDialog> {
     if (_formKey.currentState!.validate()) {
       final cubit = context.read<CustomerListCubit>();
       final isNew = widget.customer == null;
-      
+
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(child: CircularProgressIndicator()),
+      );
+
+      String legitUrl = widget.customer?.legitDocumentUrl ?? '';
+      if (selectedFileBytes != null && selectedFileName != null) {
+        try {
+          final supabasePath = 'legal_docs/${DateTime.now().millisecondsSinceEpoch}_$selectedFileName';
+          await Supabase.instance.client.storage.from(SupabaseConfig.bucketName).uploadBinary(
+            supabasePath,
+            selectedFileBytes!,
+            fileOptions: const FileOptions(cacheControl: '3600', upsert: false),
+          );
+          legitUrl = Supabase.instance.client.storage.from(SupabaseConfig.bucketName).getPublicUrl(supabasePath);
+        } catch (e) {
+          debugPrint("Error uploading legal doc: $e");
+        }
+      }
+
+      if (!mounted) return;
+      Navigator.pop(context); // pop loading dialog
+
       final data = CustomerModel(
         customerId: widget.customer?.customerId ?? '',
         companyName: companyNameCtrl.text.trim(),
@@ -401,7 +435,7 @@ class _CustomerAddEditDialogState extends State<CustomerAddEditDialog> {
         numberOfLocations: locationsCtrl.text.trim(),
         numberOfEmployees: employeesCtrl.text.trim(),
         companyFunction: companyFunctionCtrl.text.trim(),
-        legitDocumentUrl: legitDocumentUrlCtrl.text.trim(),
+        legitDocumentUrl: legitUrl,
         isProfileApproved: isNew ? true : widget.customer!.isProfileApproved,
         fcmToken: widget.customer?.fcmToken ?? "",
         roleId: AppConst.customerRole,
@@ -424,6 +458,7 @@ class _CustomerAddEditDialogState extends State<CustomerAddEditDialog> {
       } else {
         cubit.updateCustomer(data);
       }
+      if (!mounted) return;
       Navigator.pop(context);
     }
   }

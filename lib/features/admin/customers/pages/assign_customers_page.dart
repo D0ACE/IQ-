@@ -94,9 +94,9 @@ class _AssignCustomersPageState extends State<AssignCustomersPage> {
                 }
 
                 if (state is CustomerListLoaded) {
-                  // Filter only approved customers
+                  // Filter only approved customers with valid data
                   var assignedCustomers = state.customers
-                      .where((customer) => customer.isProfileApproved)
+                      .where((customer) => customer.isProfileApproved && customer.companyName.trim().isNotEmpty)
                       .toList();
 
                   if (_searchQuery.isNotEmpty) {
@@ -258,9 +258,9 @@ class _CustomerCard extends StatelessWidget {
                     ),
                   ),
                   child: const Text(
-                    'Add/Edit Next Visit Date',
+                    'ADD/EDIT NEXT VISIT DATE',
                     style: TextStyle(
-                      color: AppColors.kPrimaryColor,
+                      color: AppColors.buttonYellow,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),

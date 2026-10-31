@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
 import 'package:iq_plus/features/dashboard/page/visit_summary/model/visitor_summary_model.dart';
 
@@ -28,35 +29,35 @@ class VisitorSummaryDetailsDialog extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _sectionTitle('Visit Details'),
-                    _keyValue('Client', model.clientName),
                     _keyValue('Location', model.location),
                     _keyValue('Visit Date', model.visitDate ?? ''),
-                    _keyValue('Time', '${model.fromTime} - ${model.toTime}'),
+                    _keyValue('Login Time', model.loginTime),
+                    _keyValue('Logout Time', model.logoutTime),
                     _keyValue('Purpose', model.purpose),
-                    _keyValue('Officer', model.officerName),
+                    _keyValue('Consultant Coach Name', model.consultantCoachName),
                     _keyValue('Department', model.department),
 
                     _divider(),
 
                     _sectionTitle('Scope of Review'),
-                    ...model.scopeOfReview.entries.map(
-                          (e) => _keyValue(e.key, e.value.toString()),
-                    ),
+                    if (model.scopeOfReview.isEmpty)
+                      const Text('No scope items specified')
+                    else
+                      for (final item in model.scopeOfReview)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 2),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.check_circle_outline, size: 16, color: AppColors.kPrimaryColor),
+                              const SizedBox(width: 8),
+                              Expanded(child: Text(item, style: const TextStyle(fontSize: 14))),
+                            ],
+                          ),
+                        ),
 
                     _divider(),
 
-                    _sectionTitle('Observations'),
-                    ...model.observations.map(
-                          (o) => _cardBlock(
-                        title: o.process,
-                        children: [
-                          _keyValue('Observation', o.obs),
-                          _keyValue('Severity', o.severity),
-                        ],
-                      ),
-                    ),
 
-                    _divider(),
 
                     _sectionTitle('Compliance'),
                     _statusChip(model.complianceStatus),
@@ -69,11 +70,15 @@ class VisitorSummaryDetailsDialog extends StatelessWidget {
                       const Text('No non-compliances found'),
                     ...model.nonCompliances.map(
                           (n) => _cardBlock(
-                        title: 'Gap',
+                        title: 'NC: ${n.gap}',
                         children: [
-                          _keyValue('Gap', n.gap),
-                          _keyValue('Root Cause', n.root),
-                          _keyValue('Impact', n.impact),
+                          _keyValue('Category of NC', n.category),
+                          if (n.actionRequired.isNotEmpty)
+                            _keyValue('Action Required', n.actionRequired),
+                          if (n.responsible.isNotEmpty)
+                            _keyValue('Responsible', n.responsible),
+                          if ((n.targetDate ?? '').isNotEmpty)
+                            _keyValue('Target Date', n.targetDate!),
                         ],
                       ),
                     ),
@@ -83,10 +88,14 @@ class VisitorSummaryDetailsDialog extends StatelessWidget {
                     _sectionTitle('Corrective Actions (CAPA)'),
                     ...model.capas.map(
                           (c) => _cardBlock(
-                        title: c.action,
+                        title: 'Action Taken: ${c.action}',
                         children: [
-                          _keyValue('Owner', c.owner),
-                          _keyValue('Target Date', c.date ?? ''),
+                          _keyValue('Root Cause', c.rootCause),
+                          _keyValue('Date of Action Taken', c.date ?? ''),
+                          if (c.actionTakenBy.isNotEmpty)
+                            _keyValue('Action Taken By', c.actionTakenBy),
+                          if (c.evidence.isNotEmpty)
+                            _evidenceWidget('Supporting Evidence', c.evidence),
                         ],
                       ),
                     ),
@@ -96,18 +105,11 @@ class VisitorSummaryDetailsDialog extends StatelessWidget {
                     _sectionTitle('Client Feedback'),
                     Text(model.clientFeedback),
 
-                    const SizedBox(height: 12),
-
-                    _sectionTitle('Overall Assessment'),
-                    _statusChip(model.overallAssessment),
-
                     _divider(),
 
                     _sectionTitle('Sign Off'),
-                    _keyValue('Officer Name', model.signOff.officerName),
-                    _keyValue('Officer Signature', model.signOff.officerSign),
+                    _keyValue('Consultant Coach Name', model.signOff.consultantCoachName.isNotEmpty ? model.signOff.consultantCoachName : model.consultantCoachName),
                     _keyValue('Client Name', model.signOff.clientName),
-                    _keyValue('Client Signature', model.signOff.clientSign),
                     _keyValue('Signed On', model.signOff.signDate ?? ''),
                   ],
                 ),
@@ -190,6 +192,85 @@ class VisitorSummaryDetailsDialog extends StatelessWidget {
             ),
           ),
           Expanded(child: Text(value)),
+        ],
+      ),
+    );
+  }
+
+  Widget _evidenceWidget(String key, String evidence) {
+    final bool isUrl = evidence.startsWith('http://') || evidence.startsWith('https://');
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: 160,
+            child: Text(
+              key,
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+          Expanded(
+            child: InkWell(
+              onTap: () async {
+                final Uri? uri = Uri.tryParse(evidence);
+                if (uri != null) {
+                  if (await canLaunchUrl(uri)) {
+                    await launchUrl(uri, mode: LaunchMode.externalApplication);
+                  } else {
+                    await launchUrl(uri);
+                  }
+                }
+              },
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isUrl ? Icons.download : Icons.attach_file,
+                    size: 18,
+                    color: AppColors.kPrimaryColor,
+                  ),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      evidence,
+                      style: TextStyle(
+                        color: isUrl ? AppColors.kPrimaryColor : Colors.black87,
+                        decoration: isUrl ? TextDecoration.underline : TextDecoration.none,
+                        fontWeight: isUrl ? FontWeight.w600 : FontWeight.normal,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.kPrimaryColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.file_download, size: 14, color: AppColors.kPrimaryColor),
+                        SizedBox(width: 4),
+                        Text(
+                          'Download / Open',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.kPrimaryColor,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );

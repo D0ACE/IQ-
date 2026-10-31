@@ -79,8 +79,7 @@ class LoginScreenTopImage extends StatelessWidget {
             height: isMobile ? 220 : 340,
             width: isMobile ? 220 : 340,
             decoration: BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
+             /* color: Colors.white,
               boxShadow: [
                 BoxShadow(
                   color: AppColors.kPrimaryColor.withValues(alpha: 0.08),
@@ -92,13 +91,15 @@ class LoginScreenTopImage extends StatelessWidget {
                   blurRadius: 20,
                   spreadRadius: -10,
                 ),
-              ],
+              ],*/
+              shape: BoxShape.circle,
+
             ),
             child: Center(
               child: Hero(
                 tag: 'login_illustration',
                 child: AssetIconWidget(
-                  icon: AppAssets.login,
+                  icon: AppAssets.iqPlusLogo,
                   height: isMobile ? 160 : 280,
                   width: null,
                 ),

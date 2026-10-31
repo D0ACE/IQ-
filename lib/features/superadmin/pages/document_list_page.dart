@@ -147,12 +147,24 @@ class _DocumentListPageState extends State<DocumentListPage> {
       appBar: const CommonAppBar(title: 'Policies & Procedures'),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddOptions(context),
-        backgroundColor: AppColors.purple,
-        child: const Icon(Icons.add, color: Colors.white),
+        backgroundColor: AppColors.buttonDarkGreen,
+        child: const Icon(Icons.add, color: AppColors.buttonYellow),
       ),
       body: BlocBuilder<DocumentCubit, DocumentState>(
         builder: (context, state) {
-          if (state is DocumentLoading) {
+          if (state is DocumentLoading || state is GlobalVersionHistoryLoaded || state is DocumentInitial || state is DocumentOperationSuccess) {
+            if (state is GlobalVersionHistoryLoaded || state is DocumentInitial) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (!mounted) return;
+                final user = getIt<HiveService>().getUser();
+                final isConsultant = Utility.isConsultant(user?.roleId);
+                final String? consultantIdFilter = isConsultant ? user?.userId : null;
+                context.read<DocumentCubit>().loadDocuments(
+                  userId: consultantIdFilter,
+                  isConsultant: isConsultant,
+                );
+              });
+            }
             return const Center(child: CircularProgressIndicator());
           }
           if (state is DocumentError) {
@@ -201,17 +213,21 @@ class _DocumentListPageState extends State<DocumentListPage> {
                   }
                 }
 
+                final companyFilteredDocs = _selectedCompanyFilter == 'all'
+                    ? allDocs
+                    : allDocs.where((d) => d.customerId == _selectedCompanyFilter).toList();
+
                 final filteredDocs = _getFilteredDocuments(
-                  allDocs,
+                  companyFilteredDocs,
                   customers,
                   isConsultant,
                   user?.userId,
                 );
 
-                final int totalCount = allDocs.length;
-                final int activeCount = allDocs.where((d) => d.status == 'active').length;
-                final int draftCount = allDocs.where((d) => d.status == 'draft').length;
-                final int rejectedCount = allDocs.where((d) => d.status == 'rejected' || d.status == 'reject').length;
+                final int totalCount = companyFilteredDocs.length;
+                final int activeCount = companyFilteredDocs.where((d) => d.status == 'active').length;
+                final int draftCount = companyFilteredDocs.where((d) => d.status == 'draft').length;
+                final int rejectedCount = companyFilteredDocs.where((d) => d.status == 'rejected' || d.status == 'reject').length;
 
                 return Column(
                   children: [
@@ -444,8 +460,8 @@ class _DocumentListPageState extends State<DocumentListPage> {
                                     icon: const Icon(Icons.clear_all_rounded, size: 18),
                                     label: const Text("Reset Filters"),
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: AppColors.kPrimaryColor,
-                                      foregroundColor: Colors.white,
+                                      backgroundColor: AppColors.buttonDarkGreen,
+                                      foregroundColor: AppColors.buttonYellow,
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(12),
                                       ),
@@ -780,24 +796,26 @@ class _DocumentListPageState extends State<DocumentListPage> {
         title: const Text('Update Policy Status'),
         content: const Text('Would you like to approve & activate this policy, or reject it with a reason?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('CANCEL', style: TextStyle(color: AppColors.buttonYellow, fontWeight: FontWeight.bold))),
           OutlinedButton(
             onPressed: () {
               Navigator.pop(ctx);
               _showRejectDialog(context, docId);
             },
             style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: Colors.red),
+              side: const BorderSide(color: AppColors.neutralBorder),
+              backgroundColor: AppColors.buttonDarkGreen,
+              foregroundColor: AppColors.buttonYellow,
             ),
-            child: const Text('Reject Policy', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+            child: const Text('Reject Policy', style: TextStyle(color: AppColors.buttonYellow, fontWeight: FontWeight.bold)),
           ),
           ElevatedButton(
             onPressed: () {
               context.read<DocumentCubit>().updateStatus(docId, 'active');
               Navigator.pop(ctx);
             },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
-            child: const Text('Approve Policy', style: TextStyle(fontWeight: FontWeight.bold)),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.buttonDarkGreen, foregroundColor: AppColors.buttonYellow),
+            child: const Text('Approve Policy', style: TextStyle(color: AppColors.buttonYellow, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -853,8 +871,8 @@ class _DocumentListPageState extends State<DocumentListPage> {
                 Navigator.pop(ctx);
               }
             },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
-            child: const Text('Reject', style: TextStyle(fontWeight: FontWeight.bold)),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.buttonDarkGreen, foregroundColor: AppColors.buttonYellow),
+            child: const Text('Reject', style: TextStyle(color: AppColors.buttonYellow, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -863,33 +881,56 @@ class _DocumentListPageState extends State<DocumentListPage> {
 
   void _showVersionHistoryDialog(BuildContext context, String docId, String title) {
     String dialogQuery = '';
+    final ScrollController verticalController = ScrollController();
+    final historyFuture = DocumentRepository().getVersionHistory(docId);
 
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setDialogState) {
           return AlertDialog(
+            constraints: const BoxConstraints(maxWidth: 820),
+            backgroundColor: Colors.white,
+            surfaceTintColor: Colors.white,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
             title: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Version History'),
-                Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                const Text(
+                  'Version History',
+                  style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.titleText),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppColors.subText.withValues(alpha: 0.7),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ],
             ),
             content: SizedBox(
               width: double.maxFinite,
               child: FutureBuilder<List<VersionHistoryModel>>(
-                future: DocumentRepository().getVersionHistory(docId),
+                future: historyFuture,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
+                    return const SizedBox(
+                      height: 100,
+                      child: Center(child: CircularProgressIndicator()),
+                    );
                   }
                   if (snapshot.hasError) {
                     return Center(child: Text("Error: ${snapshot.error}"));
                   }
                   var history = snapshot.data ?? [];
                   if (history.isEmpty) {
-                    return const Center(child: Text("No history found"));
+                    return const SizedBox(
+                      height: 100,
+                      child: Center(child: Text("No history found")),
+                    );
                   }
 
                   if (dialogQuery.isNotEmpty) {
@@ -939,74 +980,158 @@ class _DocumentListPageState extends State<DocumentListPage> {
                         )
                       else
                         Flexible(
-                          child: ListView.separated(
-                            shrinkWrap: true,
-                            itemCount: history.length,
-                            separatorBuilder: (ctx, index) => const Divider(),
-                            itemBuilder: (ctx, index) {
-                              final v = history[index];
-                              final isRejected = v.status == 'rejected' || v.status == 'reject';
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Text(v.versionNo, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.purple)),
-                                          const SizedBox(width: 8),
+                          child: Scrollbar(
+                            controller: verticalController,
+                            thumbVisibility: true,
+                            child: SingleChildScrollView(
+                              controller: verticalController,
+                              scrollDirection: Axis.vertical,
+                              child: SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                child: DataTable(
+                                  headingRowColor: WidgetStateProperty.all(const Color(0xFFF8FAFC)),
+                                  headingTextStyle: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.titleText,
+                                    fontSize: 13,
+                                  ),
+                                  dataTextStyle: const TextStyle(fontSize: 13, color: Colors.black87),
+                                  horizontalMargin: 16,
+                                  columnSpacing: 20,
+                                  columns: const [
+                                    DataColumn(label: Text('#')),
+                                    DataColumn(label: Text('Version')),
+                                    DataColumn(label: Text('Status')),
+                                    DataColumn(label: Text('Change Description')),
+                                    DataColumn(label: Text('Performed By & Date')),
+                                    DataColumn(label: Text('Approval / Rejection Info')),
+                                  ],
+                                  rows: history.asMap().entries.map((entry) {
+                                    final int index = entry.key;
+                                    final VersionHistoryModel v = entry.value;
+                                    final isActive = v.status == 'active';
+                                    final isRejected = v.status == 'rejected' || v.status == 'reject';
+                                    final statusColor = isActive
+                                        ? Colors.green
+                                        : isRejected
+                                            ? Colors.red
+                                            : Colors.orange;
+
+                                    return DataRow(
+                                      color: index % 2 == 1
+                                          ? WidgetStateProperty.all(const Color(0xFFFAFAFA))
+                                          : WidgetStateProperty.all(Colors.white),
+                                      cells: [
+                                        DataCell(Text('${index + 1}')),
+                                        DataCell(
                                           Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                             decoration: BoxDecoration(
-                                              color: (v.status == 'active'
-                                                      ? Colors.green
-                                                      : isRejected
-                                                          ? Colors.red
-                                                          : Colors.orange)
-                                                  .withValues(alpha: 0.1),
-                                              borderRadius: BorderRadius.circular(4),
+                                              color: AppColors.purple.withValues(alpha: 0.08),
+                                              borderRadius: BorderRadius.circular(6),
+                                            ),
+                                            child: Text(
+                                              v.versionNo,
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                color: AppColors.purple,
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        DataCell(
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                            decoration: BoxDecoration(
+                                              color: statusColor.withValues(alpha: 0.1),
+                                              borderRadius: BorderRadius.circular(6),
+                                              border: Border.all(color: statusColor.withValues(alpha: 0.3)),
                                             ),
                                             child: Text(
                                               v.status.toUpperCase(),
                                               style: TextStyle(
-                                                fontSize: 8,
+                                                fontSize: 11,
                                                 fontWeight: FontWeight.bold,
-                                                color: v.status == 'active'
-                                                    ? Colors.green
-                                                    : isRejected
-                                                        ? Colors.red
-                                                        : Colors.orange,
+                                                color: statusColor,
                                               ),
                                             ),
                                           ),
-                                        ],
-                                      ),
-                                      Text(DateFormat('dd MMM yyyy, hh:mm a').format(v.performedDate), style: const TextStyle(fontSize: 11, color: Colors.grey)),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text("Description of the change: ${v.changeDescription}", style: const TextStyle(fontSize: 13)),
-                                  const SizedBox(height: 4),
-                                  Text("Performed By: ${v.performedBy} on ${DateFormat('dd MMM yyyy').format(v.performedDate)}", 
-                                       style: const TextStyle(fontSize: 11, fontStyle: FontStyle.italic)),
-                                  if (v.status == 'active' && v.approvedBy != null)
-                                    Padding(
-                                      padding: const EdgeInsets.only(top: 2),
-                                      child: Text("Approved by: ${v.approvedBy} on ${v.approvedDate != null ? DateFormat('dd MMM yyyy').format(v.approvedDate!) : 'N/A'}", 
-                                           style: const TextStyle(fontSize: 11, color: Colors.green, fontWeight: FontWeight.bold)),
-                                    ),
-                                  if (isRejected && (v.rejectionReason != null || v.rejectedBy != null))
-                                    Padding(
-                                      padding: const EdgeInsets.only(top: 4),
-                                      child: Text(
-                                        "Rejected by: ${v.rejectedBy ?? v.performedBy}${v.rejectionReason != null ? ' - Reason: ${v.rejectionReason}' : ''}",
-                                        style: const TextStyle(fontSize: 11, color: Colors.red, fontWeight: FontWeight.bold),
-                                      ),
-                                    ),
-                                ],
-                              );
-                            },
+                                        ),
+                                        DataCell(
+                                          ConstrainedBox(
+                                            constraints: const BoxConstraints(maxWidth: 240),
+                                            child: Text(
+                                              v.changeDescription.isEmpty ? '-' : v.changeDescription,
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        ),
+                                        DataCell(
+                                          Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              Text(
+                                                v.performedBy.isEmpty ? '-' : v.performedBy,
+                                                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+                                              ),
+                                              Text(
+                                                DateFormat('dd MMM yyyy, hh:mm a').format(v.performedDate),
+                                                style: const TextStyle(fontSize: 11, color: Colors.grey),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        DataCell(
+                                          ConstrainedBox(
+                                            constraints: const BoxConstraints(maxWidth: 220),
+                                            child: isActive && v.approvedBy != null
+                                                ? Column(
+                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    mainAxisAlignment: MainAxisAlignment.center,
+                                                    children: [
+                                                      Text(
+                                                        "Approved by: ${v.approvedBy}",
+                                                        style: const TextStyle(fontSize: 11, color: Colors.green, fontWeight: FontWeight.bold),
+                                                        overflow: TextOverflow.ellipsis,
+                                                      ),
+                                                      if (v.approvedDate != null)
+                                                        Text(
+                                                          DateFormat('dd MMM yyyy').format(v.approvedDate!),
+                                                          style: const TextStyle(fontSize: 10, color: Colors.grey),
+                                                        ),
+                                                    ],
+                                                  )
+                                                : isRejected && (v.rejectionReason != null || v.rejectedBy != null)
+                                                    ? Column(
+                                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                                        mainAxisAlignment: MainAxisAlignment.center,
+                                                        children: [
+                                                          Text(
+                                                            "Rejected by: ${v.rejectedBy ?? v.performedBy}",
+                                                            style: const TextStyle(fontSize: 11, color: Colors.red, fontWeight: FontWeight.bold),
+                                                            overflow: TextOverflow.ellipsis,
+                                                          ),
+                                                          if (v.rejectionReason != null && v.rejectionReason!.isNotEmpty)
+                                                            Text(
+                                                              "Reason: ${v.rejectionReason}",
+                                                              style: TextStyle(fontSize: 11, color: Colors.red.shade900),
+                                                              maxLines: 2,
+                                                              overflow: TextOverflow.ellipsis,
+                                                            ),
+                                                        ],
+                                                      )
+                                                    : const Text('-'),
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                  }).toList(),
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                     ],
@@ -1015,7 +1140,10 @@ class _DocumentListPageState extends State<DocumentListPage> {
               ),
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close')),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Close', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.buttonYellow)),
+              ),
             ],
           );
         },
@@ -1030,13 +1158,13 @@ class _DocumentListPageState extends State<DocumentListPage> {
         title: const Text('Delete Document'),
         content: const Text('Are you sure you want to delete this document?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('CANCEL', style: TextStyle(color: AppColors.buttonYellow, fontWeight: FontWeight.bold))),
           TextButton(
             onPressed: () {
               context.read<DocumentCubit>().deleteDocument(docId, filePath);
               Navigator.pop(ctx);
             },
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            child: const Text('DELETE', style: TextStyle(color: AppColors.buttonYellow, fontWeight: FontWeight.bold)),
           ),
         ],
       ),

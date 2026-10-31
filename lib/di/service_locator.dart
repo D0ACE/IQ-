@@ -19,6 +19,8 @@ import 'package:iq_plus/features/videos/repository/video_repository.dart';
 import 'package:iq_plus/features/videos/cubit/video_cubit.dart';
 import 'package:iq_plus/features/periodic_compliance/repository/periodic_compliance_repository.dart';
 import 'package:iq_plus/features/periodic_compliance/cubit/periodic_compliance_cubit.dart';
+import 'package:iq_plus/features/kpis/repository/kpi_repository.dart';
+import 'package:iq_plus/features/kpis/cubit/kpi_cubit.dart';
 
 final getIt = GetIt.instance;
 
@@ -49,6 +51,9 @@ Future<void> setupServiceLocator() async {
   );
   getIt.registerLazySingleton<PeriodicComplianceRepository>(
         () => PeriodicComplianceRepository(getIt<FirebaseFirestore>()),
+  );
+  getIt.registerLazySingleton<KpiRepository>(
+        () => KpiRepository(getIt<FirebaseFirestore>()),
   );
 
   // Cubit
@@ -82,6 +87,10 @@ Future<void> setupServiceLocator() async {
 
   getIt.registerFactory<PeriodicComplianceCubit>(
         () => PeriodicComplianceCubit(getIt()),
+  );
+
+  getIt.registerFactory<KpiCubit>(
+        () => KpiCubit(getIt()),
   );
 
   getIt.registerLazySingleton<HiveService>(() => HiveService());

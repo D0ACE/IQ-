@@ -2,7 +2,9 @@ import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:universal_html/html.dart' as html;
 import 'package:iq_plus/common/routes/go_route.dart';
+import 'package:iq_plus/common/utility/app_validation.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
 import 'package:iq_plus/core/access/access_control.dart';
 import 'package:iq_plus/features/admin/customers/widgets/customer_hierarchy_graph.dart';
@@ -112,7 +114,7 @@ class _CustomerDetailViewState extends State<CustomerProfilePage>
                         const Divider(color: Colors.black12),
                         _buildMosaicRow(Icons.alternate_email_rounded, "Secure Entry", customer.email),
                         const Divider(color: Colors.black12),
-                        _buildMosaicRow(Icons.phone_in_talk_outlined, "Telephony", customer.phoneNumber),
+                        _buildMosaicRow(Icons.phone_in_talk_outlined, "Telephony", AppValidation.formatPhoneForDisplay(customer.phoneNumber)),
                       ],
                     ),
                   ),
@@ -122,6 +124,47 @@ class _CustomerDetailViewState extends State<CustomerProfilePage>
                   const SizedBox(height: 12),
                   _buildMosaicPanel(
                     child: _buildMosaicRow(Icons.location_on_outlined, "Headquarters", customer.address),
+                  ),
+
+                  const SizedBox(height: 24),
+                  _sectionLabel("LEGAL DOCUMENTATION"),
+                  const SizedBox(height: 12),
+                  _buildMosaicPanel(
+                    child: Row(
+                      children: [
+                        Icon(Icons.description_rounded, color: Colors.blueGrey.shade200, size: 20),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text("Legal Document File", style: TextStyle(fontSize: 9, color: Colors.black38, fontWeight: FontWeight.bold)),
+                              Text(
+                                customer.legitDocumentUrl.isNotEmpty ? "Document Attached" : "No Document Uploaded",
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: customer.legitDocumentUrl.isNotEmpty ? Colors.green.shade700 : Colors.red,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (customer.legitDocumentUrl.isNotEmpty)
+                          ElevatedButton.icon(
+                            onPressed: () {
+                              html.window.open(customer.legitDocumentUrl, '_blank');
+                            },
+                            icon: const Icon(Icons.open_in_new_rounded, size: 14),
+                            label: const Text("VIEW FILE"),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.buttonDarkGreen,
+                              foregroundColor: AppColors.buttonYellow,
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
 
                   if (customer.consultantId != null) ...[

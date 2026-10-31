@@ -2,6 +2,7 @@ import 'dart:developer' as developer;
 import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:iq_plus/common/utility/utility.dart';
+import 'package:iq_plus/core/email_services/email_service.dart';
 import 'package:iq_plus/core/local_storage/hive_service.dart';
 import 'package:iq_plus/di/service_locator.dart';
 import 'package:iq_plus/features/superadmin/models/document_model.dart';
@@ -122,6 +123,7 @@ class DocumentRepository {
     DateTime? rejectedDate,
     required String status,
     String? docTitle,
+    String? customerId,
   }) async {
     final historyRef = _firestore.collection('documents').doc(docId).collection('version_history');
     await historyRef.add({
@@ -137,7 +139,82 @@ class DocumentRepository {
       'rejectedDate': rejectedDate != null ? Timestamp.fromDate(rejectedDate) : null,
       'status': status,
       'docTitle': docTitle,
+      'customerId': customerId,
     });
+  }
+
+  Future<void> _notifyCustomerPolicyEvent({
+    String? docId,
+    String? customerId,
+    required String policyTitle,
+    required bool isUpdate,
+    String? changeDescription,
+  }) async {
+    try {
+      String? targetCustomerId = customerId;
+      if ((targetCustomerId == null || targetCustomerId.isEmpty) && docId != null && docId.isNotEmpty) {
+        final docSnap = await _firestore.collection('documents').doc(docId).get();
+        if (docSnap.exists) {
+          targetCustomerId = docSnap.data()?['customer_id'];
+        }
+      }
+
+      final currentUser = getIt<HiveService>().getUser();
+      final String performedBy = currentUser?.userName ?? currentUser?.email ?? 'Admin/Consultant';
+
+      void addIfValid(String? emailVal, Set<String> targetSet) {
+        if (emailVal != null) {
+          final trimmed = emailVal.trim();
+          if (trimmed.isNotEmpty && !Utility.emailValidationPattern(value: trimmed)) {
+            targetSet.add(trimmed);
+          }
+        }
+      }
+
+      List<Map<String, dynamic>> targetCustomers = [];
+
+      if (targetCustomerId != null && targetCustomerId.isNotEmpty) {
+        final custDoc = await _firestore.collection('customers').doc(targetCustomerId).get();
+        if (custDoc.exists && custDoc.data() != null) {
+          targetCustomers.add(custDoc.data()!);
+        }
+      } else {
+        // Global policy for all approved customers
+        final snapshot = await _firestore
+            .collection('customers')
+            .where('isProfileApproved', isEqualTo: true)
+            .get();
+        targetCustomers = snapshot.docs.map((d) => d.data()).toList();
+      }
+
+      for (final custData in targetCustomers) {
+        final String companyName = custData['companyName'] ?? custData['name'] ?? 'Valued Customer';
+        final Set<String> recipientEmails = {};
+
+        addIfValid(custData['email'], recipientEmails);
+
+        for (final email in recipientEmails) {
+          if (isUpdate) {
+            await BrevoEmailService.sendPolicyUpdatedMail(
+              customerEmail: email,
+              customerName: companyName,
+              policyTitle: policyTitle,
+              updatedBy: performedBy,
+              changeDescription: changeDescription ?? 'Policy updated',
+            );
+          } else {
+            await BrevoEmailService.sendPolicyCreatedMail(
+              customerEmail: email,
+              customerName: companyName,
+              policyTitle: policyTitle,
+              createdBy: performedBy,
+            );
+          }
+        }
+      }
+    } catch (e) {
+      developer.log("Error sending policy email notification: $e");
+    }
   }
 
   Future<void> addDocument({
@@ -186,6 +263,12 @@ class DocumentRepository {
       'last_change_description': 'Initial document upload',
       'last_updated_by': userEmail,
     });
+
+    _notifyCustomerPolicyEvent(
+      customerId: customerId,
+      policyTitle: title,
+      isUpdate: false,
+    );
   }
 
   Future<void> saveRichDocument({
@@ -209,6 +292,13 @@ class DocumentRepository {
         'last_updated_by': userEmail,
         'updated_at': FieldValue.serverTimestamp(),
       });
+      _notifyCustomerPolicyEvent(
+        docId: docId,
+        customerId: customerId,
+        policyTitle: title,
+        isUpdate: true,
+        changeDescription: changeDescription ?? 'Rich text updated',
+      );
     } else {
       final nextId = await _getNextId();
       await _firestore.collection('documents').add({
@@ -229,6 +319,11 @@ class DocumentRepository {
         'last_change_description': 'Initial rich text creation',
         'last_updated_by': userEmail,
       });
+      _notifyCustomerPolicyEvent(
+        customerId: customerId,
+        policyTitle: title,
+        isUpdate: false,
+      );
     }
   }
 
@@ -286,6 +381,13 @@ class DocumentRepository {
         'last_updated_by': userEmail,
         'updated_at': FieldValue.serverTimestamp(),
       });
+      _notifyCustomerPolicyEvent(
+        docId: docId,
+        customerId: customerId,
+        policyTitle: title,
+        isUpdate: true,
+        changeDescription: changeDescription ?? 'Spreadsheet updated',
+      );
     } else {
       final nextId = await _getNextId();
       await _firestore.collection('documents').add({
@@ -305,6 +407,11 @@ class DocumentRepository {
         'last_change_description': 'Initial excel creation',
         'last_updated_by': userEmail,
       });
+      _notifyCustomerPolicyEvent(
+        customerId: customerId,
+        policyTitle: title,
+        isUpdate: false,
+      );
     }
   }
 
@@ -359,6 +466,13 @@ class DocumentRepository {
 
     // 🚀 Manual Update: Just update main doc. NO history log and NO version change.
     await _firestore.collection('documents').doc(docId).update(updateData);
+    _notifyCustomerPolicyEvent(
+      docId: docId,
+      customerId: customerId,
+      policyTitle: title,
+      isUpdate: true,
+      changeDescription: changeDescription ?? 'Document updated',
+    );
   }
 
   Future<void> deleteDocument(String docId, String? supabasePath) async {
@@ -421,6 +535,7 @@ class DocumentRepository {
         approvedDate: DateTime.now(),
         status: 'active',
         docTitle: docTitle,
+        customerId: assignedCustomerId,
       );
     } else if (status == 'rejected' || status == 'reject') {
       // 🚀 Authorization check: Only the assigned Customer can reject
@@ -453,6 +568,7 @@ class DocumentRepository {
         rejectedDate: DateTime.now(),
         status: 'rejected',
         docTitle: docTitle,
+        customerId: assignedCustomerId,
       );
     } else {
       // Just set to draft or other status
@@ -554,4 +670,120 @@ class DocumentRepository {
       return [];
     }
   }
+
+  Future<PaginatedVersionHistoryResult> getGlobalVersionHistoryPaginated({
+    String? userId,
+    bool isConsultant = false,
+    String? customerId,
+    DocumentSnapshot? lastDocument,
+    int limit = 15,
+  }) async {
+    try {
+      Set<String>? allowedDocIds;
+
+      if ((isConsultant && userId != null) || customerId != null) {
+        final docs = await getDocuments(
+          userId: userId,
+          isConsultant: isConsultant,
+          customerId: customerId,
+        );
+        allowedDocIds = docs.map((d) => d.docId).toSet();
+        if (allowedDocIds.isEmpty) {
+          return PaginatedVersionHistoryResult(
+            history: [],
+            lastDocument: null,
+            hasMore: false,
+          );
+        }
+      }
+
+      List<VersionHistoryModel> history = [];
+      DocumentSnapshot? currentLastDoc = lastDocument;
+      bool hasMore = true;
+      Map<String, Map<String, String>> docCache = {};
+
+      while (history.length < limit && hasMore) {
+        Query query = _firestore
+            .collectionGroup('version_history')
+            .orderBy('performedDate', descending: true)
+            .limit(limit);
+
+        if (currentLastDoc != null) {
+          query = query.startAfterDocument(currentLastDoc);
+        }
+
+        final snapshot = await query.get();
+
+        if (snapshot.docs.isEmpty) {
+          hasMore = false;
+          break;
+        }
+
+        currentLastDoc = snapshot.docs.last;
+
+        if (snapshot.docs.length < limit) {
+          hasMore = false;
+        }
+
+        for (var doc in snapshot.docs) {
+          final data = doc.data() as Map<String, dynamic>;
+          final String dId = data['docId'] ?? '';
+
+          if (allowedDocIds != null && !allowedDocIds.contains(dId)) {
+            continue;
+          }
+
+          String? title = data['docTitle'];
+          String? custId = data['customerId'] ?? data['customer_id'];
+
+          if ((title == null || title.isEmpty || custId == null || custId.isEmpty) && dId.isNotEmpty) {
+            if (docCache.containsKey(dId)) {
+              title = docCache[dId]?['title'];
+              custId = docCache[dId]?['customerId'];
+            } else {
+              try {
+                final parentDoc = await _firestore.collection('documents').doc(dId).get();
+                final parentData = parentDoc.data();
+                title = parentData?['title'] ?? 'Unknown Policy';
+                custId = parentData?['customer_id'] ?? parentData?['customerId'];
+                docCache[dId] = {
+                  'title': title!,
+                  'customerId': custId ?? '',
+                };
+              } catch (e) {
+                title = 'Unknown Policy';
+              }
+            }
+          }
+
+          history.add(VersionHistoryModel.fromFirestore(doc, docTitle: title, customerId: custId));
+        }
+      }
+
+      return PaginatedVersionHistoryResult(
+        history: history,
+        lastDocument: currentLastDoc,
+        hasMore: hasMore,
+      );
+    } catch (e) {
+      developer.log("Error fetching paginated global version history: $e");
+      return PaginatedVersionHistoryResult(
+        history: [],
+        lastDocument: null,
+        hasMore: false,
+      );
+    }
+  }
+}
+
+class PaginatedVersionHistoryResult {
+  final List<VersionHistoryModel> history;
+  final DocumentSnapshot? lastDocument;
+  final bool hasMore;
+
+  PaginatedVersionHistoryResult({
+    required this.history,
+    this.lastDocument,
+    required this.hasMore,
+  });
 }

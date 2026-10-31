@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:iq_plus/common/app_widget/app_multi_select_dropdown_widget.dart';
 import 'package:iq_plus/common/app_widget/app_text_field_widget.dart';
 import 'package:iq_plus/common/app_widget/common_gradient_button.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
@@ -32,6 +33,7 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
   late String _generatedPassword;
   CustomerModel? _selectedCustomer;
   final _currentUser = getIt<HiveService>().getUser();
+  List<String> _selectedVisibleModules = List.from(EmployeeUserModel.defaultModules);
 
   @override
   void initState() {
@@ -69,6 +71,7 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
       designation: _designationCtrl.text.trim(),
       customerId: _selectedCustomer!.customerId,
       createdBy: _currentUser?.userId,
+      visibleModules: _selectedVisibleModules,
     );
 
     context.read<UserCubit>().addUser(
@@ -152,6 +155,7 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
                   keyboardType: TextInputType.number,
                   inputFormatters: AppValidation.phoneNumberFormatters(),
                   validator: AppValidation.phoneNumberValidator,
+                  prefixText: "+91 ",
                 ),
                 verticalSpace15,
                 AppTextFieldWidget(
@@ -159,6 +163,18 @@ class _AddEmployeePageState extends State<AddEmployeePage> {
                   textFieldController: TextEditingController(text: _generatedPassword),
                   readOnly: true,
                   isEnabled: false,
+                ),
+                verticalSpace15,
+                AppMultiSelectDropdownWidget(
+                  labelText: "Visible Modules",
+                  options: EmployeeUserModel.allModuleOptions,
+                  selectedValues: _selectedVisibleModules,
+                  isRequired: true,
+                  onChanged: (values) {
+                    setState(() {
+                      _selectedVisibleModules = values;
+                    });
+                  },
                 ),
                 verticalSpaceLarge,
                 BlocBuilder<UserCubit, UserState>(

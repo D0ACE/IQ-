@@ -185,14 +185,16 @@ class _NcrPageState extends State<NcrPage> {
     return Scaffold(
       backgroundColor: AppColors.whiteTextColor,
       floatingActionButtonLocation: FloatingActionButtonLocation.endTop,
-      floatingActionButton: Utility.isCustomer(roleId)?null:Padding(
+      floatingActionButton: (Utility.isCustomer(roleId) || Utility.isEmployee(roleId))
+          ? null
+          : Padding(
         padding: const EdgeInsets.only(top: 16),
         child: FloatingActionButton.extended(
-          backgroundColor: AppColors.primary,
-          icon: const Icon(Icons.add, color: Colors.white),
+          backgroundColor: AppColors.buttonDarkGreen,
+          icon: const Icon(Icons.add, color: AppColors.buttonYellow),
           label: const Text(
             'Add new form',
-            style: TextStyle(color: Colors.white),
+            style: TextStyle(color: AppColors.buttonYellow),
           ),
           onPressed: () {
             GoRouter.of(
@@ -517,14 +519,14 @@ class NcrListCard extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text("Cancel"),
+            child: const Text("CANCEL", style: TextStyle(color: AppColors.buttonYellow, fontWeight: FontWeight.bold)),
           ),
           TextButton(
             onPressed: () {
               context.read<NcrProvider>().deleteNcr(ncr['id']);
               Navigator.pop(ctx);
             },
-            child: const Text("Delete", style: TextStyle(color: Colors.red)),
+            child: const Text("DELETE", style: TextStyle(color: AppColors.buttonYellow, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -553,9 +555,10 @@ class NcrListCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final process = ncr['process'] ?? 'N/A';
-    final createdAt = ncr['createdAt'] != null
-        ? (ncr['createdAt'] as Timestamp).toDate()
-        : null;
+    final rawCreatedAt = ncr['createdAt'];
+    final DateTime? createdAt = rawCreatedAt is Timestamp
+        ? rawCreatedAt.toDate()
+        : (rawCreatedAt is String ? DateTime.tryParse(rawCreatedAt) : null);
 
     return Card(
       color: AppColors.cardBg,
@@ -616,7 +619,7 @@ class NcrListCard extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 4.0),
                 child: _statusTag(),
               ),
-              if (!Utility.isCustomer(roleId)) ...[
+              if (!Utility.isCustomer(roleId) && !Utility.isEmployee(roleId)) ...[
                 IconButton(
                   icon: const Icon(Icons.edit, color: AppColors.primary),
                   onPressed: () {

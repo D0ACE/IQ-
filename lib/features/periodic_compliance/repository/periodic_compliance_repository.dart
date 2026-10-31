@@ -21,8 +21,131 @@ class PeriodicComplianceRepository {
     await _tasksCollection.doc(taskId).delete();
   }
 
-  Future<void> completeTask(String taskId) async {
-    await _tasksCollection.doc(taskId).update({'status': 'completed'});
+  Future<bool> saveTaskProgress(
+    String taskId, {
+    required String evidenceUrl,
+    required String evidenceFileName,
+    String comment = '',
+    String achieved = '',
+    String achievedType = '',
+  }) async {
+    final docSnap = await _tasksCollection.doc(taskId).get();
+    String updatedUrl = evidenceUrl;
+    String updatedName = evidenceFileName;
+    String updatedComment = comment;
+    bool isNonCompliant = false;
+
+    if (docSnap.exists && docSnap.data() != null) {
+      final data = docSnap.data() as Map<String, dynamic>;
+      final status = (data['status'] as String? ?? '').toLowerCase();
+      DateTime? dueDate;
+      if (data['dueDate'] is Timestamp) {
+        dueDate = (data['dueDate'] as Timestamp).toDate();
+      }
+      if (status == 'non_compliant' || status == 'non compliant') {
+        isNonCompliant = true;
+      } else if (dueDate != null && dueDate.isBefore(DateTime.now())) {
+        isNonCompliant = true;
+      }
+
+      final existingUrl = data['evidenceUrl'] as String? ?? '';
+      final existingName = data['evidenceFileName'] as String? ?? '';
+      final existingComment = data['comment'] as String? ?? data['comments'] as String? ?? '';
+
+      if (existingUrl.isNotEmpty && evidenceUrl.isNotEmpty) {
+        updatedUrl = '$existingUrl,$evidenceUrl';
+      } else if (existingUrl.isNotEmpty) {
+        updatedUrl = existingUrl;
+      }
+
+      if (existingName.isNotEmpty && evidenceFileName.isNotEmpty) {
+        updatedName = '$existingName,$evidenceFileName';
+      } else if (existingName.isNotEmpty) {
+        updatedName = existingName;
+      }
+
+      if (existingComment.isNotEmpty && comment.isNotEmpty) {
+        updatedComment = '$existingComment\n$comment';
+      } else if (existingComment.isNotEmpty) {
+        updatedComment = existingComment;
+      }
+    }
+
+    final Map<String, dynamic> updateData = {
+      'status': 'in_progress',
+      'evidenceUrl': updatedUrl,
+      'evidenceFileName': updatedName,
+    };
+    if (updatedComment.isNotEmpty) {
+      updateData['comment'] = updatedComment;
+    }
+    if (achieved.isNotEmpty) {
+      updateData['achieved'] = achieved;
+    }
+    if (achievedType.isNotEmpty) {
+      updateData['achievedType'] = achievedType;
+    }
+
+    await _tasksCollection.doc(taskId).update(updateData);
+    return isNonCompliant;
+  }
+
+  Future<void> completeTask(
+    String taskId, {
+    String evidenceUrl = '',
+    String evidenceFileName = '',
+    String comment = '',
+    String achieved = '',
+    String achievedType = '',
+  }) async {
+    final docSnap = await _tasksCollection.doc(taskId).get();
+    String updatedUrl = evidenceUrl;
+    String updatedName = evidenceFileName;
+    String updatedComment = comment;
+
+    if (docSnap.exists && docSnap.data() != null) {
+      final data = docSnap.data() as Map<String, dynamic>;
+      final existingUrl = data['evidenceUrl'] as String? ?? '';
+      final existingName = data['evidenceFileName'] as String? ?? '';
+      final existingComment = data['comment'] as String? ?? data['comments'] as String? ?? '';
+
+      if (existingUrl.isNotEmpty && evidenceUrl.isNotEmpty) {
+        updatedUrl = '$existingUrl,$evidenceUrl';
+      } else if (existingUrl.isNotEmpty) {
+        updatedUrl = existingUrl;
+      }
+
+      if (existingName.isNotEmpty && evidenceFileName.isNotEmpty) {
+        updatedName = '$existingName,$evidenceFileName';
+      } else if (existingName.isNotEmpty) {
+        updatedName = existingName;
+      }
+
+      if (existingComment.isNotEmpty && comment.isNotEmpty) {
+        updatedComment = '$existingComment\n$comment';
+      } else if (existingComment.isNotEmpty) {
+        updatedComment = existingComment;
+      }
+    }
+
+    final Map<String, dynamic> updateData = {'status': 'completed'};
+    if (updatedUrl.isNotEmpty) {
+      updateData['evidenceUrl'] = updatedUrl;
+    }
+    if (updatedName.isNotEmpty) {
+      updateData['evidenceFileName'] = updatedName;
+    }
+    if (updatedComment.isNotEmpty) {
+      updateData['comment'] = updatedComment;
+    }
+    if (achieved.isNotEmpty) {
+      updateData['achieved'] = achieved;
+    }
+    if (achievedType.isNotEmpty) {
+      updateData['achievedType'] = achievedType;
+    }
+
+    await _tasksCollection.doc(taskId).update(updateData);
   }
 
   Stream<List<PeriodicComplianceTask>> getTasksStream({

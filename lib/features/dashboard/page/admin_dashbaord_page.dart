@@ -10,9 +10,12 @@ import 'package:iq_plus/common/utility/utility.dart';
 import 'package:iq_plus/common/widgets/common_app_bar.dart';
 import 'package:iq_plus/core/local_storage/hive_service.dart';
 import 'package:iq_plus/di/service_locator.dart';
+import 'package:iq_plus/features/auth/model/user_model.dart';
 import 'package:iq_plus/features/admin/customers/cubit/customer_list_cubit.dart';
+import 'package:iq_plus/features/auth/cubit/auth_cubit.dart';
 import 'package:iq_plus/features/users/repository/user_repository.dart';
 import 'package:iq_plus/features/periodic_compliance/periodic_compliance_provider.dart';
+import 'package:iq_plus/features/kpis/kpi_provider.dart';
 
 import 'package:iq_plus/ncr_form/ncr_provider.dart';
 
@@ -27,7 +30,7 @@ class AdminDashboardPage extends StatefulWidget {
 
 class _AdminDashboardPageState extends State<AdminDashboardPage>
     with TickerProviderStateMixin {
-  final user = getIt<HiveService>().getUser();
+  UserModel? get user => getIt<HiveService>().getUser();
 
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -54,9 +57,13 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
           ),
         );
 
+    // 🚀 Check if user is blocked
+    context.read<AuthCubit>().checkBlockStatus();
+
     // 🚀 Start listening to NCR data for the graph
     context.read<NcrProvider>().listenToNcrs();
     context.read<PeriodicComplianceProvider>().listenToTasks();
+    context.read<KpiProvider>().listenToTasks();
 
     _animationController.forward();
   }
@@ -494,6 +501,14 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
                     context.push(AppRoutes.periodicComplianceList);
                   },
                 ),
+                _drawerItem(
+                  icon: Icons.fact_check_rounded,
+                  title: 'Internal Audit Report',
+                  onTap: () {
+                    GoRouter.of(context).pop();
+                    context.push(AppRoutes.auditReport, extra: true);
+                  },
+                ),
 
                 const SizedBox(height: 20),
                 _drawerSectionTitle('COMMUNICATION'),
@@ -586,7 +601,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
           builder: (context, snapshot) {
             return _statCard(
               'Total Customers',
-              snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData
+              snapshot.connectionState == ConnectionState.waiting &&
+                      !snapshot.hasData
                   ? '...'
                   : '${snapshot.data ?? 0}',
               AppColors.paid,
@@ -607,7 +623,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
           builder: (context, snapshot) {
             return _statCard(
               'Total Users',
-              snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData
+              snapshot.connectionState == ConnectionState.waiting &&
+                      !snapshot.hasData
                   ? '...'
                   : '${snapshot.data ?? 0}',
               AppColors.blue,
@@ -739,6 +756,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
         ),
         const SizedBox(height: 24),
         _buildPeriodicComplianceChart(context),
+        const SizedBox(height: 24),
+        _buildKpiChart(context),
       ],
     );
   }
@@ -770,7 +789,10 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -808,11 +830,15 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
 
     final barValues = [
       provider.pendingCount.toDouble(),
+      provider.inProgressCount.toDouble(),
       provider.completedCount.toDouble(),
+      provider.nonCompliantCount.toDouble(),
     ];
 
+    final axisConfig = _calculateAxisConfig(barValues);
+
     return _buildChartCard(
-      title: "Periodic Compliance Tasks",
+      title: "Compliance Tasks",
       badgeText: "Task Analytics",
       badgeColor: Colors.orange,
       child: SizedBox(
@@ -820,7 +846,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
         child: BarChart(
           BarChartData(
             alignment: BarChartAlignment.spaceAround,
-            maxY: barValues.isEmpty ? 5 : (barValues.reduce(max) + 2).toDouble(),
+            maxY: axisConfig.maxY,
             barTouchData: BarTouchData(enabled: true),
             titlesData: FlTitlesData(
               show: true,
@@ -829,16 +855,22 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
                   showTitles: true,
                   reservedSize: 32,
                   getTitlesWidget: (value, meta) {
-                    const labels = ['Pending', 'Completed'];
+                    const labels = [
+                      'Open',
+                      'In Progress',
+                      'Completed',
+                      'Non\nCompliant',
+                    ];
                     if (value.toInt() >= 0 && value.toInt() < labels.length) {
                       return Padding(
-                        padding: const EdgeInsets.only(top: 8),
+                        padding: const EdgeInsets.only(top: 4),
                         child: Text(
                           labels[value.toInt()],
+                          textAlign: TextAlign.center,
                           style: TextStyle(
                             color: Colors.grey.shade500,
                             fontWeight: FontWeight.bold,
-                            fontSize: 12,
+                            fontSize: 9.5,
                           ),
                         ),
                       );
@@ -850,26 +882,187 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
               leftTitles: AxisTitles(
                 sideTitles: SideTitles(
                   showTitles: true,
+                  interval: axisConfig.interval,
                   reservedSize: 28,
-                  getTitlesWidget: (value, meta) => Text(
-                    value.toInt().toString(),
-                    style: TextStyle(color: Colors.grey.shade400, fontSize: 10),
-                  ),
+                  getTitlesWidget: (value, meta) {
+                    final remainder =
+                        (value -
+                                (value / axisConfig.interval).round() *
+                                    axisConfig.interval)
+                            .abs();
+                    if (remainder > 0.001 &&
+                        (value - axisConfig.maxY).abs() > 0.001) {
+                      return const SizedBox();
+                    }
+                    return Text(
+                      value.toInt().toString(),
+                      style: TextStyle(
+                        color: Colors.grey.shade400,
+                        fontSize: 10,
+                      ),
+                    );
+                  },
                 ),
               ),
-              topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              topTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
+              rightTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
             ),
-            gridData: FlGridData(show: true, drawVerticalLine: false),
+            gridData: FlGridData(
+              show: true,
+              drawVerticalLine: false,
+              horizontalInterval: axisConfig.interval,
+              getDrawingHorizontalLine: (value) =>
+                  FlLine(color: Colors.grey.shade100, strokeWidth: 1),
+            ),
             borderData: FlBorderData(show: false),
             barGroups: barValues.asMap().entries.map((entry) {
+              Color barColor;
+              if (entry.key == 0) {
+                barColor = Colors.orange;
+              } else if (entry.key == 1) {
+                barColor = Colors.blue;
+              } else if (entry.key == 2) {
+                barColor = Colors.green;
+              } else {
+                barColor = Colors.red;
+              }
               return BarChartGroupData(
                 x: entry.key,
                 barRods: [
                   BarChartRodData(
                     toY: entry.value,
-                    color: entry.key == 0 ? Colors.orange : Colors.green,
-                    width: 22,
+                    color: barColor,
+                    width: 16,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(6),
+                      topRight: Radius.circular(6),
+                    ),
+                  ),
+                ],
+              );
+            }).toList(),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildKpiChart(BuildContext context) {
+    final provider = context.watch<KpiProvider>();
+
+    final barValues = [
+      provider.pendingCount.toDouble(),
+      provider.inProgressCount.toDouble(),
+      provider.completedCount.toDouble(),
+      provider.nonCompliantCount.toDouble(),
+    ];
+
+    final axisConfig = _calculateAxisConfig(barValues);
+
+    return _buildChartCard(
+      title: "KPI's",
+      badgeText: "KPI Analytics",
+      badgeColor: AppColors.primary,
+      child: SizedBox(
+        height: 250,
+        child: BarChart(
+          BarChartData(
+            alignment: BarChartAlignment.spaceAround,
+            maxY: axisConfig.maxY,
+            barTouchData: BarTouchData(enabled: true),
+            titlesData: FlTitlesData(
+              show: true,
+              bottomTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 32,
+                  getTitlesWidget: (value, meta) {
+                    const labels = [
+                      'Open',
+                      'In Progress',
+                      'Completed',
+                      'Non\nCompliant',
+                    ];
+                    if (value.toInt() >= 0 && value.toInt() < labels.length) {
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          labels[value.toInt()],
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.grey.shade500,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 9.5,
+                          ),
+                        ),
+                      );
+                    }
+                    return const SizedBox();
+                  },
+                ),
+              ),
+              leftTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  interval: axisConfig.interval,
+                  reservedSize: 28,
+                  getTitlesWidget: (value, meta) {
+                    final remainder =
+                        (value -
+                                (value / axisConfig.interval).round() *
+                                    axisConfig.interval)
+                            .abs();
+                    if (remainder > 0.001 &&
+                        (value - axisConfig.maxY).abs() > 0.001) {
+                      return const SizedBox();
+                    }
+                    return Text(
+                      value.toInt().toString(),
+                      style: TextStyle(
+                        color: Colors.grey.shade400,
+                        fontSize: 10,
+                      ),
+                    );
+                  },
+                ),
+              ),
+              topTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
+              rightTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
+            ),
+            gridData: FlGridData(
+              show: true,
+              drawVerticalLine: false,
+              horizontalInterval: axisConfig.interval,
+              getDrawingHorizontalLine: (value) =>
+                  FlLine(color: Colors.grey.shade100, strokeWidth: 1),
+            ),
+            borderData: FlBorderData(show: false),
+            barGroups: barValues.asMap().entries.map((entry) {
+              Color barColor;
+              if (entry.key == 0) {
+                barColor = Colors.orange;
+              } else if (entry.key == 1) {
+                barColor = Colors.blue;
+              } else if (entry.key == 2) {
+                barColor = Colors.green;
+              } else {
+                barColor = Colors.red;
+              }
+              return BarChartGroupData(
+                x: entry.key,
+                barRods: [
+                  BarChartRodData(
+                    toY: entry.value,
+                    color: barColor,
+                    width: 16,
                     borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(6),
                       topRight: Radius.circular(6),
@@ -926,7 +1119,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
             _clickableCard(
               title: 'Visit Summary',
               icon: Icons.event_available_rounded,
-              onTap: () => GoRouter.of(context).push(AppRoutes.visitorSummaryList),
+              onTap: () =>
+                  GoRouter.of(context).push(AppRoutes.visitorSummaryList),
             ),
             _clickableCard(
               title: 'Policies & Procedures',
@@ -954,6 +1148,11 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
               icon: Icons.assignment_rounded,
               onTap: () => context.push(AppRoutes.periodicComplianceList),
             ),
+            _clickableCard(
+              title: 'Internal Audit Report',
+              icon: Icons.fact_check_rounded,
+              onTap: () => context.push(AppRoutes.auditReport, extra: true),
+            ),
           ],
         );
       },
@@ -976,6 +1175,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
       themeColor = Colors.blueGrey;
     } else if (title.contains('Employees')) {
       themeColor = Colors.pinkAccent;
+    } else if (title.contains('Audit')) {
+      themeColor = AppColors.brandPrimaryLight;
     }
 
     return Container(
@@ -1056,6 +1257,41 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
   }
 }
 
+/// Helper to compute logical Y-axis bounds set strictly to max total count
+({double maxY, double interval}) _calculateAxisConfig(List<double> values) {
+  if (values.isEmpty) return (maxY: 5.0, interval: 1.0);
+  final maxValDouble = values.reduce(max);
+  if (maxValDouble <= 0) return (maxY: 5.0, interval: 1.0);
+
+  final maxVal = maxValDouble.ceil();
+  final maxY = maxVal.toDouble();
+
+  double interval = 1.0;
+  if (maxVal <= 6) {
+    interval = 1.0;
+  } else if (maxVal % 2 == 0 && maxVal <= 12) {
+    interval = 2.0;
+  } else if (maxVal % 3 == 0 && maxVal <= 15) {
+    interval = 3.0;
+  } else if (maxVal % 4 == 0 && maxVal <= 20) {
+    interval = 4.0;
+  } else if (maxVal % 5 == 0) {
+    interval = 5.0;
+  } else if (maxVal <= 10) {
+    interval = 2.0;
+  } else if (maxVal <= 20) {
+    interval = (maxVal / 4).roundToDouble();
+  } else if (maxVal <= 50) {
+    interval = (maxVal / 5).roundToDouble();
+  } else {
+    interval = (maxVal / 5).roundToDouble();
+  }
+
+  if (interval < 1.0) interval = 1.0;
+
+  return (maxY: maxY, interval: interval);
+}
+
 /// 📊 Animated Bar Chart
 class AnimatedBarChart extends StatelessWidget {
   final List<double> values;
@@ -1069,10 +1305,12 @@ class AnimatedBarChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final axisConfig = _calculateAxisConfig(values);
+
     return BarChart(
       BarChartData(
         alignment: BarChartAlignment.spaceAround,
-        maxY: values.isEmpty ? 5 : (values.reduce(max) + 2).toDouble(),
+        maxY: axisConfig.maxY,
         barTouchData: BarTouchData(
           enabled: true,
           touchTooltipData: BarTouchTooltipData(
@@ -1116,8 +1354,18 @@ class AnimatedBarChart extends StatelessWidget {
           leftTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
+              interval: axisConfig.interval,
               reservedSize: 28,
               getTitlesWidget: (value, meta) {
+                final remainder =
+                    (value -
+                            (value / axisConfig.interval).round() *
+                                axisConfig.interval)
+                        .abs();
+                if (remainder > 0.001 &&
+                    (value - axisConfig.maxY).abs() > 0.001) {
+                  return const SizedBox();
+                }
                 return Text(
                   value.toInt().toString(),
                   style: TextStyle(
@@ -1139,6 +1387,7 @@ class AnimatedBarChart extends StatelessWidget {
         gridData: FlGridData(
           show: true,
           drawVerticalLine: false,
+          horizontalInterval: axisConfig.interval,
           getDrawingHorizontalLine: (value) =>
               FlLine(color: Colors.grey.shade100, strokeWidth: 1),
         ),
@@ -1161,7 +1410,7 @@ class AnimatedBarChart extends StatelessWidget {
                 ),
                 backDrawRodData: BackgroundBarChartRodData(
                   show: true,
-                  toY: values.isEmpty ? 5 : (values.reduce(max) + 2).toDouble(),
+                  toY: axisConfig.maxY,
                   color: Colors.grey.shade50,
                 ),
               ),
@@ -1172,3 +1421,4 @@ class AnimatedBarChart extends StatelessWidget {
     );
   }
 }
+

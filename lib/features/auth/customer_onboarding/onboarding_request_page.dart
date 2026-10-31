@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:iq_plus/common/utility/app_validation.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
 import 'package:iq_plus/common/themes/app_ui_helper.dart';
 import 'package:iq_plus/features/auth/cubit/customer/customer_cubit.dart';
@@ -35,9 +36,10 @@ class _OnboardingRequestPageState extends State<OnboardingRequestPage> {
   }
 
   List<CustomerModel> _getFilteredCustomers(List<CustomerModel> customers) {
-    if (_searchQuery.isEmpty) return customers;
+    final validCustomers = customers.where((c) => c.companyName.trim().isNotEmpty).toList();
+    if (_searchQuery.isEmpty) return validCustomers;
     final q = _searchQuery.toLowerCase().trim();
-    return customers.where((customer) {
+    return validCustomers.where((customer) {
       final matchName = customer.companyName.toLowerCase().contains(q);
       final matchEmail = customer.email.toLowerCase().contains(q);
       final matchPhone = customer.phoneNumber.toLowerCase().contains(q);
@@ -242,10 +244,10 @@ class _OnboardingRequestPageState extends State<OnboardingRequestPage> {
                                   });
                                 },
                                 icon: const Icon(Icons.clear_rounded, size: 18),
-                                label: const Text("Clear Search"),
+                                label: const Text("CLEAR SEARCH"),
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.primary,
-                                  foregroundColor: Colors.white,
+                                  backgroundColor: AppColors.buttonDarkGreen,
+                                  foregroundColor: AppColors.buttonYellow,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
@@ -306,7 +308,7 @@ class _OnboardingRequestPageState extends State<OnboardingRequestPage> {
                                           const SizedBox(width: 6),
                                           Expanded(
                                             child: Text(
-                                              customer.phoneNumber,
+                                              AppValidation.formatPhoneForDisplay(customer.phoneNumber),
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
                                               style: TextStyle(

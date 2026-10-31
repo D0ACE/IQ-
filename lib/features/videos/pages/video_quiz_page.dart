@@ -116,8 +116,8 @@ class _VideoQuizPageState extends State<VideoQuizPage> {
             child: ElevatedButton(
               onPressed: () => setState(() => _quizStarted = true),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.purple,
-                foregroundColor: Colors.white,
+                backgroundColor: AppColors.buttonDarkGreen,
+                foregroundColor: AppColors.buttonYellow,
                 padding: const EdgeInsets.symmetric(vertical: 18),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 elevation: 8,
@@ -171,12 +171,12 @@ class _VideoQuizPageState extends State<VideoQuizPage> {
             child: ElevatedButton(
               onPressed: _answers.length < widget.video.questions.length ? null : _submit,
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.purple,
-                foregroundColor: Colors.white,
+                backgroundColor: AppColors.buttonDarkGreen,
+                foregroundColor: AppColors.buttonYellow,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
-              child: const Text("Submit Quiz", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              child: const Text("SUBMIT QUIZ", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             ),
           );
         }
@@ -220,7 +220,7 @@ class _VideoQuizPageState extends State<VideoQuizPage> {
 
   Widget _buildResult() {
     final double percentage = (widget.video.questions.isEmpty) ? 0 : (_score / widget.video.questions.length) * 100;
-    final bool passed = percentage >= 60;
+    final bool passed = percentage >= 80;
 
     return Center(
       child: Padding(
@@ -239,8 +239,12 @@ class _VideoQuizPageState extends State<VideoQuizPage> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  passed ? "Congratulations!" : "Keep Practicing!",
-                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  passed ? "Congratulations! Passed" : "Training Failed",
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: passed ? Colors.green : Colors.red,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -252,14 +256,25 @@ class _VideoQuizPageState extends State<VideoQuizPage> {
                   "${percentage.toStringAsFixed(0)}%",
                   style: TextStyle(fontSize: 48, fontWeight: FontWeight.w900, color: passed ? Colors.green : Colors.red),
                 ),
+                const SizedBox(height: 4),
+                Text(
+                  passed
+                      ? "Minimum 80% required to pass"
+                      : "Required: 80% to pass",
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey.shade600,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
                 const SizedBox(height: 24),
                 ElevatedButton(
                   onPressed: () {
                     Navigator.pop(context);
                     Navigator.pop(context);
                   },
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.purple, foregroundColor: Colors.white),
-                  child: const Text("Finish"),
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.buttonDarkGreen, foregroundColor: AppColors.buttonYellow),
+                  child: const Text("FINISH"),
                 )
                /* Row(
                   children: [
@@ -267,10 +282,10 @@ class _VideoQuizPageState extends State<VideoQuizPage> {
                       child: OutlinedButton(
                         onPressed: () => setState(() => _showReview = true),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.purple,
+                          foregroundColor: AppColors.buttonYellow,
                           side: const BorderSide(color: AppColors.purple),
                         ),
-                        child: const Text("Review Answers"),
+                        child: const Text("REVIEW ANSWERS"),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -280,8 +295,8 @@ class _VideoQuizPageState extends State<VideoQuizPage> {
                           Navigator.pop(context);
                           Navigator.pop(context);
                         },
-                        style: ElevatedButton.styleFrom(backgroundColor: AppColors.purple, foregroundColor: Colors.white),
-                        child: const Text("Finish"),
+                        style: ElevatedButton.styleFrom(backgroundColor: AppColors.buttonDarkGreen, foregroundColor: AppColors.buttonYellow),
+                        child: const Text("FINISH"),
                       ),
                     ),
                   ],
@@ -391,12 +406,12 @@ class _VideoQuizPageState extends State<VideoQuizPage> {
             child: ElevatedButton(
               onPressed: () => Navigator.pop(context),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.purple,
-                foregroundColor: Colors.white,
+                backgroundColor: AppColors.buttonDarkGreen,
+                foregroundColor: AppColors.buttonYellow,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
-              child: const Text("Back to Video List", style: TextStyle(fontWeight: FontWeight.bold)),
+              child: const Text("BACK TO VIDEO LIST", style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ),
         ),

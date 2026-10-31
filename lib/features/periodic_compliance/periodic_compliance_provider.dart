@@ -27,8 +27,14 @@ class PeriodicComplianceProvider extends ChangeNotifier {
     });
   }
 
-  int get pendingCount => _taskList.where((t) => t.status == 'pending').length;
-  int get completedCount => _taskList.where((t) => t.status == 'completed').length;
+  int get openCount => _taskList.where((t) => t.effectiveStatus == 'open').length;
+  int get pendingCount => openCount;
+  int get inProgressCount => _taskList.where((t) {
+        final s = t.effectiveStatus;
+        return s == 'in_progress' || s == 'in progress';
+      }).length;
+  int get completedCount => _taskList.where((t) => t.effectiveStatus == 'completed').length;
+  int get nonCompliantCount => _taskList.where((t) => t.effectiveStatus == 'non_compliant').length;
 
   @override
   void dispose() {

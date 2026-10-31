@@ -1,19 +1,23 @@
 import 'dart:typed_data';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 
 class VisitorSummaryPdf {
   static Future<Uint8List> generate(Map<String, dynamic> p,
       {bool isUpdated = false}) async {
     final pdf = pw.Document();
 
+    final fontBase = await PdfGoogleFonts.robotoRegular();
+    final fontBold = await PdfGoogleFonts.robotoBold();
+
     pdf.addPage(
       pw.MultiPage(
         pageTheme: pw.PageTheme(
           margin: const pw.EdgeInsets.all(24),
           theme: pw.ThemeData.withFont(
-            base: pw.Font.helvetica(),
-            bold: pw.Font.helveticaBold(),
+            base: fontBase,
+            bold: fontBold,
           ),
         ),
         build: (context) =>
@@ -37,12 +41,12 @@ class VisitorSummaryPdf {
                 pw.Divider(),
 
                 _sectionTitle('Visit Details'),
-                _kv('Client Name', p['clientName']),
                 _kv('Location', p['location']),
                 _kv('Date of Visit', p['visitDate']),
-                _kv('Time', '${p['fromTime']} – ${p['toTime']}'),
+                _kv('Login Time', p['loginTime']),
+                _kv('Logout Time', p['logoutTime']),
                 _kv('Purpose', p['purpose']),
-                _kv('Compliance Officer', p['officerName']),
+                _kv('Consultant Coach Name', p['consultantCoachName']),
                 _kv('Department / Process', p['department']),
 
                 pw.Divider(),
@@ -50,8 +54,7 @@ class VisitorSummaryPdf {
                 _sectionTitle('Scope of Review'),
                 _box(p['scopeOfReview']),
 
-                _sectionTitle('Observations'),
-                _box(p['observations']),
+
 
                 pw.Divider(),
 
@@ -70,18 +73,12 @@ class VisitorSummaryPdf {
                 _sectionTitle('Client Feedback'),
                 pw.Text(p['clientFeedback'] ?? ''),
 
-                _sectionTitle('Overall Assessment'),
-                pw.Text(p['overallAssessment'] ?? '',
-                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-
                 pw.Divider(),
 
                 _sectionTitle('Sign-Off'),
-                _kv('Officer Name', p['signOfficerName']),
-                _kv('Officer Signature', p['signOfficerSign']),
+                _kv('Consultant Coach Name', p['signConsultantCoachName'] ?? p['consultantCoachName']),
                 pw.SizedBox(height: 8),
                 _kv('Client Name', p['signClientName']),
-                _kv('Client Signature', p['signClientSign']),
                 pw.SizedBox(height: 8),
                 _kv('Date', p['signDate']),
               ],

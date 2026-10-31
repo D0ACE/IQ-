@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:iq_plus/common/utility/app_validation.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
 import 'package:iq_plus/core/local_storage/hive_service.dart';
 import 'package:iq_plus/di/service_locator.dart';
@@ -25,8 +26,13 @@ class _PeriodicComplianceFormPageState extends State<PeriodicComplianceFormPage>
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _titleController;
   late TextEditingController _descriptionController;
+  late TextEditingController _targetController;
   DateTime? _selectedDueDate;
   CustomerModel? _selectedCustomer;
+  String _selectedTargetType = 'Percentage';
+  bool _isAutoGenerate = false;
+  String _selectedFrequency = 'Monthly';
+  final List<String> _frequencies = ['Weekly', 'Monthly', 'Quarterly', 'Biannually', 'Annually'];
   bool _isSaving = false;
 
   @override
@@ -34,25 +40,58 @@ class _PeriodicComplianceFormPageState extends State<PeriodicComplianceFormPage>
     super.initState();
     _titleController = TextEditingController(text: widget.task?.title ?? '');
     _descriptionController = TextEditingController(text: widget.task?.description ?? '');
+    _targetController = TextEditingController(
+        text: (widget.task?.target ?? '').replaceAll('%', '').trim());
     _selectedDueDate = widget.task?.dueDate;
+    _selectedTargetType = widget.task?.targetType ?? 'Percentage';
+    _isAutoGenerate = widget.task?.isAutoGenerate ?? false;
+    _selectedFrequency = widget.task?.frequency ?? 'Monthly';
+    if (!_frequencies.contains(_selectedFrequency)) {
+      _selectedFrequency = 'Monthly';
+    }
   }
 
   @override
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
+    _targetController.dispose();
     super.dispose();
   }
 
   Future<void> _pickDate() async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    final firstDate = (_selectedDueDate != null && _selectedDueDate!.isBefore(today))
+        ? DateTime(_selectedDueDate!.year, _selectedDueDate!.month, _selectedDueDate!.day)
+        : today;
+
+    DateTime initialDate = _selectedDueDate ?? now.add(const Duration(days: 7));
+    if (initialDate.isBefore(firstDate)) {
+      initialDate = firstDate;
+    }
+
+    final lastDate = now.add(const Duration(days: 365 * 5));
+
     final picked = await showDatePicker(
       context: context,
-      initialDate: _selectedDueDate ?? DateTime.now().add(const Duration(days: 7)),
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
+      initialDate: initialDate,
+      firstDate: firstDate,
+      lastDate: lastDate,
     );
     if (picked != null) {
       setState(() => _selectedDueDate = picked);
+    }
+  }
+
+  String _formatValue(String input, String targetType) {
+    final clean = input.trim().replaceAll('%', '').trim();
+    if (clean.isEmpty) return '';
+    if (targetType == 'Percentage') {
+      return '$clean%';
+    } else {
+      return clean;
     }
   }
 
@@ -195,6 +234,91 @@ class _PeriodicComplianceFormPageState extends State<PeriodicComplianceFormPage>
                       ),
                     ),
                   ),
+                  const SizedBox(height: 32),
+                  _sectionHeader('Target'),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    initialValue: _selectedTargetType,
+                    decoration: _inputDecoration('Target Format', 'Select format'),
+                    items: const [
+                      DropdownMenuItem(value: 'Percentage', child: Text('Percentage (%)')),
+                      DropdownMenuItem(value: 'Number', child: Text('Number')),
+                    ],
+                    onChanged: (val) {
+                      if (val != null) {
+                        setState(() => _selectedTargetType = val);
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  _buildTextField(
+                    controller: _targetController,
+                    label: 'Target Value',
+                    hint: _selectedTargetType == 'Percentage' ? 'e.g. 80%' : 'e.g. 100',
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    validator: (val) => _validateValue(val, 'Target', _selectedTargetType),
+                  ),
+                  const SizedBox(height: 32),
+                  _sectionHeader('Auto Generation'),
+                  const SizedBox(height: 16),
+                  Material(
+                    color: Colors.white,
+                    clipBehavior: Clip.antiAlias,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      side: BorderSide(color: Colors.grey.shade200),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        CheckboxListTile(
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                          title: const Text(
+                            'Auto generate task',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.titleText,
+                            ),
+                          ),
+                          subtitle: const Text(
+                            'Automatically create the next compliance task based on frequency and due date',
+                            style: TextStyle(fontSize: 12, color: Colors.grey),
+                          ),
+                          value: _isAutoGenerate,
+                          activeColor: AppColors.primary,
+                          onChanged: (val) {
+                            setState(() {
+                              _isAutoGenerate = val ?? false;
+                            });
+                          },
+                        ),
+                        if (_isAutoGenerate) ...[
+                          const Divider(height: 1),
+                          Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: DropdownButtonFormField<String>(
+                              initialValue: _selectedFrequency,
+                              decoration: _inputDecoration('Frequency', 'Select frequency'),
+                              items: _frequencies.map((f) {
+                                return DropdownMenuItem<String>(
+                                  value: f,
+                                  child: Text(f),
+                                );
+                              }).toList(),
+                              onChanged: (val) {
+                                if (val != null) {
+                                  setState(() => _selectedFrequency = val);
+                                }
+                              },
+                              validator: (v) => (_isAutoGenerate && (v == null || v.isEmpty))
+                                  ? 'Please select a frequency'
+                                  : null,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
                   const SizedBox(height: 48),
                   Builder(
                     builder: (ctx) => SizedBox(
@@ -202,8 +326,8 @@ class _PeriodicComplianceFormPageState extends State<PeriodicComplianceFormPage>
                       height: 56,
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
+                          backgroundColor: AppColors.buttonDarkGreen,
+                          foregroundColor: AppColors.buttonYellow,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                           elevation: 0,
                         ),
@@ -212,6 +336,8 @@ class _PeriodicComplianceFormPageState extends State<PeriodicComplianceFormPage>
                             : () {
                                 if (_formKey.currentState!.validate() && user != null) {
                                   setState(() => _isSaving = true);
+                                  final formattedTarget = _formatValue(_targetController.text, _selectedTargetType);
+
                                   final task = PeriodicComplianceTask(
                                     id: widget.task?.id ?? '',
                                     title: _titleController.text.trim(),
@@ -224,11 +350,20 @@ class _PeriodicComplianceFormPageState extends State<PeriodicComplianceFormPage>
                                     assignedCustomerMediumLevelName: _selectedCustomer?.mediumLevelName ?? widget.task?.assignedCustomerMediumLevelName ?? '',
                                     assignedCustomerMediumLevelEmail: _selectedCustomer?.mediumLevelEmail ?? widget.task?.assignedCustomerMediumLevelEmail ?? '',
                                     assignedCustomerMediumLevelMobile: _selectedCustomer?.mediumLevelMobile ?? widget.task?.assignedCustomerMediumLevelMobile ?? '',
+                                    target: formattedTarget,
+                                    achieved: widget.task?.achieved ?? '',
+                                    targetType: _selectedTargetType,
+                                    achievedType: widget.task?.achievedType ?? 'Percentage',
                                     dueDate: _selectedDueDate!,
-                                    status: widget.task?.status ?? 'pending',
+                                    status: widget.task?.status ?? 'open',
                                     createdAt: widget.task?.createdAt ?? DateTime.now(),
                                     createdBy: user.userId,
                                     createdByName: user.userName,
+                                    evidenceUrl: widget.task?.evidenceUrl ?? '',
+                                    evidenceFileName: widget.task?.evidenceFileName ?? '',
+                                    isAutoGenerate: _isAutoGenerate,
+                                    frequency: _selectedFrequency,
+                                    comment: widget.task?.comment ?? '',
                                   );
 
                                   if (widget.task == null) {
@@ -244,7 +379,7 @@ class _PeriodicComplianceFormPageState extends State<PeriodicComplianceFormPage>
                                 width: 22,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2.5,
-                                  color: Colors.white,
+                                  color: AppColors.buttonYellow,
                                 ),
                               )
                             : Text(
@@ -292,7 +427,7 @@ class _PeriodicComplianceFormPageState extends State<PeriodicComplianceFormPage>
           const SizedBox(height: 8),
           _lowerPersonInfoRow(Icons.email_outlined, 'Email', email.isNotEmpty ? email : 'N/A'),
           const SizedBox(height: 8),
-          _lowerPersonInfoRow(Icons.phone_outlined, 'Phone', phone.isNotEmpty ? phone : 'N/A'),
+          _lowerPersonInfoRow(Icons.phone_outlined, 'Phone', phone.isNotEmpty ? AppValidation.formatPhoneForDisplay(phone) : 'N/A'),
         ],
       ),
     );
@@ -334,11 +469,13 @@ class _PeriodicComplianceFormPageState extends State<PeriodicComplianceFormPage>
     required String label,
     required String hint,
     int maxLines = 1,
+    TextInputType keyboardType = TextInputType.text,
     String? Function(String?)? validator,
   }) {
     return TextFormField(
       controller: controller,
       maxLines: maxLines,
+      keyboardType: keyboardType,
       decoration: _inputDecoration(label, hint),
       validator: validator,
     );
@@ -364,5 +501,26 @@ class _PeriodicComplianceFormPageState extends State<PeriodicComplianceFormPage>
         borderSide: const BorderSide(color: AppColors.primary, width: 2),
       ),
     );
+  }
+
+  String? _validateValue(String? val, String fieldName, String targetType) {
+    if (val == null || val.trim().isEmpty) {
+      return '$fieldName is required';
+    }
+    final cleanVal = val.trim().replaceAll('%', '').trim();
+    final numVal = double.tryParse(cleanVal);
+    if (numVal == null) {
+      return 'Enter a valid numeric value';
+    }
+    if (targetType == 'Percentage') {
+      if (numVal < 0 || numVal > 100) {
+        return 'Percentage must be between 0 and 100';
+      }
+    } else {
+      if (numVal < 0) {
+        return 'Value must be 0 or greater';
+      }
+    }
+    return null;
   }
 }

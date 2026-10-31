@@ -33,9 +33,13 @@ class CustomerDropdownWidget extends StatelessWidget {
           }
 
           if (state is CustomerListLoaded) {
+            final validCustomers = state.customers
+                .where((c) => c.companyName.trim().isNotEmpty)
+                .toList();
+
             CustomerModel? matchedCustomer;
             if (selectedCustomer != null && selectedCustomer!.customerId.isNotEmpty) {
-              final matches = state.customers.where(
+              final matches = validCustomers.where(
                 (c) => c.customerId == selectedCustomer!.customerId,
               );
               if (matches.length == 1) {
@@ -54,7 +58,7 @@ class CustomerDropdownWidget extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              items: state.customers.map((customer) {
+              items: validCustomers.map((customer) {
                 return DropdownMenuItem<CustomerModel>(
                   value: customer,
                   child: Row(

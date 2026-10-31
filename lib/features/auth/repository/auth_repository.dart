@@ -158,14 +158,15 @@ class AuthRepository {
 
   /// GET ALL CUSTOMERS
   Future<List<CustomerModel>> getAllCustomers() async {
-    final snapshot = await firestore
-        .collection('customers')
-        .orderBy('createdAt', descending: true)
-        .get();
+    final snapshot = await firestore.collection('customers').get();
 
-    return snapshot.docs.map((doc) {
-      return CustomerModel.fromJson(doc.data(), customerId: doc.id);
-    }).toList();
+    final customers = snapshot.docs
+        .map((doc) => CustomerModel.fromJson(doc.data(), customerId: doc.id))
+        .where((c) => c.companyName.trim().isNotEmpty)
+        .toList();
+
+    customers.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return customers;
   }
 
   Future<List<CustomerModel>> getFetchAllApprovedCustomers() async {
@@ -174,9 +175,13 @@ class AuthRepository {
         .where('isProfileApproved', isEqualTo: true)
         .get();
 
-    return snapshot.docs.map((doc) {
-      return CustomerModel.fromJson(doc.data(), customerId: doc.id);
-    }).toList();
+    final customers = snapshot.docs
+        .map((doc) => CustomerModel.fromJson(doc.data(), customerId: doc.id))
+        .where((c) => c.companyName.trim().isNotEmpty)
+        .toList();
+
+    customers.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return customers;
   }
 
   Future<List<CustomerModel>> getFetchConsultantCustomers(
@@ -187,9 +192,13 @@ class AuthRepository {
         .where('consultantId', isEqualTo: consultantId)
         .get();
 
-    return snapshot.docs.map((doc) {
-      return CustomerModel.fromJson(doc.data(), customerId: doc.id);
-    }).toList();
+    final customers = snapshot.docs
+        .map((doc) => CustomerModel.fromJson(doc.data(), customerId: doc.id))
+        .where((c) => c.companyName.trim().isNotEmpty)
+        .toList();
+
+    customers.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return customers;
   }
 
   Future<List<CustomerModel>> getFetchAssignCustomers(
@@ -200,9 +209,13 @@ class AuthRepository {
         .where('consultantId', isEqualTo: consultantId)
         .get();
 
-    return snapshot.docs.map((doc) {
-      return CustomerModel.fromJson(doc.data(), customerId: doc.id);
-    }).toList();
+    final customers = snapshot.docs
+        .map((doc) => CustomerModel.fromJson(doc.data(), customerId: doc.id))
+        .where((c) => c.companyName.trim().isNotEmpty)
+        .toList();
+
+    customers.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return customers;
   }
 
   /// APPROVE CUSTOMER
@@ -302,8 +315,180 @@ class AuthRepository {
         .update(customer.toJson());
   }
 
-  /// ❌ DELETE CUSTOMER
+  /// ❌ DELETE CUSTOMER (Completely removes customer document and all associated data across Firestore)
   Future<void> deleteCustomer(String customerId) async {
+    if (customerId.trim().isEmpty) return;
+
+    // 1. Delete employee subcollection: customers/{customerId}/employees
+    try {
+      final employeesSnap = await firestore
+          .collection('customers')
+          .doc(customerId)
+          .collection('employees')
+          .get();
+      for (final doc in employeesSnap.docs) {
+        await doc.reference.delete();
+      }
+    } catch (e) {
+      developer.log("Error deleting customer employees subcollection: $e");
+    }
+
+    // 2. Delete users in 'users' collection associated with this customerId
+    try {
+      final usersSnap = await firestore
+          .collection('users')
+          .where('customerId', isEqualTo: customerId)
+          .get();
+      for (final doc in usersSnap.docs) {
+        await doc.reference.delete();
+      }
+    } catch (e) {
+      developer.log("Error deleting users linked to customer: $e");
+    }
+
+    // 3. Delete customer MMEs in 'customer_mme'
+    try {
+      final mmeSnap = await firestore
+          .collection('customer_mme')
+          .where('customerId', isEqualTo: customerId)
+          .get();
+      for (final doc in mmeSnap.docs) {
+        await doc.reference.delete();
+      }
+    } catch (e) {
+      developer.log("Error deleting customer_mme: $e");
+    }
+
+    // 4. Delete visitor summaries in 'visitor_summaries'
+    try {
+      final visitorSnap = await firestore
+          .collection('visitor_summaries')
+          .where('customerId', isEqualTo: customerId)
+          .get();
+      for (final doc in visitorSnap.docs) {
+        await doc.reference.delete();
+      }
+    } catch (e) {
+      developer.log("Error deleting visitor_summaries: $e");
+    }
+
+    // 5. Delete periodic compliance tasks in 'periodic_compliance_tasks'
+    try {
+      final complianceSnap1 = await firestore
+          .collection('periodic_compliance_tasks')
+          .where('assignedCustomerId', isEqualTo: customerId)
+          .get();
+      for (final doc in complianceSnap1.docs) {
+        await doc.reference.delete();
+      }
+      final complianceSnap2 = await firestore
+          .collection('periodic_compliance_tasks')
+          .where('customerId', isEqualTo: customerId)
+          .get();
+      for (final doc in complianceSnap2.docs) {
+        await doc.reference.delete();
+      }
+    } catch (e) {
+      developer.log("Error deleting periodic_compliance_tasks: $e");
+    }
+
+    // 6. Delete NCR forms in 'ncr_forms'
+    try {
+      final ncrSnap1 = await firestore
+          .collection('ncr_forms')
+          .where('customerId', isEqualTo: customerId)
+          .get();
+      for (final doc in ncrSnap1.docs) {
+        await doc.reference.delete();
+      }
+      final ncrSnap2 = await firestore
+          .collection('ncr_forms')
+          .where('companyId', isEqualTo: customerId)
+          .get();
+      for (final doc in ncrSnap2.docs) {
+        await doc.reference.delete();
+      }
+    } catch (e) {
+      developer.log("Error deleting ncr_forms: $e");
+    }
+
+    // 7. Delete documents in 'documents' and their 'version_history' subcollection
+    try {
+      final docsSnap1 = await firestore
+          .collection('documents')
+          .where('customer_id', isEqualTo: customerId)
+          .get();
+      for (final doc in docsSnap1.docs) {
+        final historySnap = await doc.reference.collection('version_history').get();
+        for (final hDoc in historySnap.docs) {
+          await hDoc.reference.delete();
+        }
+        await doc.reference.delete();
+      }
+      final docsSnap2 = await firestore
+          .collection('documents')
+          .where('customerId', isEqualTo: customerId)
+          .get();
+      for (final doc in docsSnap2.docs) {
+        final historySnap = await doc.reference.collection('version_history').get();
+        for (final hDoc in historySnap.docs) {
+          await hDoc.reference.delete();
+        }
+        await doc.reference.delete();
+      }
+    } catch (e) {
+      developer.log("Error deleting customer documents: $e");
+    }
+
+    // 8. Delete main customer document in 'customers'
     await firestore.collection('customers').doc(customerId).delete();
+  }
+
+  /// 🚫 Check if logged-in user is blocked (Admin, Consultant, Employee)
+  Future<bool> isUserBlocked() async {
+    final hiveService = getIt<HiveService>();
+    final user = hiveService.getUser();
+    if (user == null) return false;
+
+    try {
+      if (user.roleId == AppConst.adminRole || user.roleId == AppConst.consultantRole || user.roleId == AppConst.superAdminRole || user.roleId == '1' || user.roleId == '2' || user.roleId == '0') {
+        final doc = await firestore.collection('users').doc(user.userId).get();
+        if (doc.exists) {
+          final data = doc.data();
+          if (data != null && (data['blockStatus'] == true || data['activeUser'] == false)) {
+            return true;
+          }
+        }
+      } else if (user.roleId == AppConst.employeeRole || user.roleId == '4') {
+        DocumentSnapshot? empDoc;
+        if (user.customerId != null && user.customerId!.isNotEmpty) {
+          empDoc = await firestore
+              .collection('customers')
+              .doc(user.customerId)
+              .collection('employees')
+              .doc(user.userId)
+              .get();
+        }
+        if (empDoc == null || !empDoc.exists) {
+          final snap = await firestore
+              .collectionGroup('employees')
+              .where('email', isEqualTo: user.email)
+              .limit(1)
+              .get();
+          if (snap.docs.isNotEmpty) {
+            empDoc = snap.docs.first;
+          }
+        }
+        if (empDoc != null && empDoc.exists) {
+          final data = empDoc.data() as Map<String, dynamic>?;
+          if (data != null && (data['blockStatus'] == true || data['activeUser'] == false)) {
+            return true;
+          }
+        }
+      }
+    } catch (e) {
+      developer.log("Error checking user blocked status: $e");
+    }
+    return false;
   }
 }

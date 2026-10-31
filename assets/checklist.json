@@ -1,0 +1,694 @@
+{
+  "requirements": [
+    {
+      "id": "as9100d-6",
+      "clause": "4. CONTEXT OF THE ORGANIZATION",
+      "description": ""
+    },
+    {
+      "id": "as9100d-7",
+      "clause": "4.1 Understanding the Organization and its Context",
+      "description": "Emphasis on defining the QMS and context of the organization"
+    },
+    {
+      "id": "as9100d-8",
+      "clause": "",
+      "description": "Clauses are applicable or not applicable with justification"
+    },
+    {
+      "id": "as9100d-9",
+      "clause": "4.2 Understanding the Needs and Expectations of Interested Parties",
+      "description": ""
+    },
+    {
+      "id": "as9100d-10",
+      "clause": "4.3 Determining the Scope of the QMS",
+      "description": "What the organization does?"
+    },
+    {
+      "id": "as9100d-11",
+      "clause": "4.4 Quality Management System and its Processes",
+      "description": "Sequence of interactions"
+    },
+    {
+      "id": "as9100d-12",
+      "clause": "",
+      "description": "Description of processes needed for the QMS"
+    },
+    {
+      "id": "as9100d-13",
+      "clause": "5 LEADERSHIP",
+      "description": ""
+    },
+    {
+      "id": "as9100d-14",
+      "clause": "5.1 Leadership and Commitment",
+      "description": "Top management"
+    },
+    {
+      "id": "as9100d-15",
+      "clause": "5.1.1General",
+      "description": ""
+    },
+    {
+      "id": "as9100d-16",
+      "clause": "5.1.2 Customer Focus",
+      "description": "Statement that if product and service conformity and OTD are measured and actions will be taken if planned results are not achieved."
+    },
+    {
+      "id": "as9100d-17",
+      "clause": "5.2 Policy",
+      "description": ""
+    },
+    {
+      "id": "as9100d-18",
+      "clause": "5.2.1 Developing the Quality Policy",
+      "description": ""
+    },
+    {
+      "id": "as9100d-19",
+      "clause": "5.2.2 Communicating the Quality Policy",
+      "description": ""
+    },
+    {
+      "id": "as9100d-20",
+      "clause": "5.3 Organizational Roles, Responsibilities and Authorities",
+      "description": ""
+    },
+    {
+      "id": "as9100d-21",
+      "clause": "6. PLANNING",
+      "description": ""
+    },
+    {
+      "id": "as9100d-22",
+      "clause": "6.1 Actions to Address Risks and Opportunities",
+      "description": "Need to describe how risk is met in all contexts, not just in planning or contract review"
+    },
+    {
+      "id": "as9100d-23",
+      "clause": "6.2 Quality Objectives and Planning to Achieve Them",
+      "description": "Quality objectives to be defined  for all the prrocesses and periodical monitoring achieve the targets."
+    },
+    {
+      "id": "as9100d-24",
+      "clause": "6.3 Planning of Changes",
+      "description": ""
+    },
+    {
+      "id": "as9100d-25",
+      "clause": "7.  SUPPORT",
+      "description": ""
+    },
+    {
+      "id": "as9100d-26",
+      "clause": "7.1 Resources",
+      "description": ""
+    },
+    {
+      "id": "as9100d-27",
+      "clause": "7.1.1General",
+      "description": ""
+    },
+    {
+      "id": "as9100d-28",
+      "clause": "7.1.2 People",
+      "description": "Add requirements for human factors"
+    },
+    {
+      "id": "as9100d-29",
+      "clause": "7.1.3 Infrastructure",
+      "description": "The required infrastructure and their monitoring is needed to achieve the customer requirements"
+    },
+    {
+      "id": "as9100d-30",
+      "clause": "7.1.4 Environment for the Operation of Processes",
+      "description": "Suitable environment-combination of human and physical factors such as social, psychological."
+    },
+    {
+      "id": "as9100d-31",
+      "clause": "7.1.5 Monitoring and Measuring Resources",
+      "description": "Provided resources are suitable and maintained to ensure continuing fitness."
+    },
+    {
+      "id": "as9100d-32",
+      "clause": "7.1.5.1 General",
+      "description": ""
+    },
+    {
+      "id": "as9100d-33",
+      "clause": "7.1.5.2 Measurement Traceability",
+      "description": "Calibration of monitoring & measuring equipment unchanged"
+    },
+    {
+      "id": "as9100d-34",
+      "clause": "7.1.6 Organization Knowledge",
+      "description": "Sharing of organizational knowledge and experience. Results of improvements in products, processes and services.  Can also be from external sources (conferences, standards, customers, consultants, etc.)"
+    },
+    {
+      "id": "as9100d-35",
+      "clause": "7.2 Competence",
+      "description": "Consideration for periodic review of necessary competence"
+    },
+    {
+      "id": "as9100d-36",
+      "clause": "7.3 Awareness",
+      "description": "Awareness to include QMS procedures/manual and changes, contribution to product or service conformity, safety and importance of ethical behavior."
+    },
+    {
+      "id": "as9100d-37",
+      "clause": "7.4 Communication",
+      "description": "Needs to include internal and external feedback relevant to the QMS"
+    },
+    {
+      "id": "as9100d-38",
+      "clause": "7.5 Documented Information",
+      "description": "Internal and external documents"
+    },
+    {
+      "id": "as9100d-39",
+      "clause": "7.5.1 General",
+      "description": ""
+    },
+    {
+      "id": "as9100d-40",
+      "clause": "7.5.2 Creating and Updating",
+      "description": "Approval implies authorized persons and approval methods identified (an approval matrix-who can approve what and how)"
+    },
+    {
+      "id": "as9100d-41",
+      "clause": "7.5.3 Control of Documented Information",
+      "description": "Adequate protection from loss of confidentiality, improper use or loss of integrity.Electronic date protection\u2014loss, unauthorized changes, unintended alteration, corruption and physical damage"
+    },
+    {
+      "id": "as9100d-42",
+      "clause": "8 OPERATION",
+      "description": ""
+    },
+    {
+      "id": "as9100d-43",
+      "clause": "8.1 Operational Planning and Control",
+      "description": "Determination of requirements to consider:"
+    },
+    {
+      "id": "as9100d-44",
+      "clause": "",
+      "description": "Personal & product safety Producibility & Inspectability Reliability, availability and maintainability"
+    },
+    {
+      "id": "as9100d-45",
+      "clause": "",
+      "description": "Suitability of part & materials used in the product Selection & development of embedded software"
+    },
+    {
+      "id": "as9100d-49",
+      "clause": "",
+      "description": "Product obsolescence"
+    },
+    {
+      "id": "as9100d-50",
+      "clause": "",
+      "description": "Prevention, detection, removal of foreign objects"
+    },
+    {
+      "id": "as9100d-51",
+      "clause": "",
+      "description": "Handling, packaging & preservation"
+    },
+    {
+      "id": "as9100d-52",
+      "clause": "",
+      "description": "Recycling or final disposal of Product at life end"
+    },
+    {
+      "id": "as9100d-53",
+      "clause": "",
+      "description": "Use of statistical techniques for design verification, process control (key characteristics),critical items, design of experiments, failure mode, effects and criticality analysis"
+    },
+    {
+      "id": "as9100d-54",
+      "clause": "",
+      "description": "Determine resources for product conformity and to meet on time delivery of products and services"
+    },
+    {
+      "id": "as9100d-55",
+      "clause": "",
+      "description": "Determining the products and services from external providers"
+    },
+    {
+      "id": "as9100d-56",
+      "clause": "",
+      "description": "Controls to prevent the delivery of nonconforming products/services"
+    },
+    {
+      "id": "as9100d-57",
+      "clause": "",
+      "description": "Planned sequence to meet requirements of acceptable risk"
+    },
+    {
+      "id": "as9100d-58",
+      "clause": "8.1.1 Operation Risk Management",
+      "description": "For operational risk management: Assign responsibilities"
+    },
+    {
+      "id": "as9100d-59",
+      "clause": "",
+      "description": "Define risk criteria"
+    },
+    {
+      "id": "as9100d-60",
+      "clause": "",
+      "description": "Identify, assess and communicate  risk"
+    },
+    {
+      "id": "as9100d-61",
+      "clause": "",
+      "description": "Manage risks that exceed defined risk criteria"
+    },
+    {
+      "id": "as9100d-62",
+      "clause": "",
+      "description": "Acceptance of remaining risks"
+    },
+    {
+      "id": "as9100d-63",
+      "clause": "8.1.2  Configuration Management",
+      "description": "Ensure identification & control of physical and functional attributes"
+    },
+    {
+      "id": "as9100d-64",
+      "clause": "",
+      "description": "Control product identity and traceability, including changes"
+    },
+    {
+      "id": "as9100d-65",
+      "clause": "",
+      "description": "Records are consistent with attributes of products and services"
+    },
+    {
+      "id": "as9100d-66",
+      "clause": "8.1.3 Product Safety",
+      "description": "Plan, implement & control processes for product safety including:"
+    },
+    {
+      "id": "as9100d-67",
+      "clause": "",
+      "description": "Assessment  of hazards and associated risks"
+    },
+    {
+      "id": "as9100d-68",
+      "clause": "",
+      "description": "Manage safety critical items"
+    },
+    {
+      "id": "as9100d-69",
+      "clause": "",
+      "description": "Analysis and reporting of events affecting safety"
+    },
+    {
+      "id": "as9100d-70",
+      "clause": "",
+      "description": "Communication of event Employee training"
+    },
+    {
+      "id": "as9100d-71",
+      "clause": "8.1.4 Prevention of Counterfeit Products",
+      "description": "Plan, implement and control processes to prevent the introduction of CP including:"
+    },
+    {
+      "id": "as9100d-72",
+      "clause": "",
+      "description": "Training for awareness and prevention of CP"
+    },
+    {
+      "id": "as9100d-73",
+      "clause": "",
+      "description": "Parts obsolescence monitoring Controls for purchasing from"
+    },
+    {
+      "id": "as9100d-74",
+      "clause": "",
+      "description": "Original or authorized sources Requirements for assuring"
+    },
+    {
+      "id": "as9100d-75",
+      "clause": "",
+      "description": "Traceability of parts and components to original or authorized manufacturers"
+    },
+    {
+      "id": "as9100d-76",
+      "clause": "",
+      "description": "Verification and testing to detect CP"
+    },
+    {
+      "id": "as9100d-77",
+      "clause": "",
+      "description": "Monitoring of CP reporting Quarantine and reporting of"
+    },
+    {
+      "id": "as9100d-78",
+      "clause": "",
+      "description": "Suspect to detected CP"
+    },
+    {
+      "id": "as9100d-79",
+      "clause": "8.2 Requirements for Products and Services",
+      "description": ""
+    },
+    {
+      "id": "as9100d-80",
+      "clause": "8.2.1 Customer Communication",
+      "description": "Handling or controlling customer property"
+    },
+    {
+      "id": "as9100d-81",
+      "clause": "",
+      "description": "Requirements for contingency actions"
+    },
+    {
+      "id": "as9100d-82",
+      "clause": "8.2.2 Determination of Requirements Related to Products and Services",
+      "description": "Special requirements for product/services determined"
+    },
+    {
+      "id": "as9100d-83",
+      "clause": "",
+      "description": "Operational risks have been identified"
+    },
+    {
+      "id": "as9100d-84",
+      "clause": "8.2.3 Review of Requirements Related to Products and Services",
+      "description": "Review of requirements coordinated with applicable functions"
+    },
+    {
+      "id": "as9100d-85",
+      "clause": "",
+      "description": "Difference in requirements in enquiry to order"
+    },
+    {
+      "id": "as9100d-86",
+      "clause": "",
+      "description": "Negotiate mutual agreements with customer when requirements cannot be fully met"
+    },
+    {
+      "id": "as9100d-87",
+      "clause": "8.2.4 Changes to Requirements for Products and Services",
+      "description": ""
+    },
+    {
+      "id": "as9100d-88",
+      "clause": "8.3 Design & Development",
+      "description": ""
+    },
+    {
+      "id": "as9100d-89",
+      "clause": "8.4 Control of Externally Provided Processes, Products and Services",
+      "description": ""
+    },
+    {
+      "id": "as9100d-90",
+      "clause": "8.4.1 General",
+      "description": "Apply appropriate controls to direct and sub-tier external providers as well as selection and use of external providers"
+    },
+    {
+      "id": "as9100d-91",
+      "clause": "8.4.2 Type and Extent of Control",
+      "description": "Verification activities performed according to identified risks"
+    },
+    {
+      "id": "as9100d-92",
+      "clause": "",
+      "description": "Include inspection or periodic testing when high risk of nonconformities and counterfeit parts"
+    },
+    {
+      "id": "as9100d-93",
+      "clause": "",
+      "description": "Review of production part approval process data"
+    },
+    {
+      "id": "as9100d-94",
+      "clause": "",
+      "description": "Review of delegations of product verification"
+    },
+    {
+      "id": "as9100d-95",
+      "clause": "",
+      "description": "Define process for pre-release of product"
+    },
+    {
+      "id": "as9100d-96",
+      "clause": "",
+      "description": "Evaluate data in test reports to confirm product meets requirements"
+    },
+    {
+      "id": "as9100d-97",
+      "clause": "",
+      "description": "When purchase of raw material is a significant operations risk, implement a process to validate the accuracy of test reports"
+    },
+    {
+      "id": "as9100d-98",
+      "clause": "8.4.3 Information for External Providers",
+      "description": "Communicate external providers within formation including"
+    },
+    {
+      "id": "as9100d-99",
+      "clause": "",
+      "description": "Relevant technical data Design and development control"
+    },
+    {
+      "id": "as9100d-100",
+      "clause": "",
+      "description": "Special requirements"
+    },
+    {
+      "id": "as9100d-101",
+      "clause": "",
+      "description": "Prevent the use of counterfeit parts"
+    },
+    {
+      "id": "as9100d-102",
+      "clause": "",
+      "description": "Ensuring that supplier personnel are aware of their contribution to product/service conformity,safety and ethical behavior"
+    },
+    {
+      "id": "as9100d-103",
+      "clause": "8.5 Production and Service Provision",
+      "description": ""
+    },
+    {
+      "id": "as9100d-104",
+      "clause": "8.5.1 Control of Production and Service Provision",
+      "description": "Ensure that documented information (procedures, work instructions for monitoring and measurement (M&M) activity for product acceptance includes:"
+    },
+    {
+      "id": "as9100d-105",
+      "clause": "",
+      "description": "Criteria for acceptance and rejection"
+    },
+    {
+      "id": "as9100d-106",
+      "clause": "",
+      "description": "Where in sequence verification operations occur"
+    },
+    {
+      "id": "as9100d-107",
+      "clause": "",
+      "description": "Measurement results to be retained"
+    },
+    {
+      "id": "as9100d-108",
+      "clause": "",
+      "description": "any specific M&M equipment required and instructions for their use"
+    },
+    {
+      "id": "as9100d-109",
+      "clause": "",
+      "description": "Control & monitoring of utlilities and supplies"
+    },
+    {
+      "id": "as9100d-110",
+      "clause": "8.5.1.1 Control of Production Equipment,Tools and Software Programs",
+      "description": ""
+    },
+    {
+      "id": "as9100d-111",
+      "clause": "8.5.1.2 Validation and Control of Special Processes",
+      "description": ""
+    },
+    {
+      "id": "as9100d-112",
+      "clause": "8.5.1.3 Production Process Verification",
+      "description": "First article inspection records must be retained.\nMaintain the identification of the configuration of products and services in order to identify any differences between the actual configuration and required configuration."
+    },
+    {
+      "id": "as9100d-113",
+      "clause": "8.5.2 Identification and Traceability",
+      "description": ""
+    },
+    {
+      "id": "as9100d-114",
+      "clause": "8.5.3 Property Belonging to Customers or External Providers",
+      "description": ""
+    },
+    {
+      "id": "as9100d-115",
+      "clause": "8.5.4 Preservation",
+      "description": ""
+    },
+    {
+      "id": "as9100d-116",
+      "clause": "8.5.5 Post-DeliveryActivities",
+      "description": ""
+    },
+    {
+      "id": "as9100d-117",
+      "clause": "8.5.6 Control of Changes",
+      "description": ""
+    },
+    {
+      "id": "as9100d-118",
+      "clause": "8.6 Release of Products and Services",
+      "description": "New sub clause to address the verification of product/service at appropriate stages"
+    },
+    {
+      "id": "as9100d-119",
+      "clause": "",
+      "description": "Retain documented information on the release of products/services including evidence of conformity and traceability to person authorizing the release."
+    },
+    {
+      "id": "as9100d-120",
+      "clause": "8.7 Control of Nonconforming Outputs",
+      "description": "Nonconforming\u201cProduct\u201d replaced with \u201cOutput\u201d"
+    },
+    {
+      "id": "as9100d-121",
+      "clause": "",
+      "description": "Include provisions for defining corrective actions for nonconforming products and services detected after delivery,as appropriate to their impacts"
+    },
+    {
+      "id": "as9100d-122",
+      "clause": "",
+      "description": "Dispositions for use-as-is or repair to include obtaining authorization for acceptance under concession by a relevant authority and,when applicable,by the customer."
+    },
+    {
+      "id": "as9100d-123",
+      "clause": "",
+      "description": "After authorization by the customer,if the nonconformity results in a departure from the contract requirements"
+    },
+    {
+      "id": "as9100d-124",
+      "clause": "",
+      "description": "Counterfeit, or suspect counterfeit, parts to be controlled to prevent re entry into the supply chain."
+    },
+    {
+      "id": "as9100d-125",
+      "clause": "9 PERFORMANCE EVALUATION",
+      "description": ""
+    },
+    {
+      "id": "as9100d-126",
+      "clause": "9.1 Monitoring, Measurement, Analysis and Evaluation",
+      "description": "The organization is responsible to determine monitoring, measurement, analysis and evaluation."
+    },
+    {
+      "id": "as9100d-127",
+      "clause": "9.1.1 General",
+      "description": ""
+    },
+    {
+      "id": "as9100d-128",
+      "clause": "9.1.2 Customer Satisfaction",
+      "description": ""
+    },
+    {
+      "id": "as9100d-129",
+      "clause": "9.1.3 Analysis and Evaluation",
+      "description": "What needs to be monitored & measured (M&M)"
+    },
+    {
+      "id": "as9100d-130",
+      "clause": "",
+      "description": "Methods for M&M and evaluation needed to ensure valid results"
+    },
+    {
+      "id": "as9100d-131",
+      "clause": "",
+      "description": "When M&M is performed"
+    },
+    {
+      "id": "as9100d-132",
+      "clause": "",
+      "description": "When results from M&M is analyzed and evaluated"
+    },
+    {
+      "id": "as9100d-133",
+      "clause": "",
+      "description": "Records of M&M to be retained as appropriate"
+    },
+    {
+      "id": "as9100d-134",
+      "clause": "9.2 Internal Audit",
+      "description": ""
+    },
+    {
+      "id": "as9100d-135",
+      "clause": "9.3 Management Review",
+      "description": ""
+    },
+    {
+      "id": "as9100d-136",
+      "clause": "9.3.1 General",
+      "description": ""
+    },
+    {
+      "id": "as9100d-137",
+      "clause": "9.3.2 Management Review Input",
+      "description": "Inputs to include ontime delivery performance"
+    },
+    {
+      "id": "as9100d-138",
+      "clause": "9.3.3 Management Review Output",
+      "description": "Outputs to include identified risks"
+    },
+    {
+      "id": "as9100d-139",
+      "clause": "10 IMPROVEMENT",
+      "description": ""
+    },
+    {
+      "id": "as9100d-140",
+      "clause": "10.1General",
+      "description": ""
+    },
+    {
+      "id": "as9100d-141",
+      "clause": "10.2 Non conformity and Corrective Action",
+      "description": "Clause is a combination of Nonconformity and Corrective action.When a nonconformity occurs,the organization shall:"
+    },
+    {
+      "id": "as9100d-142",
+      "clause": "",
+      "description": "React,takeactiontocontrol&correct"
+    },
+    {
+      "id": "as9100d-143",
+      "clause": "",
+      "description": "Deal with the consequences"
+    },
+    {
+      "id": "as9100d-144",
+      "clause": "",
+      "description": "Evaluate need for action,review and analyze the nonconformity"
+    },
+    {
+      "id": "as9100d-145",
+      "clause": "",
+      "description": "Determine causes,including those related to human factors"
+    },
+    {
+      "id": "as9100d-146",
+      "clause": "10.3 Continual Improvement",
+      "description": "The organization is responsible to monitor the implementation of improvement activities and evaluate the effectiveness of results"
+    }
+  ]
+}

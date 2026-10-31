@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:iq_plus/common/app_widget/app_multi_select_dropdown_widget.dart';
 import 'package:iq_plus/common/app_widget/app_text_field_widget.dart';
 import 'package:iq_plus/common/themes/app_colors.dart';
 import 'package:iq_plus/common/utility/app_validation.dart';
@@ -32,6 +33,7 @@ class _AddUserDialogState extends State<AddUserDialog> {
   String? selectedRoleId;
   bool blockStatus = false;
   DateTime? joiningDate;
+  List<String> selectedVisibleModules = List.from(EmployeeUserModel.defaultModules);
 
   @override
   void initState() {
@@ -42,13 +44,14 @@ class _AddUserDialogState extends State<AddUserDialog> {
       final u = widget.user!;
       nameController.text = u.userName;
       emailController.text = u.email;
-      phoneController.text = u.phoneNumber;
+      phoneController.text = AppValidation.formatPhoneForEdit(u.phoneNumber);
       selectedRoleId = u.roleId;
       passwordController.text = u.password;
       blockStatus = u.blockStatus;
       
       if (u is EmployeeUserModel) {
         joiningDate = u.joiningDate;
+        selectedVisibleModules = List.from(u.visibleModules);
       }
       
       if (joiningDate != null) {
@@ -134,6 +137,7 @@ class _AddUserDialogState extends State<AddUserDialog> {
                     _field(
                       AppTextFieldWidget(
                         keyboardType: TextInputType.number,
+                        prefixText: '+91 ',
                         inputFormatters: AppValidation.phoneNumberFormatters(),
                         hintText: "Phone Number",
                         textFieldController: phoneController,
@@ -218,6 +222,22 @@ class _AddUserDialogState extends State<AddUserDialog> {
                         ),
                       ),
 
+                    /// 🧩 Visible Modules (Show for Employees)
+                    if (widget.user is EmployeeUserModel || selectedRoleId == '4')
+                      _field(
+                        AppMultiSelectDropdownWidget(
+                          labelText: "Visible Modules",
+                          options: EmployeeUserModel.allModuleOptions,
+                          selectedValues: selectedVisibleModules,
+                          isRequired: true,
+                          onChanged: (values) {
+                            setState(() {
+                              selectedVisibleModules = values;
+                            });
+                          },
+                        ),
+                      ),
+
                     /// 🚫 User status
                     _field(
                       DropdownButtonFormField<bool>(
@@ -255,16 +275,17 @@ class _AddUserDialogState extends State<AddUserDialog> {
             TextButton(
               onPressed: () => GoRouter.of(context).pop(),
               child: Text(
-                "Cancel",
+                "CANCEL",
                 style: TextStyle(
-                    color: Colors.grey.shade600, fontWeight: FontWeight.bold),
+                    color: AppColors.buttonYellow,
+ fontWeight: FontWeight.bold),
               ),
             ),
             const SizedBox(width: 8),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.kPrimaryColor,
-                foregroundColor: Colors.white,
+                backgroundColor: AppColors.buttonDarkGreen,
+                foregroundColor: AppColors.buttonYellow,
                 elevation: 0,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -283,10 +304,14 @@ class _AddUserDialogState extends State<AddUserDialog> {
                           final u = widget.user;
                           String? designation;
                           String? customerId;
+                          List<String>? visibleModules;
 
                           if (u is EmployeeUserModel) {
                             designation = u.designation;
                             customerId = u.customerId;
+                            visibleModules = selectedVisibleModules;
+                          } else if (selectedRoleId == '4') {
+                            visibleModules = selectedVisibleModules;
                           }
 
                           success = await cubit.updateUser(
@@ -300,6 +325,7 @@ class _AddUserDialogState extends State<AddUserDialog> {
                                 joiningDate: joiningDate,
                                 designation: designation,
                                 customerId: customerId,
+                                visibleModules: visibleModules,
                               );
                         }
 
@@ -320,6 +346,7 @@ class _AddUserDialogState extends State<AddUserDialog> {
                                     joiningDate: joiningDate!,
                                     createdAt: DateTime.now(),
                                     createdBy: currentUser?.userId,
+                                    visibleModules: selectedVisibleModules,
                                   ),
                                 );
                           } else {

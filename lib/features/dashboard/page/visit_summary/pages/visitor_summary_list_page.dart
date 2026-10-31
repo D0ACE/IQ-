@@ -94,66 +94,57 @@ class _VisitorSummaryListPageState extends State<VisitorSummaryListPage> {
   }
 
   List<VisitorSummaryModel> _getFilteredList(List<VisitorSummaryModel> originalList) {
-    return originalList.where((item) {
+    final filtered = originalList.where((item) {
       // 1. Company Filter
       if (selectedCompanyFilter != 'all') {
-        final selectedCustomer = customerList.firstWhere(
-          (c) => c.customerId == selectedCompanyFilter,
-          orElse: () => CustomerModel(
-            customerId: '',
-            companyName: '',
-            email: '',
-            phoneNumber: '',
-            password: '',
-            certificateStandard: '',
-            numberOfLocations: '',
-            numberOfEmployees: '',
-            companyFunction: '',
-            legitDocumentUrl: '',
-            isProfileApproved: false,
-            fcmToken: '',
-            roleId: '',
-            createdAt: DateTime.now(),
-            address: '',
-            lowLevelName: '',
-            lowLevelEmail: '',
-            lowLevelMobile: '',
-            mediumLevelName: '',
-            mediumLevelEmail: '',
-            mediumLevelMobile: '',
-            topLevelName: '',
-            topLevelEmail: '',
-            topLevelMobile: '',
-          ),
-        );
-
         final matchesId = item.customerId == selectedCompanyFilter;
-        final matchesName = selectedCustomer.companyName.isNotEmpty &&
-            item.clientName.toLowerCase() == selectedCustomer.companyName.toLowerCase();
-
-        if (!matchesId && !matchesName) return false;
+        if (!matchesId) return false;
       }
 
       // 2. Search Query
       if (searchQuery.isNotEmpty) {
         final q = searchQuery.toLowerCase().trim();
-        final clientName = item.clientName.toLowerCase();
+        final companyName = _getCompanyName(item).toLowerCase();
         final location = item.location.toLowerCase();
         final purpose = item.purpose.toLowerCase();
         final department = item.department.toLowerCase();
-        final officerName = item.officerName.toLowerCase();
+        final consultantCoachName = item.consultantCoachName.toLowerCase();
 
-        final matches = clientName.contains(q) ||
+        final matches = companyName.contains(q) ||
             location.contains(q) ||
             purpose.contains(q) ||
             department.contains(q) ||
-            officerName.contains(q);
+            consultantCoachName.contains(q);
 
         if (!matches) return false;
       }
 
       return true;
     }).toList();
+
+    filtered.sort((a, b) {
+      final aTime = a.createdAt?.toDate() ?? _parseVisitDate(a.visitDate);
+      final bTime = b.createdAt?.toDate() ?? _parseVisitDate(b.visitDate);
+      if (aTime == null && bTime == null) return 0;
+      if (aTime == null) return 1;
+      if (bTime == null) return -1;
+      return bTime.compareTo(aTime);
+    });
+
+    return filtered;
+  }
+
+  DateTime? _parseVisitDate(String? visitDate) {
+    if (visitDate == null || visitDate.trim().isEmpty) return null;
+    try {
+      return DateFormat('dd MMM yyyy').parse(visitDate.trim());
+    } catch (_) {
+      try {
+        return DateTime.parse(visitDate.trim());
+      } catch (_) {
+        return null;
+      }
+    }
   }
 
   String _formatDate(dynamic value) {
@@ -179,7 +170,7 @@ class _VisitorSummaryListPageState extends State<VisitorSummaryListPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(title: const Text('Visitor Summary')),
-      floatingActionButton: Utility.isCustomer(roleId)
+      floatingActionButton: (Utility.isCustomer(roleId) || Utility.isEmployee(roleId))
           ? null
           : FloatingActionButton.extended(
               onPressed: () {
@@ -208,7 +199,7 @@ class _VisitorSummaryListPageState extends State<VisitorSummaryListPage> {
                       TextField(
                         controller: searchController,
                         decoration: InputDecoration(
-                          hintText: "Search by client name, location, purpose...",
+                          hintText: "Search by company name, location, purpose...",
                           hintStyle: TextStyle(fontSize: 13, color: Colors.grey.shade600),
                           prefixIcon: const Icon(Icons.search, color: AppColors.kPrimaryColor),
                           suffixIcon: searchQuery.isNotEmpty
@@ -395,9 +386,9 @@ class _VisitorSummaryListPageState extends State<VisitorSummaryListPage> {
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
-                                          /// Client Name
+                                          /// Company Name
                                           Text(
-                                            item.clientName,
+                                            _getCompanyName(item).isNotEmpty ? _getCompanyName(item) : 'Visit Summary',
                                             style: const TextStyle(
                                               fontSize: 16,
                                               fontWeight: FontWeight.w600,
@@ -405,19 +396,19 @@ class _VisitorSummaryListPageState extends State<VisitorSummaryListPage> {
                                           ),
                                           const SizedBox(height: 4),
 
-                                          /// Company Name (On top of location)
-                                          if (_getCompanyName(item).isNotEmpty) ...[
+                                          /// Consultant Coach Name
+                                          if (item.consultantCoachName.isNotEmpty) ...[
                                             Row(
                                               children: [
                                                 const Icon(
-                                                  Icons.business_rounded,
+                                                  Icons.person_outline,
                                                   size: 14,
                                                   color: AppColors.kPrimaryColor,
                                                 ),
                                                 const SizedBox(width: 4),
                                                 Expanded(
                                                   child: Text(
-                                                    _getCompanyName(item),
+                                                    item.consultantCoachName,
                                                     style: const TextStyle(
                                                       color: Colors.black87,
                                                       fontSize: 13,
@@ -457,7 +448,7 @@ class _VisitorSummaryListPageState extends State<VisitorSummaryListPage> {
                                     ),
 
                                     /// ─── EDIT & DELETE (For non-customers) ────────────────────────────
-                                    if (!Utility.isCustomer(roleId)) ...[
+                                    if (!Utility.isCustomer(roleId) && !Utility.isEmployee(roleId)) ...[
                                       IconButton(
                                         icon: const Icon(
                                           Icons.edit_outlined,
@@ -521,15 +512,18 @@ class _VisitorSummaryListPageState extends State<VisitorSummaryListPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: const Text('CANCEL', style: TextStyle(color: AppColors.buttonYellow, fontWeight: FontWeight.bold)),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.buttonDarkGreen,
+              foregroundColor: AppColors.buttonYellow,
+            ),
             onPressed: () {
               context.read<VisitorSummaryCubit>().deleteVisitorSummary(id);
               Navigator.pop(context);
             },
-            child: const Text('Delete', style: TextStyle(color: Colors.white)),
+            child: const Text('DELETE', style: TextStyle(color: AppColors.buttonYellow, fontWeight: FontWeight.bold)),
           ),
         ],
       ),

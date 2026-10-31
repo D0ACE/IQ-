@@ -15,3 +15,8 @@ class AuthFailure extends AuthState {
   final String message;
   AuthFailure(this.message);
 }
+
+class AuthUserBlocked extends AuthState {
+  final String message;
+  AuthUserBlocked(this.message);
+}

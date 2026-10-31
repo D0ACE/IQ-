@@ -46,7 +46,7 @@ class _ChatScreenState extends State<ChatScreen> {
     setState(() {
       addMessage(
         Message(text: DialogText(text: [
-          "Hello $name! I'm your IQ Plus Intelligence assistant. I'm trained on your site's specific GRC framework. How can I assist with your NCRs, Policies, or Equipment monitoring today?"
+          "Hello $name! I'm your IQ + Intelligence assistant. I'm trained on your site's specific GRC framework. How can I assist with your NCRs, Policies, or Equipment monitoring today?"
         ])),
         false,
       );
@@ -97,7 +97,7 @@ class _ChatScreenState extends State<ChatScreen> {
         title: Column(
           children: [
             const Text(
-              'IQ Plus Intelligence',
+              'IQ + Intelligence',
               style: TextStyle(
                 color: AppColors.titleText,
                 fontWeight: FontWeight.w900,
@@ -174,7 +174,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         fontWeight: FontWeight.w500,
                       ),
                       decoration: const InputDecoration(
-                        hintText: "Ask me anything about IQ Plus...",
+                        hintText: "Ask me anything about IQ +...",
                         hintStyle: TextStyle(color: Colors.grey, fontSize: 14),
                         border: InputBorder.none,
                       ),
@@ -270,7 +270,7 @@ class _ChatScreenState extends State<ChatScreen> {
             'user_id': _currentUser?.userId ?? 'unknown',
             'customer_id': _currentCustomer?.customerId ?? 'unknown',
             'role': _currentUser?.roleId ?? 'unknown',
-            'context': 'Strictly IQ Plus GRC App Support', // Influence AI scope
+            'context': 'Strictly IQ + GRC App Support', // Influence AI scope
           }
         )
       );
@@ -298,13 +298,13 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _handleLocalQuery(String text) {
     final t = text.toLowerCase().trim();
     
-    // 🚀 Advanced IQ Plus Knowledge Base
+    // 🚀 Advanced IQ + Knowledge Base
     final Map<List<String>, String> iqPlusKB = {
-      ['what is iq plus', 'about this app', 'project description']: 
-          "IQ Plus is a comprehensive Governance, Risk, and Compliance (GRC) platform designed to streamline business operations, quality management, and regulatory adherence. It centralizes NCR tracking, policy management, equipment monitoring, and team training into a single futuristic command center.",
+      ['what is IQ +', 'about this app', 'project description']:
+          "IQ + is a comprehensive Governance, Risk, and Compliance (GRC) platform designed to streamline business operations, quality management, and regulatory adherence. It centralizes NCR tracking, policy management, equipment monitoring, and team training into a single futuristic command center.",
 
       ['ncr', 'non-conformance', 'report issue']: 
-          "Non-Conformance Reports (NCR) are at the heart of IQ Plus. Use the 'NCR Management' tile to log quality deviations. \n• Open: Issues just identified.\n• In Progress: Actions being taken.\n• Closed: Verified and resolved.\nTrends are visible on your dashboard graph.",
+          "Non-Conformance Reports (NCR) are at the heart of IQ +. Use the 'NCR Management' tile to log quality deviations. \n• Open: Issues just identified.\n• In Progress: Actions being taken.\n• Closed: Verified and resolved.\nTrends are visible on your dashboard graph.",
 
       ['policy', 'procedure', 'sop', 'documents']: 
           "Policies & Procedures are managed in the dedicated tile. You can view the current approved versions, download documents, and check the 'All Policies Version History' to see how compliance has evolved over time.",
@@ -319,7 +319,7 @@ class _ChatScreenState extends State<ChatScreen> {
           "Site visits are tracked under 'Next Visit'. This section shows the scheduled date, assigned officer, department, and specific location for upcoming GRC audits or consultations.",
 
       ['role', 'admin', 'consultant', 'customer', 'super admin']: 
-          "IQ Plus supports hierarchical access:\n• Super Admin: Global system control.\n• Admin: Organization-wide management.\n• Consultant: Subject matter experts managing multiple customers.\n• Customer: Business owners and quality managers.\n• Employee: End-users focused on training and policy adherence.",
+          "IQ + supports hierarchical access:\n• Super Admin: Global system control.\n• Admin: Organization-wide management.\n• Consultant: Subject matter experts managing multiple customers.\n• Customer: Business owners and quality managers.\n• Employee: End-users focused on training and policy adherence.",
 
       ['training', 'video', 'quiz']: 
           "The Training Hub (Coming Soon) will feature awareness videos and interactive quizzes. Currently, managers can view completed training logs via 'Our Employees' -> 'View Training Results'.",
@@ -343,7 +343,7 @@ class _ChatScreenState extends State<ChatScreen> {
     }
     
     if (t == 'help' || t == 'hi' || t == 'hello') {
-      _delayedBotResponse("Hello! I'm the IQ Plus Intelligence Hub. \nI can provide accurate details on:\n• NCR Life-cycles\n• Policy Versioning\n• MME Asset Tracking\n• Role Permissions\n• Exporting Reports\nWhat would you like to master today?");
+      _delayedBotResponse("Hello! I'm the IQ + Intelligence Hub. \nI can provide accurate details on:\n• NCR Life-cycles\n• Policy Versioning\n• MME Asset Tracking\n• Role Permissions\n• Exporting Reports\nWhat would you like to master today?");
       return true;
     }
     

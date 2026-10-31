@@ -1,6 +1,9 @@
 import 'dart:math';
 import 'dart:ui';
 import 'package:file_picker/file_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:iq_plus/core/supabase/supabase_config.dart';
+import 'package:universal_html/html.dart' as html;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -81,7 +84,7 @@ class _CustomerOnboardingPageState extends State<CustomerOnboardingPage> with Ti
   void _fillCustomerData(CustomerModel customer) {
     companyNameController.text = customer.companyName;
     addressController.text = customer.address;
-    contactController.text = customer.phoneNumber;
+    contactController.text = AppValidation.formatPhoneForEdit(customer.phoneNumber);
     emailController.text = customer.email;
 
     standardOfCertificateController.text = customer.certificateStandard;
@@ -93,17 +96,17 @@ class _CustomerOnboardingPageState extends State<CustomerOnboardingPage> with Ti
     // LOW LEVEL
     lowNameController.text = customer.lowLevelName;
     lowEmailController.text = customer.lowLevelEmail;
-    lowMobileController.text = customer.lowLevelMobile;
+    lowMobileController.text = AppValidation.formatPhoneForEdit(customer.lowLevelMobile);
 
     // MEDIUM LEVEL
     mediumNameController.text = customer.mediumLevelName;
     mediumEmailController.text = customer.mediumLevelEmail;
-    mediumMobileController.text = customer.mediumLevelMobile;
+    mediumMobileController.text = AppValidation.formatPhoneForEdit(customer.mediumLevelMobile);
 
     // TOP LEVEL
     topNameController.text = customer.topLevelName;
     topEmailController.text = customer.topLevelEmail;
-    topMobileController.text = customer.topLevelMobile;
+    topMobileController.text = AppValidation.formatPhoneForEdit(customer.topLevelMobile);
   }
 
   @override
@@ -133,36 +136,61 @@ class _CustomerOnboardingPageState extends State<CustomerOnboardingPage> with Ti
     super.dispose();
   }
 
+  Uint8List? selectedFileBytes;
+
   Future<void> pickDocument() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['pdf', 'doc', 'docx', 'jpg', 'png'],
+      withData: true,
     );
 
-    if (result != null) {
+    if (result != null && result.files.single.bytes != null) {
       setState(() {
+        selectedFileBytes = result.files.single.bytes;
         selectedFileName = result.files.single.name;
         lDCController.text = selectedFileName!;
       });
     }
   }
 
-  void submit() {
+  Future<void> submit() async {
     if (_formKey.currentState!.validate()) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(child: CircularProgressIndicator()),
+      );
+
+      String legitUrl = widget.customer?.legitDocumentUrl ?? '';
+      if (selectedFileBytes != null && selectedFileName != null) {
+        try {
+          final supabasePath = 'legal_docs/${DateTime.now().millisecondsSinceEpoch}_$selectedFileName';
+          await Supabase.instance.client.storage.from(SupabaseConfig.bucketName).uploadBinary(
+            supabasePath,
+            selectedFileBytes!,
+            fileOptions: const FileOptions(cacheControl: '3600', upsert: false),
+          );
+          legitUrl = Supabase.instance.client.storage.from(SupabaseConfig.bucketName).getPublicUrl(supabasePath);
+        } catch (e) {
+          debugPrint("Error uploading legal doc: $e");
+        }
+      }
+
       final data = CustomerModel(
-        customerId: '', // Firestore will generate
+        customerId: widget.customer?.customerId ?? '', // Firestore will generate if empty
         companyName: companyNameController.text.trim(),
         address: addressController.text.trim(),
         email: emailController.text.trim(),
         phoneNumber: contactController.text.trim(),
-        password: "",
+        password: widget.customer?.password ?? "",
         certificateStandard: standardOfCertificateController.text.trim(),
         numberOfLocations: numberOfLocationsController.text.trim(),
         numberOfEmployees: numberOfEmployeesController.text.trim(),
         companyFunction: fOCController.text.trim(),
-        legitDocumentUrl: lDCController.text.trim(),
-        isProfileApproved: false,
-        fcmToken: "",
+        legitDocumentUrl: legitUrl,
+        isProfileApproved: widget.customer?.isProfileApproved ?? false,
+        fcmToken: widget.customer?.fcmToken ?? "",
         roleId: "3",
         // 🔽 LOW LEVEL DEPARTMENT
         lowLevelName: lowNameController.text.trim(),
@@ -178,8 +206,12 @@ class _CustomerOnboardingPageState extends State<CustomerOnboardingPage> with Ti
         topLevelName: topNameController.text.trim(),
         topLevelEmail: topEmailController.text.trim(),
         topLevelMobile: topMobileController.text.trim(),
-        createdAt: DateTime.now(), // placeholder
+        createdAt: widget.customer?.createdAt ?? DateTime.now(),
+        consultantId: selectedConsultantId,
       );
+
+      if (!mounted) return;
+      Navigator.of(context, rootNavigator: true).pop();
 
       context.read<CustomerCubit>().createCustomer(data);
     }
@@ -360,7 +392,7 @@ class _CustomerOnboardingPageState extends State<CustomerOnboardingPage> with Ti
         Container(width: 40, height: 3, color: AppColors.kPrimaryColor),
         const SizedBox(height: 20),
         Text(
-          widget.mode == OnboardingMode.create ? "Create Operator Identity" : "Authorize Enterprise",
+          widget.mode == OnboardingMode.create ? "Create User Identity" : "Authorize Enterprise",
           style: const TextStyle(
             fontSize: 28,
             fontWeight: FontWeight.w900,
@@ -430,7 +462,7 @@ class _CustomerOnboardingPageState extends State<CustomerOnboardingPage> with Ti
           style: const TextStyle(fontWeight: FontWeight.w500),
         ),
         actions: [
-          TextButton(
+           TextButton(
             onPressed: () {
               GoRouter.of(context).pop(); // close dialog
 
@@ -440,7 +472,7 @@ class _CustomerOnboardingPageState extends State<CustomerOnboardingPage> with Ti
                 GoRouter.of(context).pop(); // go back from details/onboarding
               }
             },
-            child: const Text("ACKNOWLEDGE", style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.kPrimaryColor)),
+            child: const Text("ACKNOWLEDGE", style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.buttonYellow)),
           ),
         ],
       ),
@@ -470,6 +502,7 @@ class _CustomerOnboardingPageState extends State<CustomerOnboardingPage> with Ti
             hintText: "Contact",
             controller: contactController,
             icon: Icons.phone_android_rounded,
+            prefixText: '+91 ',
             isRequired: true,
             keyboardType: TextInputType.number,
             validator: AppValidation.phoneNumberValidator,
@@ -520,19 +553,19 @@ class _CustomerOnboardingPageState extends State<CustomerOnboardingPage> with Ti
 
           const SizedBox(height: 30),
           departmentSection(
-            title: "LEVEL 01: OPERATIONAL CONTROL",
+            title: "LEVEL 03: Low Level Department",
             nameController: lowNameController,
             emailController: lowEmailController,
             mobileController: lowMobileController,
           ),
           departmentSection(
-            title: "LEVEL 02: TACTICAL MANAGEMENT",
+            title: "LEVEL 02: Medium Level Department",
             nameController: mediumNameController,
             emailController: mediumEmailController,
             mobileController: mediumMobileController,
           ),
           departmentSection(
-            title: "LEVEL 03: STRATEGIC OVERSIGHT",
+            title: "LEVEL 01: Top Level Department",
             nameController: topNameController,
             emailController: topEmailController,
             mobileController: topMobileController,
@@ -548,6 +581,9 @@ class _CustomerOnboardingPageState extends State<CustomerOnboardingPage> with Ti
                 }
 
                 if (state is ConsultantLoaded) {
+                  final bool hasSelectedConsultant = state.consultants.any((c) => c.id == selectedConsultantId);
+                  final String? validConsultantValue = hasSelectedConsultant ? selectedConsultantId : null;
+
                   return Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     decoration: BoxDecoration(
@@ -556,7 +592,7 @@ class _CustomerOnboardingPageState extends State<CustomerOnboardingPage> with Ti
                       border: Border.all(color: Colors.white.withValues(alpha: 0.5)),
                     ),
                     child: DropdownButtonFormField<String>(
-                      initialValue: selectedConsultantId,
+                      initialValue: validConsultantValue,
                       dropdownColor: Colors.white,
                       style: const TextStyle(color: Color(0xFF1E293B), fontWeight: FontWeight.bold),
                       decoration: const InputDecoration(
@@ -619,7 +655,7 @@ class _CustomerOnboardingPageState extends State<CustomerOnboardingPage> with Ti
             child: const Text(
               "ABORT MISSION",
               style: TextStyle(
-                color: Color(0xFF94A3B8),
+                color: AppColors.buttonYellow,
                 fontSize: 10,
                 fontWeight: FontWeight.w900,
                 letterSpacing: 2,
@@ -654,6 +690,7 @@ class _CustomerOnboardingPageState extends State<CustomerOnboardingPage> with Ti
     String? Function(String?)? validator,
     TextInputType? keyboardType,
     List<TextInputFormatter>? inputFormatters,
+    String? prefixText,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
@@ -666,6 +703,7 @@ class _CustomerOnboardingPageState extends State<CustomerOnboardingPage> with Ti
         child: AppTextFieldWidget(
           keyboardType: keyboardType,
           inputFormatters: inputFormatters,
+          prefixText: prefixText,
           hintText: hintText,
           textFieldController: controller,
           isRequired: isRequired,
@@ -690,38 +728,61 @@ class _CustomerOnboardingPageState extends State<CustomerOnboardingPage> with Ti
   }
 
   Widget _buildFileUploadField() {
+    final bool hasExistingDoc = widget.customer?.legitDocumentUrl.isNotEmpty == true;
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
-      child: InkWell(
-        onTap: pickDocument,
-        borderRadius: BorderRadius.circular(15),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 24),
-          decoration: BoxDecoration(
-            color: AppColors.kPrimaryColor.withValues(alpha: 0.05),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          InkWell(
+            onTap: widget.mode == OnboardingMode.approve ? null : pickDocument,
             borderRadius: BorderRadius.circular(15),
-            border: Border.all(color: AppColors.kPrimaryColor.withValues(alpha: 0.2)),
-          ),
-          child: Column(
-            children: [
-              const Icon(Icons.cloud_upload_rounded, color: AppColors.kPrimaryColor, size: 32),
-              const SizedBox(height: 12),
-              Text(
-                selectedFileName ?? "Legit document of the company",
-                style: TextStyle(
-                  color: selectedFileName != null ? Colors.green : AppColors.kPrimaryColor,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 12,
-                  letterSpacing: 1,
-                ),
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+              decoration: BoxDecoration(
+                color: AppColors.kPrimaryColor.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(15),
+                border: Border.all(color: AppColors.kPrimaryColor.withValues(alpha: 0.2)),
               ),
-              const Text(
-                "PDF, DOC, or Image allowed",
-                style: TextStyle(color: Colors.grey, fontSize: 10),
+              child: Row(
+                children: [
+                  const Icon(Icons.cloud_upload_rounded, color: AppColors.kPrimaryColor, size: 28),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          selectedFileName ?? (hasExistingDoc ? "Legal Document Attached" : "Legal Documentation"),
+                          style: TextStyle(
+                            color: selectedFileName != null || hasExistingDoc ? Colors.green.shade700 : AppColors.kPrimaryColor,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const Text("PDF, DOC, or Image format", style: TextStyle(color: Colors.grey, fontSize: 10)),
+                      ],
+                    ),
+                  ),
+                  if (widget.mode == OnboardingMode.approve && hasExistingDoc)
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        html.window.open(widget.customer!.legitDocumentUrl, '_blank');
+                      },
+                      icon: const Icon(Icons.open_in_new_rounded, size: 14),
+                      label: const Text("VIEW FILE"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.buttonDarkGreen,
+                        foregroundColor: AppColors.buttonYellow,
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                    ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -758,7 +819,7 @@ class _CustomerOnboardingPageState extends State<CustomerOnboardingPage> with Ti
             const SizedBox(height: 20),
             _buildModernField(hintText: "Name", controller: nameController, icon: Icons.person_rounded, isRequired: true),
             _buildModernField(hintText: "Email", controller: emailController, icon: Icons.email_rounded, keyboardType: TextInputType.emailAddress, validator: AppValidation.checkEmailValidation),
-            _buildModernField(hintText: "Mobile Number", controller: mobileController, icon: Icons.phone_rounded, keyboardType: TextInputType.number, validator: AppValidation.phoneNumberValidator, inputFormatters: AppValidation.phoneNumberFormatters()),
+            _buildModernField(hintText: "Mobile Number", controller: mobileController, icon: Icons.phone_rounded, keyboardType: TextInputType.number, prefixText: '+91 ', validator: AppValidation.phoneNumberValidator, inputFormatters: AppValidation.phoneNumberFormatters()),
           ],
         ),
       ),
