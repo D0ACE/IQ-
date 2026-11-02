@@ -51,7 +51,6 @@ dependencies:
   hive: ^2.2.3
   hive_flutter: ^1.1.0
   http: ^1.6.0
-  dialog_flowtter_plus: ^0.0.1
   intl: ^0.20.2
   firebase_auth: ^6.1.4
   equatable: ^2.0.7
@@ -108,7 +107,6 @@ flutter:
   assets:
     - assets/images/
     - assets/icons/
-    - assets/dialog_flow_auth.json
     - assets/checklist.json
 
   # An image asset can refer to one or more resolution-specific "variants", see

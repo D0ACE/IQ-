@@ -1,5 +1,17 @@
-import 'package:dialog_flowtter_plus/dialog_flowtter_plus.dart';
 import 'package:flutter/material.dart';
+
+class Message {
+  final DialogText? text;
+  final Map<String, dynamic>? payload;
+
+  const Message({this.text, this.payload});
+}
+
+class DialogText {
+  final List<String>? text;
+
+  const DialogText({this.text});
+}
 
 class MessagesScreen extends StatelessWidget {
   final List messages;

@@ -3,6 +3,7 @@ admin.initializeApp();
 
 import {onSchedule} from "firebase-functions/v2/scheduler";
 import {onRequest} from "firebase-functions/v2/https";
+import {SessionsClient} from "@google-cloud/dialogflow";
 import cors from "cors";
 
 /* =============================================================================
@@ -33,6 +34,70 @@ const getCostExplorer = () => new (getAwsSdk().CostExplorer)({
 */
 
 const corsHandler = cors({origin: true});
+
+/* =======================
+   DIALOGFLOW CHAT PROXY
+======================= */
+export const chat = onRequest((req, res) => {
+  const chatCorsHandler = cors({
+    origin: process.env.CHAT_ALLOWED_ORIGIN || false,
+  });
+
+  chatCorsHandler(req, res, async () => {
+    try {
+      if (req.method !== "POST") {
+        res.status(405).json({error: "Method Not Allowed"});
+        return;
+      }
+
+      const {text, sessionId} = req.body as {
+        text?: unknown;
+        sessionId?: unknown;
+      };
+      if (typeof text !== "string" || !text.trim() ||
+          typeof sessionId !== "string" || !sessionId.trim()) {
+        res.status(400).json({error: "text and sessionId are required"});
+        return;
+      }
+
+      const authJson = process.env.DIALOGFLOW_AUTH_JSON;
+      if (!authJson) {
+        throw new Error("DIALOGFLOW_AUTH_JSON is not configured");
+      }
+
+      const credentials = JSON.parse(authJson) as {
+        client_email: string;
+        private_key: string;
+        project_id: string;
+      };
+      const client = new SessionsClient({
+        projectId: credentials.project_id,
+        credentials: {
+          client_email: credentials.client_email,
+          private_key: credentials.private_key,
+        },
+      });
+      const session = client.projectAgentSessionPath(
+        credentials.project_id,
+        sessionId.trim()
+      );
+      const [response] = await client.detectIntent({
+        session,
+        queryInput: {
+          text: {text: text.trim(), languageCode: "en-US"},
+        },
+      });
+
+      res.status(200).json({
+        reply: response.queryResult?.fulfillmentText ||
+          "I don't have an answer for that yet.",
+      });
+    } catch (error) {
+      console.error("DIALOGFLOW CHAT ERROR:", error);
+      res.status(500).json({error: "Unable to process chat request"});
+    }
+  });
+});
 
 /* =======================
    NCR Scheduled Job

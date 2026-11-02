@@ -1,6 +1,8 @@
+import 'dart:convert';
 
-import 'package:dialog_flowtter_plus/dialog_flowtter_plus.dart';
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
+import 'package:uuid/uuid.dart';
 
 import 'package:iq_plus/common/themes/app_colors.dart';
 import 'package:iq_plus/core/local_storage/hive_service.dart';
@@ -15,7 +17,11 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  DialogFlowtter? dialogFlowtter;
+  static const _apiBaseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'https://us-central1-iq-plush-dc0e6.cloudfunctions.net',
+  );
+  final String _sessionId = const Uuid().v4();
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
@@ -29,38 +35,36 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
-    DialogFlowtter.fromFile().then((instance) {
-      if (mounted) {
-        setState(() {
-          dialogFlowtter = instance;
-        });
-        _addWelcomeMessage();
-      }
-    }).catchError((e) {
-      debugPrint("DialogFlowtter initialization error: $e");
-    });
+    _addWelcomeMessage();
   }
 
   void _addWelcomeMessage() {
-    final String name = _currentCustomer?.companyName ?? _currentUser?.userName ?? "there";
+    final String name =
+        _currentCustomer?.companyName ?? _currentUser?.userName ?? "there";
     setState(() {
       addMessage(
-        Message(text: DialogText(text: [
-          "Hello $name! I'm your IQ + Intelligence assistant. I'm trained on your site's specific GRC framework. How can I assist with your NCRs, Policies, or Equipment monitoring today?"
-        ])),
+        Message(
+          text: DialogText(
+            text: [
+              "Hello $name! I'm your IQ + Intelligence assistant. I'm trained on your site's specific GRC framework. How can I assist with your NCRs, Policies, or Equipment monitoring today?",
+            ],
+          ),
+        ),
         false,
       );
-      
+
       // 🚀 Add initial smart suggestions
       addMessage(
-        Message(payload: {
-          'quick_replies': [
-            {'title': 'Track my NCRs', 'payload': 'ncr_status'},
-            {'title': 'Access Policies', 'payload': 'view_policies'},
-            {'title': 'Equipment Help', 'payload': 'mme_help'},
-            {'title': 'Contact Human', 'payload': 'contact_support'},
-          ]
-        }),
+        Message(
+          payload: {
+            'quick_replies': [
+              {'title': 'Track my NCRs', 'payload': 'ncr_status'},
+              {'title': 'Access Policies', 'payload': 'view_policies'},
+              {'title': 'Equipment Help', 'payload': 'mme_help'},
+              {'title': 'Contact Human', 'payload': 'contact_support'},
+            ],
+          },
+        ),
         false,
       );
     });
@@ -70,7 +74,6 @@ class _ChatScreenState extends State<ChatScreen> {
   void dispose() {
     _controller.dispose();
     _scrollController.dispose();
-    dialogFlowtter?.dispose();
     super.dispose();
   }
 
@@ -120,9 +123,9 @@ class _ChatScreenState extends State<ChatScreen> {
                 Text(
                   isBotTyping ? 'Thinking...' : 'Active Now',
                   style: TextStyle(
-                    fontSize: 10, 
-                    color: isBotTyping ? Colors.orange : Colors.green, 
-                    fontWeight: FontWeight.bold
+                    fontSize: 10,
+                    color: isBotTyping ? Colors.orange : Colors.green,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ],
@@ -147,7 +150,9 @@ class _ChatScreenState extends State<ChatScreen> {
             padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(24),
+              ),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.05),
@@ -202,7 +207,11 @@ class _ChatScreenState extends State<ChatScreen> {
                     ],
                   ),
                   child: IconButton(
-                    icon: const Icon(Icons.arrow_upward_rounded, color: Colors.white, size: 22),
+                    icon: const Icon(
+                      Icons.arrow_upward_rounded,
+                      color: Colors.white,
+                      size: 22,
+                    ),
                     onPressed: () {
                       final text = _controller.text.trim();
                       if (text.isNotEmpty) {
@@ -257,30 +266,26 @@ class _ChatScreenState extends State<ChatScreen> {
     if (_handleLocalQuery(text)) return;
 
     try {
-      if (dialogFlowtter == null) {
-        throw Exception("DialogFlowtter is not initialized");
-      }
-      // 🚀 Optimized Cloud Intent Detection
-      final response = await dialogFlowtter!.detectIntent(
-        queryInput: QueryInput(
-          text: TextInput(text: text),
-        ),
-        queryParams: QueryParameters(
-          payload: {
-            'user_id': _currentUser?.userId ?? 'unknown',
-            'customer_id': _currentCustomer?.customerId ?? 'unknown',
-            'role': _currentUser?.roleId ?? 'unknown',
-            'context': 'Strictly IQ + GRC App Support', // Influence AI scope
-          }
-        )
+      final response = await http.post(
+        Uri.parse('$_apiBaseUrl/chat'),
+        headers: const {'Content-Type': 'application/json'},
+        body: jsonEncode({'text': text, 'sessionId': _sessionId}),
       );
 
-      if (response.message == null) throw Exception("No response");
+      if (response.statusCode != 200) {
+        throw Exception('Chat API returned ${response.statusCode}');
+      }
+
+      final responseBody = jsonDecode(response.body) as Map<String, dynamic>;
+      final reply = responseBody['reply'] as String?;
+      if (reply == null || reply.trim().isEmpty) {
+        throw Exception('Chat API returned no reply');
+      }
 
       if (mounted) {
         setState(() {
           isBotTyping = false;
-          addMessage(response.message!);
+          addMessage(Message(text: DialogText(text: [reply])));
         });
         _scrollToBottom();
       }
@@ -288,7 +293,15 @@ class _ChatScreenState extends State<ChatScreen> {
       if (mounted) {
         setState(() {
           isBotTyping = false;
-          addMessage(Message(text: DialogText(text: ["I'm optimizing my connection to give you a better answer. Please try asking about NCRs or Policies directly."])));
+          addMessage(
+            Message(
+              text: DialogText(
+                text: [
+                  "I'm optimizing my connection to give you a better answer. Please try asking about NCRs or Policies directly.",
+                ],
+              ),
+            ),
+          );
         });
         _scrollToBottom();
       }
@@ -297,41 +310,78 @@ class _ChatScreenState extends State<ChatScreen> {
 
   bool _handleLocalQuery(String text) {
     final t = text.toLowerCase().trim();
-    
+
     // 🚀 Advanced IQ + Knowledge Base
     final Map<List<String>, String> iqPlusKB = {
-      ['what is IQ +', 'about this app', 'project description']:
-          "IQ + is a comprehensive Governance, Risk, and Compliance (GRC) platform designed to streamline business operations, quality management, and regulatory adherence. It centralizes NCR tracking, policy management, equipment monitoring, and team training into a single futuristic command center.",
+      [
+        'what is IQ +',
+        'about this app',
+        'project description',
+      ]: "IQ + is a comprehensive Governance, Risk, and Compliance (GRC) platform designed to streamline business operations, quality management, and regulatory adherence. It centralizes NCR tracking, policy management, equipment monitoring, and team training into a single futuristic command center.",
 
-      ['ncr', 'non-conformance', 'report issue']: 
-          "Non-Conformance Reports (NCR) are at the heart of IQ +. Use the 'NCR Management' tile to log quality deviations. \n• Open: Issues just identified.\n• In Progress: Actions being taken.\n• Closed: Verified and resolved.\nTrends are visible on your dashboard graph.",
+      [
+        'ncr',
+        'non-conformance',
+        'report issue',
+      ]: "Non-Conformance Reports (NCR) are at the heart of IQ +. Use the 'NCR Management' tile to log quality deviations. \n• Open: Issues just identified.\n• In Progress: Actions being taken.\n• Closed: Verified and resolved.\nTrends are visible on your dashboard graph.",
 
-      ['policy', 'procedure', 'sop', 'documents']: 
-          "Policies & Procedures are managed in the dedicated tile. You can view the current approved versions, download documents, and check the 'All Policies Version History' to see how compliance has evolved over time.",
+      [
+        'policy',
+        'procedure',
+        'sop',
+        'documents',
+      ]: "Policies & Procedures are managed in the dedicated tile. You can view the current approved versions, download documents, and check the 'All Policies Version History' to see how compliance has evolved over time.",
 
-      ['mme', 'equipment', 'calibration', 'monitoring']: 
-          "Measuring and Monitoring Equipment (MME) tracking allows you to manage critical assets. You can monitor calibration cycles, asset IDs, and compliance status via the 'MME Tracker' in the Operations section.",
+      [
+        'mme',
+        'equipment',
+        'calibration',
+        'monitoring',
+      ]: "Measuring and Monitoring Equipment (MME) tracking allows you to manage critical assets. You can monitor calibration cycles, asset IDs, and compliance status via the 'MME Tracker' in the Operations section.",
 
-      ['employee', 'team', 'staff', 'directory']: 
-          "The 'Our Employees' section is your team hub. Here you can onboard new members, manage roles, and track their 'View Training Results' to ensure entire organization competency.",
+      [
+        'employee',
+        'team',
+        'staff',
+        'directory',
+      ]: "The 'Our Employees' section is your team hub. Here you can onboard new members, manage roles, and track their 'View Training Results' to ensure entire organization competency.",
 
-      ['visit', 'consultant visit', 'next visit']: 
-          "Site visits are tracked under 'Next Visit'. This section shows the scheduled date, assigned officer, department, and specific location for upcoming GRC audits or consultations.",
+      [
+        'visit',
+        'consultant visit',
+        'next visit',
+      ]: "Site visits are tracked under 'Next Visit'. This section shows the scheduled date, assigned officer, department, and specific location for upcoming GRC audits or consultations.",
 
-      ['role', 'admin', 'consultant', 'customer', 'super admin']: 
-          "IQ + supports hierarchical access:\n• Super Admin: Global system control.\n• Admin: Organization-wide management.\n• Consultant: Subject matter experts managing multiple customers.\n• Customer: Business owners and quality managers.\n• Employee: End-users focused on training and policy adherence.",
+      [
+        'role',
+        'admin',
+        'consultant',
+        'customer',
+        'super admin',
+      ]: "IQ + supports hierarchical access:\n• Super Admin: Global system control.\n• Admin: Organization-wide management.\n• Consultant: Subject matter experts managing multiple customers.\n• Customer: Business owners and quality managers.\n• Employee: End-users focused on training and policy adherence.",
 
-      ['training', 'video', 'quiz']: 
-          "The Training Hub (Coming Soon) will feature awareness videos and interactive quizzes. Currently, managers can view completed training logs via 'Our Employees' -> 'View Training Results'.",
+      [
+        'training',
+        'video',
+        'quiz',
+      ]: "The Training Hub (Coming Soon) will feature awareness videos and interactive quizzes. Currently, managers can view completed training logs via 'Our Employees' -> 'View Training Results'.",
 
-      ['export', 'excel', 'download data']: 
-          "You can export training and compliance data into Excel format. Look for the 'Export Training' button inside the results pages to generate professional XLSX reports instantly.",
+      [
+        'export',
+        'excel',
+        'download data',
+      ]: "You can export training and compliance data into Excel format. Look for the 'Export Training' button inside the results pages to generate professional XLSX reports instantly.",
 
-      ['password', 'login problem', 'change pass']: 
-          "Security is priority. Change your password in 'Profile' (Drawer) or the 'Change Password' card on the login screen. Ensure you select the correct 'Tab' before logging in.",
+      [
+        'password',
+        'login problem',
+        'change pass',
+      ]: "Security is priority. Change your password in 'Profile' (Drawer) or the 'Change Password' card on the login screen. Ensure you select the correct 'Tab' before logging in.",
 
-      ['audit', 'compliance check']: 
-          "The 'Audit Hub' tile (launching soon) will allow for systematic internal and external audits directly within the portal.",
+      [
+        'audit',
+        'compliance check',
+      ]: "The 'Audit Hub' tile (launching soon) will allow for systematic internal and external audits directly within the portal.",
     };
 
     // 🚀 Intelligent Keyword Matching
@@ -341,12 +391,14 @@ class _ChatScreenState extends State<ChatScreen> {
         return true;
       }
     }
-    
+
     if (t == 'help' || t == 'hi' || t == 'hello') {
-      _delayedBotResponse("Hello! I'm the IQ + Intelligence Hub. \nI can provide accurate details on:\n• NCR Life-cycles\n• Policy Versioning\n• MME Asset Tracking\n• Role Permissions\n• Exporting Reports\nWhat would you like to master today?");
+      _delayedBotResponse(
+        "Hello! I'm the IQ + Intelligence Hub. \nI can provide accurate details on:\n• NCR Life-cycles\n• Policy Versioning\n• MME Asset Tracking\n• Role Permissions\n• Exporting Reports\nWhat would you like to master today?",
+      );
       return true;
     }
-    
+
     return false;
   }
 
@@ -364,9 +416,6 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void addMessage(Message message, [bool isUserMessage = false]) {
-    messages.add({
-      'message': message,
-      'isUserMessage': isUserMessage,
-    });
+    messages.add({'message': message, 'isUserMessage': isUserMessage});
   }
 }
