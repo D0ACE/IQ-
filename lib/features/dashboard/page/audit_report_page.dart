@@ -15,6 +15,8 @@ import 'package:iq_plus/core/supabase/supabase_config.dart';
 import 'package:iq_plus/di/service_locator.dart';
 import 'package:iq_plus/features/users/models/employe_user.dart';
 import 'package:iq_plus/features/users/repository/user_repository.dart';
+import 'package:iq_plus/features/admin/customers/widgets/customer_dropdown_widget.dart';
+import 'package:iq_plus/features/auth/model/customer_model.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:universal_html/html.dart' as html;
@@ -164,17 +166,23 @@ class AuditWorksheetModel {
   AuditWorksheetModel({
     required this.id,
     required List<StandardRequirement> requirements,
+    this.customerId = '',
+    this.customerName = '',
     DateTime? createdAt,
     List<AuditRowModel>? rows,
   }) : createdAt = createdAt ?? DateTime.now(),
        rows = rows ?? requirements.map(AuditRowModel.new).toList();
 
   final int id;
+  final String customerId;
+  final String customerName;
   final DateTime createdAt;
   final List<AuditRowModel> rows;
 
   Map<String, dynamic> toJson() => {
     'id': id,
+    'customerId': customerId,
+    'customerName': customerName,
     'createdAt': createdAt.toIso8601String(),
     'rows': rows.map((r) => r.toJson()).toList(),
   };
@@ -221,6 +229,8 @@ class AuditWorksheetModel {
 
     return AuditWorksheetModel(
       id: id,
+      customerId: json['customerId'] as String? ?? '',
+      customerName: json['customerName'] as String? ?? '',
       requirements: standardRequirements,
       createdAt: createdAt,
       rows: rowList,
@@ -250,6 +260,7 @@ class _AuditReportPageState extends State<AuditReportPage> {
   List<StandardRequirement> _requirements = [];
   List<EmployeeUserModel> _employees = [];
   final List<AuditWorksheetModel> _submittedWorksheets = [];
+  CustomerModel? _selectedCustomer;
   bool _loading = true;
 
   bool get _isReadOnly {
@@ -257,6 +268,26 @@ class _AuditReportPageState extends State<AuditReportPage> {
     final user = getIt<HiveService>().getUser();
     final roleId = user?.roleId;
     return Utility.isAdmin(roleId) || Utility.isSuperAdmin(roleId);
+  }
+
+  String? get _customerIdForVisibility {
+    final customer = getIt<HiveService>().getCustomer();
+    if (customer != null && Utility.isCustomer(customer.roleId)) {
+      return customer.customerId;
+    }
+    return null;
+  }
+
+  List<AuditWorksheetModel> _visibleWorksheets(
+    Iterable<AuditWorksheetModel> worksheets,
+  ) {
+    final customerId = _customerIdForVisibility;
+    if (customerId == null || customerId.isEmpty) {
+      return worksheets.toList();
+    }
+    return worksheets
+        .where((worksheet) => worksheet.customerId == customerId)
+        .toList();
   }
 
   @override
@@ -354,10 +385,11 @@ class _AuditReportPageState extends State<AuditReportPage> {
             _requirements,
           );
         }).toList();
-        if (mounted && list.isNotEmpty) {
+        final visibleList = _visibleWorksheets(list);
+        if (mounted && visibleList.isNotEmpty) {
           setState(() {
             _submittedWorksheets.clear();
-            _submittedWorksheets.addAll(list);
+            _submittedWorksheets.addAll(visibleList);
           });
         }
       }
@@ -382,12 +414,13 @@ class _AuditReportPageState extends State<AuditReportPage> {
           }
         }
 
-        cloudList.sort((a, b) => b.id.compareTo(a.id));
+        final visibleCloudList = _visibleWorksheets(cloudList)
+          ..sort((a, b) => b.id.compareTo(a.id));
 
         if (mounted) {
           setState(() {
             _submittedWorksheets.clear();
-            _submittedWorksheets.addAll(cloudList);
+            _submittedWorksheets.addAll(visibleCloudList);
           });
           // Update local Hive cache with cloud data
           final box = await Hive.openBox('audit_worksheets_box');
@@ -431,6 +464,7 @@ class _AuditReportPageState extends State<AuditReportPage> {
 
   /// Creates a new worksheet with the lowest currently unused identifier.
   AuditWorksheetModel _newWorksheet() {
+    final customerName = _selectedCustomer?.companyName.trim() ?? '';
     final usedIds = _submittedWorksheets
         .map((worksheet) => worksheet.id)
         .toSet();
@@ -438,12 +472,17 @@ class _AuditReportPageState extends State<AuditReportPage> {
     while (usedIds.contains(nextId)) {
       nextId++;
     }
-    return AuditWorksheetModel(id: nextId, requirements: _requirements);
+    return AuditWorksheetModel(
+      id: nextId,
+      customerId: _selectedCustomer?.customerId ?? '',
+      customerName: customerName,
+      requirements: _requirements,
+    );
   }
 
   /// Opens a blank worksheet and stores it after creation/editing.
   Future<void> _addWorksheet() async {
-    if (_isReadOnly) return;
+    if (_isReadOnly || _selectedCustomer == null) return;
     final draft = _newWorksheet();
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
@@ -637,24 +676,7 @@ class _AuditReportPageState extends State<AuditReportPage> {
             ),
           ),
           actions: [
-            if (!_isReadOnly)
-              Padding(
-                padding: const EdgeInsets.only(right: 16),
-                child: FilledButton.icon(
-                  onPressed: _loading ? null : _addWorksheet,
-                  icon: const Icon(Icons.add),
-                  label: const Text('Create Report'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.buttonDarkGreen,
-                    foregroundColor: AppColors.buttonYellow,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(13),
-                      side: const BorderSide(color: _AuditColors.green),
-                    ),
-                  ),
-                ),
-              )
-            else
+            if (_isReadOnly)
               const Padding(
                 padding: EdgeInsets.only(right: 16),
                 child: Chip(
@@ -681,6 +703,11 @@ class _AuditReportPageState extends State<AuditReportPage> {
             : _HomePage(
                 submittedWorksheets: _submittedWorksheets,
                 isReadOnly: _isReadOnly,
+                selectedCustomer: _selectedCustomer,
+                consultantId: getIt<HiveService>().getUser()?.userId,
+                onCustomerChanged: (customer) {
+                  setState(() => _selectedCustomer = customer);
+                },
                 onAddForm: _addWorksheet,
                 onOpenForm: _openWorksheet,
                 onDeleteForm: _deleteWorksheet,
@@ -695,6 +722,9 @@ class _HomePage extends StatelessWidget {
   const _HomePage({
     required this.submittedWorksheets,
     required this.isReadOnly,
+    required this.selectedCustomer,
+    required this.consultantId,
+    required this.onCustomerChanged,
     required this.onAddForm,
     required this.onOpenForm,
     required this.onDeleteForm,
@@ -702,6 +732,9 @@ class _HomePage extends StatelessWidget {
 
   final List<AuditWorksheetModel> submittedWorksheets;
   final bool isReadOnly;
+  final CustomerModel? selectedCustomer;
+  final String? consultantId;
+  final ValueChanged<CustomerModel?> onCustomerChanged;
   final VoidCallback onAddForm;
   final ValueChanged<AuditWorksheetModel> onOpenForm;
   final ValueChanged<AuditWorksheetModel> onDeleteForm;
@@ -712,6 +745,46 @@ class _HomePage extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 28, 20, 32),
       children: [
+        if (!isReadOnly) ...[
+          Card(
+            elevation: 0,
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Select Customer',
+                    style: TextStyle(
+                      color: _AuditColors.navy,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  CustomerDropdownWidget(
+                    selectedCustomer: selectedCustomer,
+                    consultantId: consultantId,
+                    onChanged: onCustomerChanged,
+                    hint: 'Select a customer to add an audit report',
+                  ),
+                  if (selectedCustomer != null) ...[
+                    const SizedBox(height: 16),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: FilledButton.icon(
+                        onPressed: onAddForm,
+                        icon: const Icon(Icons.add),
+                        label: const Text('Add Report'),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+        ],
         Text(
           'Internal Audit Report',
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
@@ -729,51 +802,31 @@ class _HomePage extends StatelessWidget {
           style: const TextStyle(color: _AuditColors.mutedText, fontSize: 16),
         ),
         const SizedBox(height: 20),
-        if (submittedWorksheets.isEmpty)
-          Card(
-            elevation: 0,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 64, horizontal: 24),
-              child: Column(
-                children: [
-                  const Icon(
-                    Icons.table_rows_outlined,
-                    size: 56,
-                    color: AppColors.neutralTextSecondary,
-                  ),
-                  const SizedBox(height: 14),
-                  Text(
-                    isReadOnly
-                        ? 'No audit reports available'
-                        : 'Your audit reports will appear here',
-                    style: const TextStyle(
-                      fontSize: 19,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    isReadOnly
-                        ? 'Internal audit reports submitted by consultants will appear here for review.'
-                        : 'Begin by creating an audit report for your checklist.',
-                    style: const TextStyle(
-                      color: _AuditColors.mutedText,
-                      fontSize: 14,
-                    ),
-                  ),
-                  if (!isReadOnly) ...[
-                    const SizedBox(height: 20),
-                    FilledButton.icon(
-                      onPressed: onAddForm,
-                      icon: const Icon(Icons.add),
-                      label: const Text('Create Report'),
-                    ),
-                  ],
-                ],
-              ),
+        if (submittedWorksheets.isEmpty && isReadOnly)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 64, horizontal: 24),
+            child: Column(
+              children: [
+                Icon(
+                  Icons.table_rows_outlined,
+                  size: 56,
+                  color: AppColors.neutralTextSecondary,
+                ),
+                SizedBox(height: 14),
+                Text(
+                  'No audit reports available',
+                  style: TextStyle(fontSize: 19, fontWeight: FontWeight.w700),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'Internal audit reports submitted by consultants will appear here for review.',
+                  style: TextStyle(color: _AuditColors.mutedText, fontSize: 14),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
           )
-        else
+        else if (submittedWorksheets.isNotEmpty)
           ...submittedWorksheets.map(
             (worksheet) => _SubmittedFormCard(
               worksheet: worksheet,
@@ -837,7 +890,7 @@ class _SubmittedFormCard extends StatelessWidget {
           ),
         ),
         title: Text(
-          'Audit Report ${worksheet.id}  •  ${isFullyCompleted ? "Completed" : "$savedCount of ${worksheet.rows.length} Saved"}',
+          'Audit Report ${worksheet.id} (${worksheet.customerName.isEmpty ? "Customer" : worksheet.customerName})  •  ${isFullyCompleted ? "Completed" : "$savedCount of ${worksheet.rows.length} Saved"}',
           style: const TextStyle(
             color: _AuditColors.navy,
             fontWeight: FontWeight.w700,
@@ -945,8 +998,8 @@ class _AuditFormPageState extends State<AuditFormPage> {
           shape: const Border(bottom: BorderSide(color: _AuditColors.border)),
           title: Text(
             widget.readOnly
-                ? 'Internal Audit Number ${widget.worksheet.id} • Read Only'
-                : 'Internal Audit Number ${widget.worksheet.id}',
+                ? 'Audit Report ${widget.worksheet.id} (${widget.worksheet.customerName.isEmpty ? "Customer" : widget.worksheet.customerName}) • Read Only'
+                : 'Audit Report ${widget.worksheet.id} (${widget.worksheet.customerName.isEmpty ? "Customer" : widget.worksheet.customerName})',
             style: const TextStyle(
               color: _AuditColors.navy,
               fontWeight: FontWeight.w700,
@@ -987,7 +1040,7 @@ class _AuditFormPageState extends State<AuditFormPage> {
                         Navigator.of(context).pop();
                       },
                       icon: const Icon(Icons.check, size: 18),
-                      label: const Text('DONE'),
+                      label: const Text('SUBMIT'),
                       style: FilledButton.styleFrom(
                         backgroundColor: AppColors.buttonDarkGreen,
                         foregroundColor: AppColors.buttonYellow,
@@ -1679,8 +1732,10 @@ class _AttachmentCellState extends State<AttachmentCell> {
 
         if (bytes != null) {
           try {
-            final sanitizedFileName =
-                fileName.replaceAll(RegExp(r'[^\w\.\-]'), '_');
+            final sanitizedFileName = fileName.replaceAll(
+              RegExp(r'[^\w\.\-]'),
+              '_',
+            );
             final String supabasePath =
                 'audit_attachments/${DateTime.now().millisecondsSinceEpoch}_$sanitizedFileName';
 
@@ -1899,7 +1954,9 @@ class _AttachmentCellState extends State<AttachmentCell> {
                     borderRadius: const BorderRadius.vertical(
                       bottom: Radius.circular(16),
                     ),
-                    border: Border(top: BorderSide(color: Colors.grey.shade200)),
+                    border: Border(
+                      top: BorderSide(color: Colors.grey.shade200),
+                    ),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -2001,8 +2058,9 @@ class _AttachmentCellState extends State<AttachmentCell> {
 
   Widget _buildBase64Image(String rawBase64) {
     try {
-      final clean =
-          rawBase64.contains(',') ? rawBase64.split(',').last : rawBase64;
+      final clean = rawBase64.contains(',')
+          ? rawBase64.split(',').last
+          : rawBase64;
       final bytes = base64Decode(clean);
       return Image.memory(bytes, fit: BoxFit.contain);
     } catch (e) {
@@ -2116,12 +2174,12 @@ class _AttachmentCellState extends State<AttachmentCell> {
                                 ),
                               )
                             : (attachment.base64Data.isNotEmpty
-                                ? _buildBase64Image(attachment.base64Data)
-                                : const Icon(
-                                    Icons.image,
-                                    size: 16,
-                                    color: AppColors.brandPrimary,
-                                  )),
+                                  ? _buildBase64Image(attachment.base64Data)
+                                  : const Icon(
+                                      Icons.image,
+                                      size: 16,
+                                      color: AppColors.brandPrimary,
+                                    )),
                       ),
                     )
                   else

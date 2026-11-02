@@ -20,7 +20,6 @@ import 'package:iq_plus/features/auth/model/customer_model.dart';
 import 'package:iq_plus/features/periodic_compliance/periodic_compliance_provider.dart';
 import 'package:iq_plus/features/kpis/kpi_provider.dart';
 
-
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
 
@@ -28,7 +27,8 @@ class DashboardPage extends StatefulWidget {
   State<DashboardPage> createState() => _DashboardPageState();
 }
 
-class _DashboardPageState extends State<DashboardPage> with TickerProviderStateMixin {
+class _DashboardPageState extends State<DashboardPage>
+    with TickerProviderStateMixin {
   ConsultantModel? assignedConsultant;
   bool isConsultantLoading = false;
   CustomerModel? customerModel;
@@ -53,13 +53,13 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
       curve: Curves.easeIn,
     );
 
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.05),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOutCubic,
-    ));
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.05), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
 
     final hiveService = getIt<HiveService>();
     customerModel = hiveService.getCustomer();
@@ -70,8 +70,12 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
 
     // 🚀 Start listening to NCR data for the graph
     context.read<NcrProvider>().listenToNcrs();
-    context.read<PeriodicComplianceProvider>().listenToTasks(customerId: customerModel?.customerId);
-    context.read<KpiProvider>().listenToTasks(customerId: customerModel?.customerId);
+    context.read<PeriodicComplianceProvider>().listenToTasks(
+      customerId: customerModel?.customerId,
+    );
+    context.read<KpiProvider>().listenToTasks(
+      customerId: customerModel?.customerId,
+    );
 
     _animationController.forward();
   }
@@ -96,14 +100,20 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
           Positioned(
             top: -50,
             right: -50,
-            child: _buildDecorativeCircle(200, AppColors.kPrimaryColor.withValues(alpha: 0.03)),
+            child: _buildDecorativeCircle(
+              200,
+              AppColors.kPrimaryColor.withValues(alpha: 0.03),
+            ),
           ),
           Positioned(
             bottom: 100,
             left: -30,
-            child: _buildDecorativeCircle(150, AppColors.secondary.withValues(alpha: 0.03)),
+            child: _buildDecorativeCircle(
+              150,
+              AppColors.secondary.withValues(alpha: 0.03),
+            ),
           ),
-          
+
           FadeTransition(
             opacity: _fadeAnimation,
             child: SlideTransition(
@@ -169,10 +179,7 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: color,
-      ),
+      decoration: BoxDecoration(shape: BoxShape.circle, color: color),
     );
   }
 
@@ -221,7 +228,11 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
                   color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: const Icon(Icons.waves_rounded, color: Colors.white, size: 28),
+                child: const Icon(
+                  Icons.waves_rounded,
+                  color: Colors.white,
+                  size: 28,
+                ),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -280,7 +291,9 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
             padding: const EdgeInsets.fromLTRB(24, 60, 24, 24),
             decoration: BoxDecoration(
               color: AppColors.kPrimaryColor,
-              borderRadius: const BorderRadius.only(topRight: Radius.circular(30)),
+              borderRadius: const BorderRadius.only(
+                topRight: Radius.circular(30),
+              ),
               boxShadow: [
                 BoxShadow(
                   color: AppColors.kPrimaryColor.withValues(alpha: 0.1),
@@ -298,7 +311,11 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
                     color: Colors.white.withValues(alpha: 0.2),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.dashboard_rounded, color: Colors.white, size: 24),
+                  child: const Icon(
+                    Icons.dashboard_rounded,
+                    color: Colors.white,
+                    size: 24,
+                  ),
                 ),
                 const SizedBox(height: 16),
                 Text(
@@ -328,7 +345,7 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
               children: [
                 _drawerSectionTitle('ACCOUNT'),
                 _profileDropdown(context),
-                
+
                 const SizedBox(height: 16),
                 _drawerSectionTitle('OPERATIONS'),
                 _drawerItem(
@@ -337,7 +354,10 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
                   onTap: () {
                     if ((customerModel?.customerId ?? '').isNotEmpty) {
                       GoRouter.of(context).pop();
-                      context.push(AppRoutes.customerMMEList, extra: customerModel!.customerId);
+                      context.push(
+                        AppRoutes.customerMMEList,
+                        extra: customerModel!.customerId,
+                      );
                     }
                   },
                 ),
@@ -450,10 +470,18 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
       data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
       child: ExpansionTile(
         tilePadding: const EdgeInsets.symmetric(horizontal: 12),
-        leading: Icon(Icons.person_outline_rounded, color: Colors.grey.shade600, size: 22),
+        leading: Icon(
+          Icons.person_outline_rounded,
+          color: Colors.grey.shade600,
+          size: 22,
+        ),
         title: Text(
           'My Profile',
-          style: TextStyle(color: Colors.grey.shade700, fontSize: 14, fontWeight: FontWeight.w600),
+          style: TextStyle(
+            color: Colors.grey.shade700,
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         children: [
           _drawerSubItem(
@@ -461,7 +489,9 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
             onTap: () async {
               GoRouter.of(context).pop();
               if (customer == null) return;
-              final result = await context.push(AppRoutes.customerProfile, extra: customer) as CustomerModel?;
+              final result =
+                  await context.push(AppRoutes.customerProfile, extra: customer)
+                      as CustomerModel?;
               if (result != null) setState(() => customerModel = result);
             },
           ),
@@ -470,7 +500,10 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
             onTap: () async {
               GoRouter.of(context).pop();
               if (customer == null) return;
-              await context.push(AppRoutes.customerProfileEdit, extra: customer);
+              await context.push(
+                AppRoutes.customerProfileEdit,
+                extra: customer,
+              );
             },
           ),
         ],
@@ -483,7 +516,11 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
       contentPadding: const EdgeInsets.only(left: 48),
       title: Text(
         title,
-        style: TextStyle(color: Colors.grey.shade600, fontSize: 13, fontWeight: FontWeight.w500),
+        style: TextStyle(
+          color: Colors.grey.shade600,
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+        ),
       ),
       onTap: onTap,
     );
@@ -548,10 +585,12 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
     );
   }
 
-  Widget _statCard(String title,
-      String value,
-      Color color,
-      GestureTapCallback onTap,) {
+  Widget _statCard(
+    String title,
+    String value,
+    Color color,
+    GestureTapCallback onTap,
+  ) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -578,7 +617,10 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
                   width: 60,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [color.withValues(alpha: 0.2), color.withValues(alpha: 0.05)],
+                      colors: [
+                        color.withValues(alpha: 0.2),
+                        color.withValues(alpha: 0.05),
+                      ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
@@ -693,7 +735,10 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -756,7 +801,12 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
                   showTitles: true,
                   reservedSize: 32,
                   getTitlesWidget: (value, meta) {
-                    const labels = ['Open', 'In Progress', 'Completed', 'Non\nCompliant'];
+                    const labels = [
+                      'Open',
+                      'In Progress',
+                      'Completed',
+                      'Non\nCompliant',
+                    ];
                     if (value.toInt() >= 0 && value.toInt() < labels.length) {
                       return Padding(
                         padding: const EdgeInsets.only(top: 4),
@@ -782,19 +832,30 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
                   reservedSize: 28,
                   getTitlesWidget: (value, meta) {
                     final remainder =
-                        (value - (value / axisConfig.interval).round() * axisConfig.interval).abs();
-                    if (remainder > 0.001 && (value - axisConfig.maxY).abs() > 0.001) {
+                        (value -
+                                (value / axisConfig.interval).round() *
+                                    axisConfig.interval)
+                            .abs();
+                    if (remainder > 0.001 &&
+                        (value - axisConfig.maxY).abs() > 0.001) {
                       return const SizedBox();
                     }
                     return Text(
                       value.toInt().toString(),
-                      style: TextStyle(color: Colors.grey.shade400, fontSize: 10),
+                      style: TextStyle(
+                        color: Colors.grey.shade400,
+                        fontSize: 10,
+                      ),
                     );
                   },
                 ),
               ),
-              topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              topTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
+              rightTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
             ),
             gridData: FlGridData(
               show: true,
@@ -866,7 +927,12 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
                   showTitles: true,
                   reservedSize: 32,
                   getTitlesWidget: (value, meta) {
-                    const labels = ['Open', 'In Progress', 'Completed', 'Non\nCompliant'];
+                    const labels = [
+                      'Open',
+                      'In Progress',
+                      'Completed',
+                      'Non\nCompliant',
+                    ];
                     if (value.toInt() >= 0 && value.toInt() < labels.length) {
                       return Padding(
                         padding: const EdgeInsets.only(top: 4),
@@ -892,19 +958,30 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
                   reservedSize: 28,
                   getTitlesWidget: (value, meta) {
                     final remainder =
-                        (value - (value / axisConfig.interval).round() * axisConfig.interval).abs();
-                    if (remainder > 0.001 && (value - axisConfig.maxY).abs() > 0.001) {
+                        (value -
+                                (value / axisConfig.interval).round() *
+                                    axisConfig.interval)
+                            .abs();
+                    if (remainder > 0.001 &&
+                        (value - axisConfig.maxY).abs() > 0.001) {
                       return const SizedBox();
                     }
                     return Text(
                       value.toInt().toString(),
-                      style: TextStyle(color: Colors.grey.shade400, fontSize: 10),
+                      style: TextStyle(
+                        color: Colors.grey.shade400,
+                        fontSize: 10,
+                      ),
                     );
                   },
                 ),
               ),
-              topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              topTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
+              rightTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
             ),
             gridData: FlGridData(
               show: true,
@@ -973,12 +1050,12 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
               icon: Icons.shield_rounded,
               onTap: () {},
             ),*/
-          /*  _clickableCard(
+            /*  _clickableCard(
               title: 'Next Audit',
               icon: Icons.fact_check_rounded,
               onTap: () {},
             ),*/
-        /*    _clickableCard(
+            /*    _clickableCard(
               title: 'Next Training',
               icon: Icons.school_rounded,
               onTap: () {},
@@ -1005,6 +1082,11 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
               onTap: () => context.push(AppRoutes.periodicComplianceList),
             ),
             _clickableCard(
+              title: 'Internal Audit Report',
+              icon: Icons.fact_check_rounded,
+              onTap: () => context.push(AppRoutes.auditReport, extra: true),
+            ),
+            _clickableCard(
               title: 'All Policies Version History',
               icon: Icons.history_rounded,
               onTap: () => context.push(AppRoutes.globalVersionHistory),
@@ -1026,18 +1108,15 @@ class _DashboardPageState extends State<DashboardPage> with TickerProviderStateM
       themeColor = Colors.orange;
     } else if (title.contains('Risk')) {
       themeColor = Colors.redAccent;
-    }
-    else if (title.contains('Visit')) {
+    } else if (title.contains('Visit')) {
       themeColor = Colors.indigo;
-    }
-    else if (title.contains('Audit')) {themeColor = Colors.teal;}
-    else if (title.contains('Training')) {
+    } else if (title.contains('Audit')) {
+      themeColor = Colors.teal;
+    } else if (title.contains('Training')) {
       themeColor = Colors.amber.shade700;
-    }
-    else if (title.contains('Employees')) {
+    } else if (title.contains('Employees')) {
       themeColor = Colors.pinkAccent;
-    }
-    else if (title.contains('Policies')) {
+    } else if (title.contains('Policies')) {
       themeColor = AppColors.purple;
     }
 
@@ -1243,8 +1322,12 @@ class AnimatedBarChart extends StatelessWidget {
               reservedSize: 28,
               getTitlesWidget: (value, meta) {
                 final remainder =
-                    (value - (value / axisConfig.interval).round() * axisConfig.interval).abs();
-                if (remainder > 0.001 && (value - axisConfig.maxY).abs() > 0.001) {
+                    (value -
+                            (value / axisConfig.interval).round() *
+                                axisConfig.interval)
+                        .abs();
+                if (remainder > 0.001 &&
+                    (value - axisConfig.maxY).abs() > 0.001) {
                   return const SizedBox();
                 }
                 return Text(
@@ -1258,17 +1341,19 @@ class AnimatedBarChart extends StatelessWidget {
               },
             ),
           ),
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          rightTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
         ),
         gridData: FlGridData(
           show: true,
           drawVerticalLine: false,
           horizontalInterval: axisConfig.interval,
-          getDrawingHorizontalLine: (value) => FlLine(
-            color: Colors.grey.shade100,
-            strokeWidth: 1,
-          ),
+          getDrawingHorizontalLine: (value) =>
+              FlLine(color: Colors.grey.shade100, strokeWidth: 1),
         ),
         borderData: FlBorderData(show: false),
         barGroups: values.asMap().entries.map((entry) {
@@ -1312,10 +1397,7 @@ class NextVisitDateDialog extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       elevation: 8,
       child: Container(
-        width: MediaQuery
-            .of(context)
-            .size
-            .width / 4,
+        width: MediaQuery.of(context).size.width / 4,
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
@@ -1324,7 +1406,6 @@ class NextVisitDateDialog extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-
             /// Header
             Row(
               children: [
@@ -1367,89 +1448,86 @@ class NextVisitDateDialog extends StatelessWidget {
                   }
                   return Expanded(
                     child: ListView.separated(
-                        itemCount: state.list.length,
-                        separatorBuilder: (_, _) =>
-                            SizedBox(
-                              height: 10,
-                            ),
-                        itemBuilder: (context, index) {
-                          return Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 18,
-                              horizontal: 14,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.kPrimaryLightColor,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                  color: AppColors.kPrimaryColor),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-
-                                /// Date (Top Center)
-                                Center(
-                                  child: Column(
-                                    children: [
-                                      const Icon(
-                                        Icons.calendar_today,
-                                        size: 26,
+                      itemCount: state.list.length,
+                      separatorBuilder: (_, _) => SizedBox(height: 10),
+                      itemBuilder: (context, index) {
+                        return Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 18,
+                            horizontal: 14,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.kPrimaryLightColor,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.kPrimaryColor),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              /// Date (Top Center)
+                              Center(
+                                child: Column(
+                                  children: [
+                                    const Icon(
+                                      Icons.calendar_today,
+                                      size: 26,
+                                      color: AppColors.kPrimaryColor,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      state.list[index].visitDate ??
+                                          'Not Assigned',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w600,
                                         color: AppColors.kPrimaryColor,
                                       ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        state.list[index].visitDate ??
-                                            'Not Assigned',
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.w600,
-                                          color: AppColors.kPrimaryColor,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                                    ),
+                                  ],
                                 ),
+                              ),
 
-                                const SizedBox(height: 16),
-                                Divider(
-                                    color: AppColors.kPrimaryColor.withValues(alpha:
-                                        0.3)),
-
-                                const SizedBox(height: 10),
-
-                                /// Purpose
-                                _infoRow(
-                                  icon: Icons.flag,
-                                  label: 'Purpose',
-                                  value: state.list[index].purpose,
+                              const SizedBox(height: 16),
+                              Divider(
+                                color: AppColors.kPrimaryColor.withValues(
+                                  alpha: 0.3,
                                 ),
+                              ),
 
-                                /// Officer Name
-                                _infoRow(
-                                  icon: Icons.person,
-                                  label: 'Officer',
-                                  value: state.list[index].officerName,
-                                ),
+                              const SizedBox(height: 10),
 
-                                /// Department
-                                _infoRow(
-                                  icon: Icons.apartment,
-                                  label: 'Department',
-                                  value: state.list[index].department,
-                                ),
+                              /// Purpose
+                              _infoRow(
+                                icon: Icons.flag,
+                                label: 'Purpose',
+                                value: state.list[index].purpose,
+                              ),
 
-                                /// Location
-                                _infoRow(
-                                  icon: Icons.location_on,
-                                  label: 'Location',
-                                  value: state.list[index].location,
-                                ),
-                              ],
-                            ),
-                          );
-                        }
+                              /// Officer Name
+                              _infoRow(
+                                icon: Icons.person,
+                                label: 'Officer',
+                                value: state.list[index].officerName,
+                              ),
+
+                              /// Department
+                              _infoRow(
+                                icon: Icons.apartment,
+                                label: 'Department',
+                                value: state.list[index].department,
+                              ),
+
+                              /// Location
+                              _infoRow(
+                                icon: Icons.location_on,
+                                label: 'Location',
+                                value: state.list[index].location,
+                              ),
+                            ],
+                          ),
+                        );
+                      },
                     ),
                   );
                 }
@@ -1504,5 +1582,4 @@ class NextVisitDateDialog extends StatelessWidget {
       ),
     );
   }
-
 }
