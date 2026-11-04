@@ -9,6 +9,9 @@ class FirestoreSupplierRepository implements SupplierRepository {
   CollectionReference<Map<String, dynamic>> get _collection =>
       _firestore.collection('supply_suppliers');
 
+  String _documentId(String supplierId) =>
+      supplierId.replaceAll('/', '_slash_');
+
   Map<String, dynamic> _json(DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = Map<String, dynamic>.from(doc.data() ?? <String, dynamic>{});
     final createdAt = data['createdAt'];
@@ -29,21 +32,22 @@ class FirestoreSupplierRepository implements SupplierRepository {
 
   @override
   Future<Supplier?> getSupplierById(String id) async {
-    final doc = await _collection.doc(id).get();
+    final doc = await _collection.doc(_documentId(id)).get();
     return doc.exists ? Supplier.fromJson(_json(doc)) : null;
   }
 
   @override
   Future<void> addSupplier(Supplier supplier) =>
-      _collection.doc(supplier.id).set(supplier.toJson());
+      _collection.doc(_documentId(supplier.id)).set(supplier.toJson());
 
   @override
   Future<void> updateSupplier(Supplier supplier) => _collection
-      .doc(supplier.id)
+      .doc(_documentId(supplier.id))
       .set(supplier.toJson(), SetOptions(merge: true));
 
   @override
-  Future<void> deleteSupplier(String id) => _collection.doc(id).delete();
+  Future<void> deleteSupplier(String id) =>
+      _collection.doc(_documentId(id)).delete();
 
   @override
   Future<String> getNextSupplierId() async {

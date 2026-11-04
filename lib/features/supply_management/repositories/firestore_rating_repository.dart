@@ -9,6 +9,9 @@ class FirestoreRatingRepository implements RatingRepository {
   CollectionReference<Map<String, dynamic>> get _collection =>
       _firestore.collection('supply_ratings');
 
+  String _documentId(Rating rating) =>
+      '${rating.supplierId}_${rating.period}'.replaceAll('/', '_slash_');
+
   Rating _fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = Map<String, dynamic>.from(doc.data() ?? <String, dynamic>{});
     final updatedAt = data['updatedAt'];
@@ -32,10 +35,7 @@ class FirestoreRatingRepository implements RatingRepository {
   Future<void> saveRatings(List<Rating> ratings) async {
     final batch = _firestore.batch();
     for (final rating in ratings) {
-      batch.set(
-        _collection.doc('${rating.supplierId}_${rating.period}'),
-        rating.toJson(),
-      );
+      batch.set(_collection.doc(_documentId(rating)), rating.toJson());
     }
     await batch.commit();
   }
