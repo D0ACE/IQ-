@@ -65,14 +65,14 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage>
     // 🚀 Start listening to NCR data for the graph
     context.read<NcrProvider>().listenToNcrs();
     context.read<PeriodicComplianceProvider>().listenToTasks(
-          createdBy: user?.userId,
-          isConsultant: true,
-        );
+      createdBy: user?.userId,
+      isConsultant: true,
+    );
     context.read<KpiProvider>().listenToTasks(
-          createdBy: user?.userId,
-          isConsultant: true,
-        );
-    
+      createdBy: user?.userId,
+      isConsultant: true,
+    );
+
     // 🚀 Fetch only assigned customers for this consultant
     if ((user?.userId ?? '').isNotEmpty) {
       context.read<CustomerListCubit>().fetchApprovedCustomers(user?.userId);
@@ -528,7 +528,9 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage>
                   title: 'Internal Audit Report',
                   onTap: () {
                     GoRouter.of(context).pop();
-                    GoRouter.of(context).push(AppRoutes.auditReport, extra: false);
+                    GoRouter.of(
+                      context,
+                    ).push(AppRoutes.auditReport, extra: false);
                   },
                 ),
 
@@ -624,7 +626,7 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage>
             if (state is CustomerListLoading) {
               return const Center(child: CircularProgressIndicator());
             }
-            
+
             // 🚀 Ensure we only count customers assigned to this consultant
             int count = 0;
             if (state is CustomerListLoaded) {
@@ -632,7 +634,7 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage>
                   .where((c) => c.consultantId == user?.userId)
                   .length;
             }
-            
+
             return _statCard(
               'Assigned Customers',
               '$count',
@@ -641,7 +643,10 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage>
               () async {
                 final cubit = context.read<CustomerListCubit>();
                 final router = GoRouter.of(context);
-                await router.push(AppRoutes.assignCustomers, extra: user?.userId);
+                await router.push(
+                  AppRoutes.assignCustomers,
+                  extra: user?.userId,
+                );
                 if (mounted) {
                   cubit.fetchApprovedCustomers(user?.userId);
                 }
@@ -839,7 +844,10 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage>
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -902,7 +910,12 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage>
                   showTitles: true,
                   reservedSize: 32,
                   getTitlesWidget: (value, meta) {
-                    const labels = ['Open', 'In Progress', 'Completed', 'Non\nCompliant'];
+                    const labels = [
+                      'Open',
+                      'In Progress',
+                      'Completed',
+                      'Non\nCompliant',
+                    ];
                     if (value.toInt() >= 0 && value.toInt() < labels.length) {
                       return Padding(
                         padding: const EdgeInsets.only(top: 4),
@@ -928,19 +941,30 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage>
                   reservedSize: 28,
                   getTitlesWidget: (value, meta) {
                     final remainder =
-                        (value - (value / axisConfig.interval).round() * axisConfig.interval).abs();
-                    if (remainder > 0.001 && (value - axisConfig.maxY).abs() > 0.001) {
+                        (value -
+                                (value / axisConfig.interval).round() *
+                                    axisConfig.interval)
+                            .abs();
+                    if (remainder > 0.001 &&
+                        (value - axisConfig.maxY).abs() > 0.001) {
                       return const SizedBox();
                     }
                     return Text(
                       value.toInt().toString(),
-                      style: TextStyle(color: Colors.grey.shade400, fontSize: 10),
+                      style: TextStyle(
+                        color: Colors.grey.shade400,
+                        fontSize: 10,
+                      ),
                     );
                   },
                 ),
               ),
-              topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              topTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
+              rightTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
             ),
             gridData: FlGridData(
               show: true,
@@ -1012,7 +1036,12 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage>
                   showTitles: true,
                   reservedSize: 32,
                   getTitlesWidget: (value, meta) {
-                    const labels = ['Open', 'In Progress', 'Completed', 'Non\nCompliant'];
+                    const labels = [
+                      'Open',
+                      'In Progress',
+                      'Completed',
+                      'Non\nCompliant',
+                    ];
                     if (value.toInt() >= 0 && value.toInt() < labels.length) {
                       return Padding(
                         padding: const EdgeInsets.only(top: 4),
@@ -1038,19 +1067,30 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage>
                   reservedSize: 28,
                   getTitlesWidget: (value, meta) {
                     final remainder =
-                        (value - (value / axisConfig.interval).round() * axisConfig.interval).abs();
-                    if (remainder > 0.001 && (value - axisConfig.maxY).abs() > 0.001) {
+                        (value -
+                                (value / axisConfig.interval).round() *
+                                    axisConfig.interval)
+                            .abs();
+                    if (remainder > 0.001 &&
+                        (value - axisConfig.maxY).abs() > 0.001) {
                       return const SizedBox();
                     }
                     return Text(
                       value.toInt().toString(),
-                      style: TextStyle(color: Colors.grey.shade400, fontSize: 10),
+                      style: TextStyle(
+                        color: Colors.grey.shade400,
+                        fontSize: 10,
+                      ),
                     );
                   },
                 ),
               ),
-              topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              topTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
+              rightTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
             ),
             gridData: FlGridData(
               show: true,
@@ -1117,6 +1157,22 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage>
                   GoRouter.of(context).push(AppRoutes.visitorSummaryList),
             ),
             _clickableCard(
+              title: 'Supply Registration Form',
+              icon: Icons.playlist_add_rounded,
+              onTap: () =>
+                  GoRouter.of(context).push(AppRoutes.supplyRegistration),
+            ),
+            _clickableCard(
+              title: 'Supply Registration Requests',
+              icon: Icons.local_shipping_rounded,
+              onTap: () => GoRouter.of(context).push(AppRoutes.supplySuppliers),
+            ),
+            _clickableCard(
+              title: 'Supply Ratings',
+              icon: Icons.assessment_rounded,
+              onTap: () => GoRouter.of(context).push(AppRoutes.supplyRatings),
+            ),
+            _clickableCard(
               title: 'Policies & Procedures',
               icon: Icons.policy_rounded,
               onTap: () => GoRouter.of(context).push(AppRoutes.documentList),
@@ -1148,12 +1204,15 @@ class _ConsultantDashboardPageState extends State<ConsultantDashboardPage>
             _clickableCard(
               title: 'Compliance Tasks',
               icon: Icons.assignment_rounded,
-              onTap: () => GoRouter.of(context).push(AppRoutes.periodicComplianceList),
+              onTap: () =>
+                  GoRouter.of(context).push(AppRoutes.periodicComplianceList),
             ),
             _clickableCard(
               title: 'Internal Audit Report',
               icon: Icons.fact_check_rounded,
-              onTap: () => GoRouter.of(context).push(AppRoutes.auditReport, extra: false),
+              onTap: () => GoRouter.of(
+                context,
+              ).push(AppRoutes.auditReport, extra: false),
             ),
           ],
         );
@@ -1362,8 +1421,12 @@ class AnimatedBarChart extends StatelessWidget {
               reservedSize: 28,
               getTitlesWidget: (value, meta) {
                 final remainder =
-                    (value - (value / axisConfig.interval).round() * axisConfig.interval).abs();
-                if (remainder > 0.001 && (value - axisConfig.maxY).abs() > 0.001) {
+                    (value -
+                            (value / axisConfig.interval).round() *
+                                axisConfig.interval)
+                        .abs();
+                if (remainder > 0.001 &&
+                    (value - axisConfig.maxY).abs() > 0.001) {
                   return const SizedBox();
                 }
                 return Text(
@@ -1421,4 +1484,3 @@ class AnimatedBarChart extends StatelessWidget {
     );
   }
 }
-

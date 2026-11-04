@@ -69,6 +69,10 @@ import 'package:iq_plus/features/kpis/models/kpi_model.dart';
 import 'package:iq_plus/features/kpis/pages/kpi_list_page.dart';
 import 'package:iq_plus/features/kpis/pages/kpi_form_page.dart';
 import 'package:iq_plus/features/kpis/pages/kpi_details_page.dart';
+import 'package:iq_plus/features/supply_management/screens/supplier_registration_screen.dart';
+import 'package:iq_plus/features/supply_management/screens/approved_suppliers_screen.dart';
+import 'package:iq_plus/features/supply_management/screens/supply_rating_screen.dart';
+import 'package:iq_plus/features/supply_management/supply_management_shell.dart';
 
 class AppRouter {
   static final GoRouter router = GoRouter(
@@ -86,8 +90,16 @@ class AppRouter {
       final bool isLoggedIn = user != null || customer != null;
 
       final String location = state.matchedLocation;
+      final roleId = user?.roleId ?? customer?.roleId;
+      final isSupplyRoute = location.startsWith('/supply-management/');
+      final isCustomer = roleId == AppConst.customerRole || customer != null;
+      final isSupplyStaff =
+          roleId == AppConst.superAdminRole ||
+          roleId == AppConst.adminRole ||
+          roleId == AppConst.consultantRole;
 
-      final bool isPublicRoute = location == AppRoutes.login ||
+      final bool isPublicRoute =
+          location == AppRoutes.login ||
           location == AppRoutes.customerOnboarding ||
           location == '/customer-onboarding' ||
           location == AppRoutes.forgotPassword ||
@@ -97,6 +109,19 @@ class AppRouter {
       // 1. If user is not logged in and trying to access a protected route, redirect to login
       if (!isLoggedIn && !isPublicRoute) {
         return AppRoutes.login;
+      }
+
+      if (isSupplyRoute) {
+        if (location == AppRoutes.supplyRegistration &&
+            (isCustomer || isSupplyStaff)) {
+          return null;
+        }
+        if ((location == AppRoutes.supplySuppliers ||
+                location == AppRoutes.supplyRatings) &&
+            isSupplyStaff) {
+          return null;
+        }
+        return isLoggedIn ? AppRoutes.customerDashboard : AppRoutes.login;
       }
 
       // 2. If user is logged in and trying to access the login page, redirect to their dashboard
@@ -199,6 +224,28 @@ class AppRouter {
         },
       ),
 
+      GoRoute(
+        path: AppRoutes.supplyRegistration,
+        builder: (context, state) => const SupplyManagementShell(
+          title: 'Supply Management Registration',
+          child: SupplierRegistrationScreen(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.supplySuppliers,
+        builder: (context, state) => const SupplyManagementShell(
+          title: 'Approved Suppliers',
+          child: ApprovedSuppliersScreen(),
+        ),
+      ),
+      GoRoute(
+        path: AppRoutes.supplyRatings,
+        builder: (context, state) => const SupplyManagementShell(
+          title: 'Supply Ratings',
+          child: SupplyRatingScreen(),
+        ),
+      ),
+
       /// ADMIN DASHBOARD
       GoRoute(
         path: AppRoutes.adminDashboard,
@@ -270,9 +317,9 @@ class AppRouter {
         builder: (context, state) {
           final consultantId = state.extra as String?;
           if (consultantId == null) {
-             return const Scaffold(
-               body: Center(child: Text('Error: Consultant ID is missing.')),
-             );
+            return const Scaffold(
+              body: Center(child: Text('Error: Consultant ID is missing.')),
+            );
           }
           return ConsultantProfilePage(consultantId: consultantId);
         },
@@ -404,9 +451,7 @@ class AppRouter {
         path: AppRoutes.documentEditor,
         builder: (context, state) {
           final doc = state.extra as DocumentModel?;
-          return DocumentEditorPage(
-            document: doc,
-          );
+          return DocumentEditorPage(document: doc);
         },
       ),
       GoRoute(
@@ -464,7 +509,9 @@ class AppRouter {
         builder: (context, state) => MultiBlocProvider(
           providers: [
             BlocProvider(create: (_) => UserCubit(getIt<UserRepository>())),
-            BlocProvider(create: (_) => CustomerListCubit(getIt<AuthRepository>())),
+            BlocProvider(
+              create: (_) => CustomerListCubit(getIt<AuthRepository>()),
+            ),
           ],
           child: const EmployeeListPage(),
         ),
@@ -474,7 +521,9 @@ class AppRouter {
         builder: (context, state) => MultiBlocProvider(
           providers: [
             BlocProvider(create: (_) => VideoCubit(getIt<VideoRepository>())),
-            BlocProvider(create: (_) => CustomerListCubit(getIt<AuthRepository>())),
+            BlocProvider(
+              create: (_) => CustomerListCubit(getIt<AuthRepository>()),
+            ),
           ],
           child: const VideoListPage(),
         ),
@@ -506,7 +555,8 @@ class AppRouter {
       ),
       GoRoute(
         path: AppRoutes.videoDetails,
-        builder: (context, state) => VideoDetailsPage(video: state.extra as AwarenessVideoModel),
+        builder: (context, state) =>
+            VideoDetailsPage(video: state.extra as AwarenessVideoModel),
       ),
       GoRoute(
         path: AppRoutes.employeeTraining,
@@ -518,7 +568,8 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.trainingResults,
         builder: (context, state) {
-          final Map<String, dynamic>? extra = state.extra as Map<String, dynamic>?;
+          final Map<String, dynamic>? extra =
+              state.extra as Map<String, dynamic>?;
           return BlocProvider(
             create: (_) => VideoCubit(getIt<VideoRepository>()),
             child: TrainingResultsPage(

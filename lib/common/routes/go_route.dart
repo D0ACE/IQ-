@@ -53,4 +53,7 @@ class AppRoutes {
   static const String kpiForm = '/kpiForm';
   static const String kpiDetails = '/kpiDetails';
   static const String auditReport = '/auditReport';
+  static const String supplyRegistration = '/supply-management/register';
+  static const String supplySuppliers = '/supply-management/suppliers';
+  static const String supplyRatings = '/supply-management/ratings';
 }

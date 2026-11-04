@@ -1061,6 +1061,11 @@ class _DashboardPageState extends State<DashboardPage>
               onTap: () {},
             ),*/
             _clickableCard(
+              title: 'Supply Management Registration',
+              icon: Icons.local_shipping_rounded,
+              onTap: () => context.push(AppRoutes.supplyRegistration),
+            ),
+            _clickableCard(
               title: 'Policies & Procedures',
               icon: Icons.description_rounded,
               onTap: () => context.push(AppRoutes.customerPolicyList),

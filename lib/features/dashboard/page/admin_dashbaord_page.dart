@@ -1096,6 +1096,21 @@ class _AdminDashboardPageState extends State<AdminDashboardPage>
               onTap: () => context.push(AppRoutes.ncrPage),
             ),
             _clickableCard(
+              title: 'Supply Registration Form',
+              icon: Icons.playlist_add_rounded,
+              onTap: () => context.push(AppRoutes.supplyRegistration),
+            ),
+            _clickableCard(
+              title: 'Supply Registration Requests',
+              icon: Icons.local_shipping_rounded,
+              onTap: () => context.push(AppRoutes.supplySuppliers),
+            ),
+            _clickableCard(
+              title: 'Supply Ratings',
+              icon: Icons.assessment_rounded,
+              onTap: () => context.push(AppRoutes.supplyRatings),
+            ),
+            _clickableCard(
               title: 'Customer Management',
               icon: Icons.business_rounded,
               onTap: () async {
@@ -1421,4 +1436,3 @@ class AnimatedBarChart extends StatelessWidget {
     );
   }
 }
-

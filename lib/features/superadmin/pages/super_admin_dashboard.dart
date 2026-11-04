@@ -1136,6 +1136,21 @@ class _SuperadminDashboardPageState extends State<SuperadminDashboardPage>
               onTap: () => context.push(AppRoutes.onboardingRequest),
             ),
             _clickableCard(
+              title: 'Supply Registration Form',
+              icon: Icons.playlist_add_rounded,
+              onTap: () => context.push(AppRoutes.supplyRegistration),
+            ),
+            _clickableCard(
+              title: 'Supply Registration Requests',
+              icon: Icons.local_shipping_rounded,
+              onTap: () => context.push(AppRoutes.supplySuppliers),
+            ),
+            _clickableCard(
+              title: 'Supply Ratings',
+              icon: Icons.assessment_rounded,
+              onTap: () => context.push(AppRoutes.supplyRatings),
+            ),
+            _clickableCard(
               title: 'NCR',
               icon: Icons.report_problem_rounded,
               onTap: () => GoRouter.of(context).push(AppRoutes.ncrPage),
@@ -1198,7 +1213,8 @@ class _SuperadminDashboardPageState extends State<SuperadminDashboardPage>
             _clickableCard(
               title: 'Internal Audit Report',
               icon: Icons.fact_check_rounded,
-              onTap: () => GoRouter.of(context).push(AppRoutes.auditReport, extra: true),
+              onTap: () =>
+                  GoRouter.of(context).push(AppRoutes.auditReport, extra: true),
             ),
           ],
         );
